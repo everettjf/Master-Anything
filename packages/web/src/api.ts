@@ -71,3 +71,78 @@ export async function fetchSource(id: string, nodeId: string): Promise<SourceSli
     await fetch(`${BASE}/repos/${id}/source?node=${encodeURIComponent(nodeId)}`),
   );
 }
+
+export interface PathUnit {
+  id: string;
+  title: string;
+  kind: "function" | "class";
+  summary?: string;
+  provenance: { path: string; startLine: number; endLine: number };
+  prerequisites: string[];
+  bloomCeiling: number;
+}
+
+export async function fetchPath(id: string): Promise<{ cycles: number; units: PathUnit[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/path`));
+}
+
+export interface MasteryUnit {
+  unitId: string;
+  title: string;
+  kind: string;
+  bloomCeiling: number;
+  level: number;
+  confidence: number;
+  attempts: number;
+}
+
+export async function fetchMastery(id: string, user: string): Promise<{ units: MasteryUnit[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/mastery?user=${encodeURIComponent(user)}`));
+}
+
+export interface Assessment {
+  id: string;
+  unitId: string;
+  kind: string;
+  language: string;
+  targetLevel: number;
+  path: string;
+  startLine: number;
+  endLine: number;
+  prompt: string;
+  brokenFunction: string;
+  verifiable: boolean;
+  note?: string;
+}
+
+export async function createAssessment(id: string, unitId: string): Promise<Assessment> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/units/${encodeURIComponent(unitId)}/assessment`, {
+      method: "POST",
+    }),
+  );
+}
+
+export interface AttemptResult {
+  passed: boolean;
+  verifiable: boolean;
+  summary: string;
+  raw: string;
+  durationMs: number;
+  state: { level: number; confidence: number; attempts: unknown[] };
+}
+
+export async function submitAttempt(
+  id: string,
+  userId: string,
+  assessmentId: string,
+  submission: string,
+): Promise<AttemptResult> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/attempts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId, assessmentId, submission }),
+    }),
+  );
+}
