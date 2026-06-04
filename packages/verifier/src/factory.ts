@@ -6,15 +6,26 @@
  * Docker is probed once; if unavailable we fall back to local with a warning,
  * so a misconfigured MA_SANDBOX never breaks the mastery loop.
  */
+import type { SupportedLanguage } from "./breakfix.js";
 import { DockerPytestRunner, dockerAvailable } from "./docker.js";
-import { LocalPytestRunner, type TestRunner } from "./runner.js";
+import { LocalNodeTestRunner, LocalPytestRunner, type TestRunner } from "./runner.js";
 
 export interface RunnerInfo {
   runner: TestRunner;
   describe: string;
 }
 
-export async function makeRunner(env: NodeJS.ProcessEnv = process.env): Promise<RunnerInfo> {
+/**
+ * Pick a test runner for a language. Python honors MA_SANDBOX=docker (with
+ * local fallback); JavaScript uses Node's built-in test runner.
+ */
+export async function makeRunner(
+  language: SupportedLanguage = "python",
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<RunnerInfo> {
+  if (language === "javascript") {
+    return { runner: new LocalNodeTestRunner(), describe: "local node --test" };
+  }
   if ((env.MA_SANDBOX ?? "").toLowerCase() === "docker") {
     if (await dockerAvailable()) {
       const image = env.MA_SANDBOX_IMAGE ?? "python:3.11";

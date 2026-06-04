@@ -48,6 +48,19 @@ export function lastMeaningfulLine(output: string): string {
   return lines[lines.length - 1] ?? "";
 }
 
+/** Pick a human summary: pytest's "N passed" line, node --test's pass/fail counts, else last line. */
+export function summarize(output: string): string {
+  const lines = output.split("\n").map((l) => l.trim());
+  // pytest: "4 passed in 0.01s" / "2 failed, 2 passed in 0.03s"
+  const pytest = lines.find((l) => /\d+ (passed|failed|error)/.test(l));
+  if (pytest) return pytest;
+  // node --test: "# pass 4" + "# fail 0"
+  const pass = lines.find((l) => l.startsWith("# pass"));
+  const fail = lines.find((l) => l.startsWith("# fail"));
+  if (pass || fail) return [pass, fail].filter(Boolean).join(", ");
+  return lastMeaningfulLine(output);
+}
+
 /** Copy a repo to an isolated temp dir and apply edits. Caller must clean up. */
 export async function materializeRepo(repoRoot: string, edits: FileEdit[] = []): Promise<string> {
   const work = await mkdtemp(join(tmpdir(), "ma-verify-"));
@@ -61,22 +74,29 @@ export async function materializeRepo(repoRoot: string, edits: FileEdit[] = []):
   return work;
 }
 
-export class LocalPytestRunner implements TestRunner {
+/** Runs a fixed test command in a materialized copy of the repo. */
+export class LocalProcessRunner implements TestRunner {
+  constructor(
+    private readonly cmd: string,
+    private readonly baseArgs: string[],
+    private readonly env: NodeJS.ProcessEnv = {},
+  ) {}
+
   async run(repoRoot: string, opts: RunOptions = {}): Promise<TestResult> {
     const timeoutMs = opts.timeoutMs ?? 30_000;
     const work = await materializeRepo(repoRoot, opts.edits ?? []);
     try {
-      return await this.spawnPytest(work, opts, timeoutMs);
+      return await this.spawn(work, opts, timeoutMs);
     } finally {
       await rm(work, { recursive: true, force: true });
     }
   }
 
-  private spawnPytest(cwd: string, opts: RunOptions, timeoutMs: number): Promise<TestResult> {
-    const args = ["-m", "pytest", "-q", "--no-header", ...(opts.targets ?? [])];
+  private spawn(cwd: string, opts: RunOptions, timeoutMs: number): Promise<TestResult> {
+    const args = [...this.baseArgs, ...(opts.targets ?? [])];
     const started = Date.now();
     return new Promise<TestResult>((resolve) => {
-      const child = spawn("python3", args, { cwd, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } });
+      const child = spawn(this.cmd, args, { cwd, env: { ...process.env, ...this.env } });
       let out = "";
       let timedOut = false;
       const timer = setTimeout(() => {
@@ -91,7 +111,7 @@ export class LocalPytestRunner implements TestRunner {
         resolve({
           passed: !timedOut && code === 0,
           exitCode: code,
-          summary: timedOut ? "timed out" : lastMeaningfulLine(out),
+          summary: timedOut ? "timed out" : summarize(out),
           durationMs: Date.now() - started,
           timedOut,
           raw: out.slice(-4000),
@@ -109,5 +129,19 @@ export class LocalPytestRunner implements TestRunner {
         });
       });
     });
+  }
+}
+
+/** Python: `python -m pytest`. */
+export class LocalPytestRunner extends LocalProcessRunner {
+  constructor() {
+    super("python3", ["-m", "pytest", "-q", "--no-header"], { PYTHONDONTWRITEBYTECODE: "1" });
+  }
+}
+
+/** JavaScript: Node's built-in test runner (zero-dependency). */
+export class LocalNodeTestRunner extends LocalProcessRunner {
+  constructor() {
+    super("node", ["--test"]);
   }
 }

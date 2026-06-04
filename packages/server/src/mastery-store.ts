@@ -17,18 +17,28 @@ import {
   gradeImpact,
   recordAttempt,
 } from "@ma/core";
-import { type TestRunner, blankPythonFunction, makeRunner, replaceLineRange } from "@ma/verifier";
+import {
+  type RunnerInfo,
+  type SupportedLanguage,
+  makeRunner,
+  replaceLineRange,
+  verifierForExtension,
+} from "@ma/verifier";
 import { llm } from "./store.js";
 import type { RepoRecord } from "./store.js";
 
-// Test runner chosen from MA_SANDBOX (docker | local). Resolved lazily/once.
-let runnerPromise: Promise<{ runner: TestRunner; describe: string }> | undefined;
-function getRunner() {
-  runnerPromise ??= makeRunner();
-  return runnerPromise;
+// One runner per language, resolved lazily/once. Python honors MA_SANDBOX.
+const runnerByLang = new Map<SupportedLanguage, Promise<RunnerInfo>>();
+function getRunner(language: SupportedLanguage) {
+  let p = runnerByLang.get(language);
+  if (!p) {
+    p = makeRunner(language);
+    runnerByLang.set(language, p);
+  }
+  return p;
 }
 export async function runnerDescribe(): Promise<string> {
-  return (await getRunner()).describe;
+  return (await getRunner("python")).describe;
 }
 
 /** Read the source lines a unit's primary node points at. */
@@ -45,7 +55,7 @@ export interface ApplyAssessment {
   repoId: string;
   unitId: string;
   kind: "break-fix";
-  language: "python";
+  language: SupportedLanguage;
   targetLevel: BloomLevel;
   path: string;
   startLine: number;
@@ -85,15 +95,16 @@ export async function createApplyAssessment(
 ): Promise<ApplyAssessment> {
   const fn = targetFunction(repo, unit);
   if (!fn) throw new Error("unit has no implementable function to practice");
-  if (extname(fn.provenance.path) !== ".py") {
-    throw new Error("Apply tasks are Python-only in P0");
+  const verifier = verifierForExtension(extname(fn.provenance.path));
+  if (!verifier) {
+    throw new Error(`Apply tasks support Python and JavaScript; not ${extname(fn.provenance.path)}`);
   }
 
   const source = readFileSync(join(repo.root, fn.provenance.path), "utf8");
-  const blank = blankPythonFunction(source, fn.provenance.startLine, fn.provenance.endLine);
+  const blank = verifier.blank(source, fn.provenance.startLine, fn.provenance.endLine);
 
   // Coverage probe: blank the function and run tests. If they fail, it's verifiable.
-  const { runner } = await getRunner();
+  const { runner } = await getRunner(verifier.language);
   const probe = await runner.run(repo.root, {
     edits: [{ path: fn.provenance.path, content: blank.fileWithBlank }],
   });
@@ -104,7 +115,7 @@ export async function createApplyAssessment(
     repoId: repo.id,
     unitId: unit.id,
     kind: "break-fix",
-    language: "python",
+    language: verifier.language,
     targetLevel: BloomLevel.Apply,
     path: fn.provenance.path,
     startLine: fn.provenance.startLine,
@@ -140,7 +151,7 @@ export async function submitAttempt(
 
   const source = readFileSync(join(repo.root, a.path), "utf8");
   const edited = replaceLineRange(source, a.startLine, a.endLine, submission);
-  const { runner } = await getRunner();
+  const { runner } = await getRunner(a.language);
   const result = await runner.run(repo.root, { edits: [{ path: a.path, content: edited }] });
 
   // Only a test-covered task counts as verified mastery; otherwise it's advisory.

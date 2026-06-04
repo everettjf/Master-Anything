@@ -15,8 +15,8 @@ import {
   type RunOptions,
   type TestResult,
   type TestRunner,
-  lastMeaningfulLine,
   materializeRepo,
+  summarize,
 } from "./runner.js";
 
 const execFileP = promisify(execFile);
@@ -81,7 +81,7 @@ export class DockerPytestRunner implements TestRunner {
           resolve({
             passed: !timedOut && code === 0,
             exitCode: code,
-            summary: timedOut ? "timed out" : lastMeaningfulLine(out),
+            summary: timedOut ? "timed out" : summarize(out),
             durationMs: Date.now() - started,
             timedOut,
             raw: out.slice(-4000),
