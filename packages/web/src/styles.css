@@ -1,0 +1,75 @@
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --border: #2a313c;
+  --text: #c9d1d9;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app { display: flex; height: 100vh; }
+
+.sidebar {
+  width: 320px;
+  flex: 0 0 320px;
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--panel);
+}
+
+.brand { font-weight: 700; font-size: 16px; }
+.brand span { color: var(--accent); }
+.tagline { color: var(--muted); font-size: 12px; margin: 4px 0 16px; }
+
+.field { display: flex; gap: 6px; margin-bottom: 12px; }
+input[type="text"] {
+  flex: 1; padding: 8px; border-radius: 6px;
+  border: 1px solid var(--border); background: #0d1117; color: var(--text);
+}
+button {
+  padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--accent); color: #0d1117; font-weight: 600; cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+
+.stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.stat { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+.stat b { display: block; font-size: 16px; }
+.stat span { color: var(--muted); font-size: 11px; }
+
+.error { color: #f85149; font-size: 12px; margin: 8px 0; }
+.hint { color: var(--muted); font-size: 12px; }
+
+.legend { margin-top: 16px; font-size: 12px; }
+.legend div { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.graph { flex: 1; position: relative; min-width: 0; }
+
+.detail {
+  position: absolute; top: 12px; right: 12px; width: 380px; max-height: 90%;
+  overflow: auto; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+}
+.detail h3 { margin: 0 0 4px; font-size: 14px; word-break: break-all; }
+.detail .path { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+.detail pre {
+  background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px; overflow: auto; font-size: 12px; max-height: 360px;
+}
+.badge {
+  display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted); margin-right: 6px;
+}
+.close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--muted); font-size: 18px; }
