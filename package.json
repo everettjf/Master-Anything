@@ -1,0 +1,26 @@
+{
+  "name": "master-anything",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Master anything, verifiably. From understanding to mastery.",
+  "scripts": {
+    "build": "pnpm -r build",
+    "graph": "pnpm --filter @ma/core graph",
+    "server": "pnpm --filter @ma/server dev",
+    "web": "pnpm --filter @ma/web dev"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "tree-sitter",
+      "tree-sitter-javascript",
+      "tree-sitter-python",
+      "tree-sitter-typescript"
+    ]
+  }
+}
