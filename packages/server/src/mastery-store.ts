@@ -7,9 +7,12 @@ import { readFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import {
   BloomLevel,
+  type ImpactQuestion,
   type LearnerUnitState,
   type LearningUnit,
+  buildImpactQuestion,
   emptyState,
+  gradeImpact,
   recordAttempt,
 } from "@ma/core";
 import { LocalPytestRunner, blankPythonFunction, replaceLineRange } from "@ma/verifier";
@@ -139,6 +142,54 @@ export async function submitAttempt(
     durationMs: result.durationMs,
     state: next,
   };
+}
+
+// --- Analyze level: graph-verified impact questions ---
+
+interface StoredImpact {
+  id: string;
+  repoId: string;
+  question: ImpactQuestion;
+}
+const impacts = new Map<string, StoredImpact>();
+
+export function createImpactAssessment(repo: RepoRecord, unit: LearningUnit) {
+  const units = [...repo.units.values()];
+  const question = buildImpactQuestion(units, unit.id);
+  const id = randomUUID();
+  impacts.set(id, { id, repoId: repo.id, question });
+  // Options carry `correct`, which the client must not see — strip it.
+  return {
+    id,
+    unitId: unit.id,
+    targetLevel: BloomLevel.Analyze,
+    prompt: question.prompt,
+    options: question.options.map((o) => ({ unitId: o.unitId, title: o.title })),
+  };
+}
+
+export function submitImpactAttempt(
+  repo: RepoRecord,
+  userId: string,
+  assessmentId: string,
+  selectedIds: string[],
+) {
+  const stored = impacts.get(assessmentId);
+  if (!stored || stored.repoId !== repo.id) throw new Error("assessment not found");
+  const grade = gradeImpact(stored.question, selectedIds);
+
+  const key = stateKey(userId, repo.id, stored.question.targetUnitId);
+  const prev = states.get(key) ?? emptyState(userId, stored.question.targetUnitId);
+  const next = recordAttempt(prev, {
+    assessmentId,
+    targetLevel: BloomLevel.Analyze,
+    passed: grade.passed,
+    verifier: "graph",
+    at: new Date().toISOString(),
+  });
+  states.set(key, next);
+
+  return { passed: grade.passed, correctIds: grade.correctIds, missedIds: grade.missedIds, wrongIds: grade.wrongIds, state: next };
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {

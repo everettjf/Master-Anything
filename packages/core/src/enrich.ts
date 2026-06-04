@@ -1,12 +1,24 @@
 /**
  * Semantic enrichment (P0.1): give each learning unit a short summary.
  *
- * The LLM is pluggable and optional. With no provider we fall back to a
- * deterministic, signature-based summary so the whole pipeline runs without
- * an API key (docs/P0-CODE-MVP.md §5.3: degrade honestly).
+ * The LLM is a thin, pluggable text-generation interface (`complete`). Domain
+ * prompts live here in core. With no provider we fall back to a deterministic,
+ * signature-based summary so the pipeline runs without an API key
+ * (docs/P0-CODE-MVP.md §5.3: degrade honestly).
  */
 import type { KnowledgeGraph, KnowledgeNode } from "./types.js";
 import type { LearningUnit } from "./units.js";
+
+export interface CompleteOptions {
+  system?: string;
+  prompt: string;
+  maxOutputTokens?: number;
+  temperature?: number;
+}
+
+export interface LlmProvider {
+  complete(opts: CompleteOptions): Promise<string>;
+}
 
 export interface EnrichInput {
   unit: LearningUnit;
@@ -14,18 +26,13 @@ export interface EnrichInput {
   memberSignatures: string[];
 }
 
-export interface LlmProvider {
-  /** Return a one-sentence summary of what the unit does. */
-  summarizeUnit(input: EnrichInput): Promise<string>;
-}
-
 function heuristicSummary(input: EnrichInput): string {
-  const { unit, primary, memberSignatures } = input;
+  const { unit, primary } = input;
   if (unit.kind === "class") {
     const methods = unit.members.length - 1;
     return `Class \`${unit.title}\`${methods > 0 ? ` with ${methods} method(s)` : ""}.`;
   }
-  return primary.signature ?? `Function \`${unit.title}\`.` + (memberSignatures.length ? "" : "");
+  return primary.signature ?? `Function \`${unit.title}\`.`;
 }
 
 export async function enrichUnits(
@@ -39,16 +46,27 @@ export async function enrichUnits(
     const memberSignatures = unit.members
       .map((id) => byId.get(id)?.signature)
       .filter((s): s is string => Boolean(s));
-    const input: EnrichInput = { unit, primary, memberSignatures };
+
     if (provider) {
       try {
-        unit.summary = await provider.summarizeUnit(input);
-        continue;
+        const sigs = memberSignatures.slice(0, 12).join("\n") || "(no signatures)";
+        const text = await provider.complete({
+          system:
+            "You explain code to a learner. Reply with ONE concise sentence describing what the unit does. No preamble, no markdown.",
+          prompt: `Unit: ${unit.title} (${unit.kind})\nSignatures:\n${sigs}\n\nOne sentence:`,
+          maxOutputTokens: 80,
+          temperature: 0.2,
+        });
+        const summary = text.trim().split("\n")[0]!.trim();
+        if (summary) {
+          unit.summary = summary;
+          continue;
+        }
       } catch {
         // fall through to heuristic on provider failure
       }
     }
-    unit.summary = heuristicSummary(input);
+    unit.summary = heuristicSummary({ unit, primary, memberSignatures });
   }
   return units;
 }

@@ -17,7 +17,7 @@ import {
 // Optional LLM enrichment backend. token.js multi-provider (MA_LLM_PROVIDER) or
 // a generic OpenAI-compatible endpoint (MA_LLM_BASE_URL); absent -> heuristic.
 const { provider: llm, describe: llmDescribe } = resolveProvider();
-export { llmDescribe };
+export { llm, llmDescribe };
 
 export interface RepoRecord {
   id: string;

@@ -7,5 +7,6 @@ export * from "./enrich.js";
 export * from "./mastery.js";
 export * from "./retrieval.js";
 export * from "./analyze.js";
+export * from "./tutor.js";
 export * from "./providers/vercel.js";
 export * from "./providers/factory.js";

@@ -8,15 +8,14 @@
  *   openai-compatible (@ai-sdk/openai-compatible + MA_LLM_BASE_URL) —
  *                     covers OpenRouter, a LiteLLM proxy, Ollama, vLLM, LocalAI…
  *
- * Wrapped behind our LlmProvider interface so enrichUnits falls back to the
- * heuristic summary if a call fails.
+ * Implements the thin `complete` interface; callers (enrich, tutor) own prompts.
  */
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { type LanguageModel, generateText } from "ai";
-import type { EnrichInput, LlmProvider } from "../enrich.js";
+import type { CompleteOptions, LlmProvider } from "../enrich.js";
 
 export interface VercelAiConfig {
   provider: string;
@@ -51,22 +50,15 @@ export class VercelAiProvider implements LlmProvider {
     this.model = buildModel(cfg);
   }
 
-  async summarizeUnit(input: EnrichInput): Promise<string> {
-    const { unit, memberSignatures } = input;
-    const sigs = memberSignatures.slice(0, 12).join("\n") || "(no signatures)";
-
+  async complete(opts: CompleteOptions): Promise<string> {
     const { text } = await generateText({
       model: this.model,
-      system:
-        "You explain code to a learner. Reply with ONE concise sentence describing what the unit does. No preamble, no markdown.",
-      prompt: `Unit: ${unit.title} (${unit.kind})\nSignatures:\n${sigs}\n\nOne sentence:`,
-      temperature: 0.2,
-      maxOutputTokens: 80,
-      abortSignal: AbortSignal.timeout(this.cfg.timeoutMs ?? 20_000),
+      system: opts.system,
+      prompt: opts.prompt,
+      temperature: opts.temperature ?? 0.2,
+      maxOutputTokens: opts.maxOutputTokens ?? 400,
+      abortSignal: AbortSignal.timeout(this.cfg.timeoutMs ?? 30_000),
     });
-
-    const summary = text.trim().split("\n")[0]!.trim();
-    if (!summary) throw new Error("LLM returned empty content");
-    return summary;
+    return text;
   }
 }

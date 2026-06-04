@@ -7,8 +7,15 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { addRepo, getRepo, listRepos, llmDescribe } from "./store.js";
-import { createApplyAssessment, masteryFor, submitAttempt } from "./mastery-store.js";
+import { answerQuestion } from "@ma/core";
+import { addRepo, getRepo, listRepos, llm, llmDescribe } from "./store.js";
+import {
+  createApplyAssessment,
+  createImpactAssessment,
+  masteryFor,
+  submitAttempt,
+  submitImpactAttempt,
+} from "./mastery-store.js";
 
 const app = new Hono();
 app.use("/*", cors());
@@ -116,6 +123,53 @@ app.post("/repos/:id/attempts", async (c) => {
   }
   try {
     return c.json(await submitAttempt(repo, userId || "anon", assessmentId, submission));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Tutor: graph-grounded Q&A with path:line citations (GraphRAG).
+app.post("/repos/:id/ask", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const query = typeof body.query === "string" ? body.query.trim() : "";
+  if (!query) return c.json({ error: "missing 'query'" }, 400);
+  try {
+    return c.json(await answerQuestion(repo.graph, query, llm));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
+  }
+});
+
+// Analyze level: generate a graph-verified impact question for a unit.
+app.post("/repos/:id/units/:unitId/analyze", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const unit = repo.units.get(c.req.param("unitId"));
+  if (!unit) return c.json({ error: "unit not found" }, 404);
+  try {
+    return c.json(createImpactAssessment(repo, unit));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Submit an impact answer -> graded against the graph -> mastery to Analyze.
+app.post("/repos/:id/analyze-attempts", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const { userId, assessmentId, selectedIds } = body as {
+    userId?: string;
+    assessmentId?: string;
+    selectedIds?: string[];
+  };
+  if (!assessmentId || !Array.isArray(selectedIds)) {
+    return c.json({ error: "missing 'assessmentId' or 'selectedIds'" }, 400);
+  }
+  try {
+    return c.json(submitImpactAttempt(repo, userId || "anon", assessmentId, selectedIds));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }
