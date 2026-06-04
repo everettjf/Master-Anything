@@ -10,7 +10,7 @@ import { BloomLevel, type KnowledgeGraph, type KnowledgeNode, type Provenance } 
 export interface LearningUnit {
   id: string;
   title: string;
-  kind: "function" | "class";
+  kind: "function" | "class" | "section";
   primary: string; // primary node id
   members: string[]; // node ids belonging to this unit
   provenance: Provenance;
@@ -77,11 +77,28 @@ export function buildUnits(graph: KnowledgeGraph): LearningUnit[] {
     nodeToUnit.set(fn.id, fn.id);
   }
 
-  // Derive prerequisites from call edges: if A's member calls B's member, A depends on B.
+  // One unit per document section (docs domain).
+  for (const sec of graph.nodes) {
+    if (sec.kind !== "section") continue;
+    units.push({
+      id: sec.id,
+      title: sec.name,
+      kind: "section",
+      primary: sec.id,
+      members: [sec.id],
+      provenance: sec.provenance,
+      summary: sec.summary,
+      prerequisites: [],
+      bloomCeiling: BloomLevel.Analyze, // Understand + Analyze; no executable Apply
+    });
+    nodeToUnit.set(sec.id, sec.id);
+  }
+
+  // Derive prerequisites from dependency edges: calls (code) or depends-on (docs).
   const prereqs = new Map<string, Set<string>>();
   for (const u of units) prereqs.set(u.id, new Set());
   for (const e of graph.edges) {
-    if (e.type !== "calls") continue;
+    if (e.type !== "calls" && e.type !== "depends-on") continue;
     const from = nodeToUnit.get(e.from);
     const to = nodeToUnit.get(e.to);
     if (!from || !to || from === to) continue;

@@ -98,9 +98,25 @@ pnpm --filter @ma/server dev        # 启动时打印 “LLM enrichment: vercel-
 - ✅ **P0.4** Web 端"学 → 测 → 验"闭环
 - ✅ **Analyze**(图谱判分的影响分析)+ **Tutor**(GraphRAG,基于图谱 grounding 的问答)
 - ✅ LLM 层统一到 **Vercel AI SDK**(OpenAI / Anthropic / Google / 任意 OpenAI 兼容端点)
+- ✅ **嵌入式语义检索**(`MA_EMBED_*`,缺省降级词法)
+- ✅ **Understand 级问答评分**(LLM 基于源码判分 → Understand 级)
+- ✅ **Docker 沙箱**运行器(`MA_SANDBOX=docker`,无 daemon 时降级本地)
+- ✅ **P1 文档适配器**:Markdown → 知识图谱,同一套 路径/精通/Tutor/Understand/Analyze
+  直接跑在文档上(连接 `examples/md-guide` 体验)。这验证了 "Anything":换适配器即换领域。
 
-> 后续:嵌入式检索(替换词法检索)、Understand 级问答评分、Docker 沙箱、多语言验证器、
-> 增量更新、P1 文档适配器。详见 [docs/P0-CODE-MVP.md](./docs/P0-CODE-MVP.md)。
+> 后续:多语言验证器、增量更新、图存储、更多文档格式(PDF/网页/课程)。
+> 详见 [docs/P0-CODE-MVP.md](./docs/P0-CODE-MVP.md) 与 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+
+### "Anything":代码 vs 文档
+
+连接路径会**自动识别领域**(也可在 `POST /repos` 传 `kind: "code"|"docs"`):
+
+| 领域 | 适配器 | 单元 | 可练的 Bloom 级 |
+|---|---|---|---|
+| 代码 | Tree-sitter | 函数 / 类 | Understand · **Apply(真实测试)** · **Analyze(图谱)** |
+| 文档 | Markdown 分节 | 章节 | Understand · **Analyze(图谱)**(无可执行 Apply) |
+
+精通引擎、学习路径、Tutor、Understand/Analyze 评估**完全复用**,领域差异只存在于适配器内。
 
 ---
 

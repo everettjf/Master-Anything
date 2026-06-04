@@ -148,6 +148,9 @@ export function App() {
 
         {repo && (
           <>
+            <div className="hint" style={{ margin: "8px 0" }}>
+              domain: <b style={{ color: "var(--accent)" }}>{repo.kind}</b>
+            </div>
             <div className="stats">
               <div className="stat">
                 <b>{repo.stats.files}</b>
@@ -264,6 +267,7 @@ export function App() {
             repoId={repo.id}
             unit={practiceUnit}
             userId={USER}
+            repoKind={repo.kind}
             onClose={() => setPracticeUnit(null)}
             onMastered={() => refreshMastery(repo.id)}
           />

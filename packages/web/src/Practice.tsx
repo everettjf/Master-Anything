@@ -21,15 +21,18 @@ export function Practice({
   repoId,
   unit,
   userId,
+  repoKind,
   onClose,
   onMastered,
 }: {
   repoId: string;
   unit: PathUnit;
   userId: string;
+  repoKind: "code" | "docs";
   onClose: () => void;
   onMastered: () => void;
 }) {
+  const codeApply = repoKind === "code";
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +41,10 @@ export function Practice({
   const [result, setResult] = useState<AttemptResult | null>(null);
 
   useEffect(() => {
+    if (!codeApply) {
+      setLoading(false);
+      return; // docs units have no executable Apply task
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -48,7 +55,7 @@ export function Practice({
       })
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
-  }, [repoId, unit.id]);
+  }, [repoId, unit.id, codeApply]);
 
   const run = async () => {
     if (!assessment) return;
@@ -76,7 +83,8 @@ export function Practice({
       {error && <div className="error">{error}</div>}
 
       {assessment && (
-        <>
+        <div className="apply">
+          <h4 style={{ color: "#3fb950" }}>Apply challenge · real tests</h4>
           <div className="prompt">{assessment.prompt}</div>
           <div className="path">
             {assessment.path}:{assessment.startLine}-{assessment.endLine} ·{" "}
@@ -119,7 +127,11 @@ export function Practice({
               <pre>{result.raw}</pre>
             </div>
           )}
+        </div>
+      )}
 
+      {!loading && (
+        <>
           <UnderstandChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
           <AnalyzeChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
         </>

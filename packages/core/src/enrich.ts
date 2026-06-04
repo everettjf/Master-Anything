@@ -28,10 +28,13 @@ export interface EnrichInput {
 
 function heuristicSummary(input: EnrichInput): string {
   const { unit, primary } = input;
+  // Adapter-provided summary (e.g. a doc section's first sentence) wins.
+  if (primary.summary) return primary.summary;
   if (unit.kind === "class") {
     const methods = unit.members.length - 1;
     return `Class \`${unit.title}\`${methods > 0 ? ` with ${methods} method(s)` : ""}.`;
   }
+  if (unit.kind === "section") return unit.title;
   return primary.signature ?? `Function \`${unit.title}\`.`;
 }
 

@@ -12,9 +12,16 @@ export enum BloomLevel {
   Create = 5,
 }
 
-export type NodeKind = "file" | "class" | "function" | "unit";
+export type NodeKind =
+  | "file"
+  | "class"
+  | "function"
+  | "unit"
+  // docs domain (P1)
+  | "document"
+  | "section";
 
-export type EdgeType = "contains" | "imports" | "depends-on" | "calls";
+export type EdgeType = "contains" | "imports" | "depends-on" | "calls" | "refers-to";
 
 export interface Provenance {
   path: string; // repo-relative file path
