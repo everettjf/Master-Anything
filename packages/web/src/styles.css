@@ -114,3 +114,23 @@ button:disabled { opacity: 0.5; cursor: default; }
 .result .summary { color: var(--muted); font-size: 12px; margin: 4px 0 8px; }
 .result pre { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 10px; overflow: auto; font-size: 11px; max-height: 240px; }
 code { background: #0d1117; border: 1px solid var(--border); border-radius: 4px; padding: 1px 4px; font-size: 12px; }
+
+.analyze { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.analyze h4 { margin: 0 0 10px; color: #a371f7; }
+.opts { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.opt { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: #0d1117; cursor: pointer; }
+.opt.correct { border-color: #3fb950; background: #16241a; }
+.opt.wrong { border-color: #f85149; background: #241a1a; }
+
+.tutor { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.tutor-log { flex: 1; overflow-y: auto; padding: 20px; }
+.turn { max-width: 760px; margin: 0 auto 18px; }
+.turn .q { font-weight: 600; margin-bottom: 8px; }
+.turn .q::before { content: "› "; color: var(--accent); }
+.turn .a { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.turn .answer { white-space: pre-wrap; }
+.cites { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.cite { font-size: 11px; background: #0d1117; border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; color: var(--muted); }
+.cite em { color: var(--accent); font-style: normal; }
+.tutor-input { display: flex; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--panel); }
+.tutor-input input { flex: 1; padding: 10px; border-radius: 8px; background: #0d1117; color: var(--text); border: 1px solid var(--border); }

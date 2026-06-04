@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import {
   type Assessment,
   type AttemptResult,
+  type ImpactQuestion,
+  type ImpactResult,
   type PathUnit,
   createAssessment,
+  createImpact,
   submitAttempt,
+  submitImpact,
 } from "./api.js";
 
 const BLOOM = ["None", "Remember", "Understand", "Apply", "Analyze", "Create"];
@@ -109,6 +113,104 @@ export function Practice({
                 {result.summary} · {result.durationMs}ms · level {result.state.level}
               </div>
               <pre>{result.raw}</pre>
+            </div>
+          )}
+
+          <AnalyzeChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Analyze-level challenge: graph-verified impact (select-all-that-apply). */
+function AnalyzeChallenge({
+  repoId,
+  unit,
+  userId,
+  onMastered,
+}: {
+  repoId: string;
+  unit: PathUnit;
+  userId: string;
+  onMastered: () => void;
+}) {
+  const [q, setQ] = useState<ImpactQuestion | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [result, setResult] = useState<ImpactResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setSelected(new Set());
+    try {
+      setQ(await createImpact(repoId, unit.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = (id: string) => {
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelected(next);
+  };
+
+  const submit = async () => {
+    if (!q) return;
+    try {
+      const r = await submitImpact(repoId, userId, q.id, [...selected]);
+      setResult(r);
+      if (r.passed) onMastered();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return (
+    <div className="analyze">
+      <h4>Analyze challenge · graph-verified</h4>
+      {error && <div className="error">{error}</div>}
+      {!q && (
+        <button onClick={load} disabled={loading}>
+          {loading ? "…" : "Start impact challenge"}
+        </button>
+      )}
+      {q && (
+        <>
+          <div className="prompt">{q.prompt}</div>
+          <div className="opts">
+            {q.options.map((o) => {
+              const cls = result
+                ? result.correctIds.includes(o.unitId)
+                  ? "opt correct"
+                  : selected.has(o.unitId)
+                    ? "opt wrong"
+                    : "opt"
+                : "opt";
+              return (
+                <label key={o.unitId} className={cls}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(o.unitId)}
+                    disabled={!!result}
+                    onChange={() => toggle(o.unitId)}
+                  />
+                  {o.title}
+                </label>
+              );
+            })}
+          </div>
+          {!result && <button onClick={submit}>Check answer</button>}
+          {result && (
+            <div className={`result ${result.passed ? "pass" : "fail"}`}>
+              <b>{result.passed ? "✓ Mastered (Analyze) — matches the graph" : "✗ Not quite"}</b>
+              <div className="summary">level {result.state.level}</div>
             </div>
           )}
         </>

@@ -14,6 +14,7 @@ import {
   fetchSource,
 } from "./api.js";
 import { Practice } from "./Practice.js";
+import { Tutor } from "./Tutor.js";
 
 const USER = "demo";
 const KIND_COLOR: Record<string, string> = {
@@ -36,7 +37,7 @@ interface FGNode {
 
 export function App() {
   const [path, setPath] = useState("");
-  const [view, setView] = useState<"graph" | "learn">("graph");
+  const [view, setView] = useState<"graph" | "learn" | "tutor">("graph");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repo, setRepo] = useState<RepoSummary | null>(null);
@@ -169,6 +170,9 @@ export function App() {
               <button className={view === "learn" ? "tab on" : "tab"} onClick={() => setView("learn")}>
                 Learn
               </button>
+              <button className={view === "tutor" ? "tab on" : "tab"} onClick={() => setView("tutor")}>
+                Tutor
+              </button>
             </div>
 
             {view === "graph" && (
@@ -224,6 +228,8 @@ export function App() {
             cooldownTicks={120}
           />
         )}
+
+        {view === "tutor" && repo && <Tutor repoId={repo.id} />}
 
         {view === "learn" && !practiceUnit && (
           <div className="learn-hello">

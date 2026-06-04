@@ -146,3 +146,69 @@ export async function submitAttempt(
     }),
   );
 }
+
+// --- Tutor (GraphRAG) ---
+
+export interface Citation {
+  id: string;
+  name: string;
+  ref: string;
+  summary?: string;
+}
+
+export interface TutorAnswer {
+  answer: string;
+  citations: Citation[];
+  grounded: boolean;
+}
+
+export async function ask(id: string, query: string): Promise<TutorAnswer> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/ask`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query }),
+    }),
+  );
+}
+
+// --- Analyze (graph-verified impact) ---
+
+export interface ImpactQuestion {
+  id: string;
+  unitId: string;
+  targetLevel: number;
+  prompt: string;
+  options: { unitId: string; title: string }[];
+}
+
+export async function createImpact(id: string, unitId: string): Promise<ImpactQuestion> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/units/${encodeURIComponent(unitId)}/analyze`, {
+      method: "POST",
+    }),
+  );
+}
+
+export interface ImpactResult {
+  passed: boolean;
+  correctIds: string[];
+  missedIds: string[];
+  wrongIds: string[];
+  state: { level: number };
+}
+
+export async function submitImpact(
+  id: string,
+  userId: string,
+  assessmentId: string,
+  selectedIds: string[],
+): Promise<ImpactResult> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/analyze-attempts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId, assessmentId, selectedIds }),
+    }),
+  );
+}
