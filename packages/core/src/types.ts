@@ -40,6 +40,9 @@ export interface KnowledgeNode {
   summary?: string;
   role?: string;
   domain?: string;
+  /** Extracted body text for non-code nodes (doc sections, PDF pages), used for
+   *  retrieval and grounding when there's no readable source slice on disk. */
+  text?: string;
   prerequisites: string[]; // prerequisite node ids
   bloomCeiling: BloomLevel;
 }

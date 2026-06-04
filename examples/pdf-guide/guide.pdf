@@ -1,0 +1,54 @@
+%PDF-1.4
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Kids[3 0 R 5 0 R 7 0 R]/Count 3>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 9 0 R>>>>>>
+endobj
+4 0 obj
+<</Length 155>>
+stream
+BT /F1 12 Tf 72 720 Td 14 TL (Installation Guide) Tj T* (Install the package with your package manager.) Tj T* (Then import it into your project.) Tj T* ET
+endstream
+endobj
+5 0 obj
+<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 6 0 R/Resources<</Font<</F1 9 0 R>>>>>>
+endobj
+6 0 obj
+<</Length 142>>
+stream
+BT /F1 12 Tf 72 720 Td 14 TL (Configuration) Tj T* (Set the API key in the environment.) Tj T* (Options are read from a config file.) Tj T* ET
+endstream
+endobj
+7 0 obj
+<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 8 0 R/Resources<</Font<</F1 9 0 R>>>>>>
+endobj
+8 0 obj
+<</Length 155>>
+stream
+BT /F1 12 Tf 72 720 Td 14 TL (Troubleshooting) Tj T* (If requests fail, check the API key first.) Tj T* (Then verify the configuration is loaded.) Tj T* ET
+endstream
+endobj
+9 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000054 00000 n 
+0000000117 00000 n 
+0000000229 00000 n 
+0000000433 00000 n 
+0000000545 00000 n 
+0000000736 00000 n 
+0000000848 00000 n 
+0000001052 00000 n 
+trailer
+<</Root 1 0 R/Size 10>>
+startxref
+1115
+%%EOF

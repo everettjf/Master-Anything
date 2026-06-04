@@ -24,7 +24,9 @@ export function tokenize(text: string): string[] {
 }
 
 export function nodeText(n: KnowledgeNode): string {
-  return [n.name, n.summary ?? "", n.signature ?? "", n.role ?? "", n.domain ?? ""].join(" ");
+  return [n.name, n.summary ?? "", n.signature ?? "", n.role ?? "", n.domain ?? "", (n.text ?? "").slice(0, 600)].join(
+    " ",
+  );
 }
 
 export function retrieve(graph: KnowledgeGraph, query: string, k = 8): RetrievedNode[] {

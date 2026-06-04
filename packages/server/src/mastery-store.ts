@@ -45,9 +45,11 @@ export async function runnerDescribe(): Promise<string> {
 function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
   const node = repo.graph.nodes.find((n) => n.id === unit.primary);
   if (!node) throw new Error("unit primary node not found");
+  const ref = `${node.provenance.path}:${node.provenance.startLine}`;
+  // Non-code nodes (doc sections, PDF pages) carry extracted text; code reads source lines.
+  if (node.text) return { text: node.text, ref };
   const lines = readFileSync(join(repo.root, node.provenance.path), "utf8").split("\n");
-  const text = lines.slice(node.provenance.startLine - 1, node.provenance.endLine).join("\n");
-  return { text, ref: `${node.provenance.path}:${node.provenance.startLine}` };
+  return { text: lines.slice(node.provenance.startLine - 1, node.provenance.endLine).join("\n"), ref };
 }
 
 export interface ApplyAssessment {

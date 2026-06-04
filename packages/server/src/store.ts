@@ -14,6 +14,7 @@ import {
   type RepoArtifact,
   buildDocsGraph,
   buildGraph,
+  buildPdfGraph,
   buildUnits,
   embeddingProviderFromEnv,
   enrichUnits,
@@ -23,16 +24,17 @@ import {
   serializeArtifact,
 } from "@ma/core";
 
-export type RepoKind = "code" | "docs";
+export type RepoKind = "code" | "docs" | "pdf";
 
 const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst", ".html", ".htm"]);
 
 const CODE_EXT = new Set([".py", ".js", ".ts", ".tsx", ".jsx", ".mjs", ".cjs"]);
 
-/** Auto-detect adapter: docs if there's documentation and no code, else code. */
+/** Auto-detect adapter: code if any code, else docs, else pdf. */
 function detectKind(root: string): RepoKind {
   let docs = 0;
   let code = 0;
+  let pdf = 0;
   const walk = (dir: string, depth: number) => {
     if (depth > 3) return;
     let entries: import("node:fs").Dirent[];
@@ -46,13 +48,23 @@ function detectKind(root: string): RepoKind {
       if (d.isDirectory()) walk(`${dir}/${d.name}`, depth + 1);
       else {
         const ext = extname(d.name).toLowerCase();
-        if (DOC_EXT.has(ext)) docs++;
+        if (ext === ".pdf") pdf++;
+        else if (DOC_EXT.has(ext)) docs++;
         else if (CODE_EXT.has(ext)) code++;
       }
     }
   };
   walk(root, 0);
-  return code === 0 && docs > 0 ? "docs" : "code";
+  if (code > 0) return "code";
+  if (docs > 0) return "docs";
+  if (pdf > 0) return "pdf";
+  return "code";
+}
+
+async function buildGraphFor(kind: RepoKind, root: string): Promise<KnowledgeGraph> {
+  if (kind === "pdf") return buildPdfGraph(root);
+  if (kind === "docs") return buildDocsGraph(root);
+  return buildGraph(root);
 }
 
 // Optional LLM enrichment + tutor backend (MA_LLM_*); absent -> heuristic.
@@ -119,7 +131,7 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
 
   // 2) Build from source.
   const kind = opts.kind ?? detectKind(root);
-  const graph = kind === "docs" ? buildDocsGraph(root) : buildGraph(root);
+  const graph = await buildGraphFor(kind, root);
   const units = await enrichUnits(buildUnits(graph), graph, llm);
   const path = orderUnits(units);
   const record: RepoRecord = {

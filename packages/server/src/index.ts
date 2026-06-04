@@ -33,7 +33,7 @@ app.post("/repos", async (c) => {
   if (!existsSync(path) || !statSync(path).isDirectory()) {
     return c.json({ error: `not a directory: ${path}` }, 400);
   }
-  const kind = body.kind === "docs" || body.kind === "code" ? body.kind : undefined;
+  const kind = ["docs", "code", "pdf"].includes(body.kind) ? body.kind : undefined;
   const fresh = body.fresh === true;
   try {
     const repo = await addRepo(path, { kind, fresh });

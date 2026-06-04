@@ -28,7 +28,7 @@ export function Practice({
   repoId: string;
   unit: PathUnit;
   userId: string;
-  repoKind: "code" | "docs";
+  repoKind: "code" | "docs" | "pdf";
   onClose: () => void;
   onMastered: () => void;
 }) {

@@ -10,7 +10,7 @@ export interface GraphStats {
 export interface RepoSummary {
   id: string;
   root: string;
-  kind: "code" | "docs";
+  kind: "code" | "docs" | "pdf";
   stats: GraphStats;
   createdAt: string;
 }

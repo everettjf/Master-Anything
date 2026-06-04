@@ -3,6 +3,7 @@ export * from "./languages.js";
 export * from "./parser.js";
 export * from "./graph.js";
 export * from "./adapters/docs.js";
+export * from "./adapters/pdf.js";
 export * from "./units.js";
 export * from "./artifact.js";
 export * from "./enrich.js";

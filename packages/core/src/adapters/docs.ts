@@ -182,6 +182,7 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
         kind: "section",
         name: sec.title,
         summary: firstSentence(sec.body),
+        text: sec.body,
         provenance: { path: rel, startLine: sec.startLine, endLine: sec.endLine, commit },
         prerequisites: [],
         bloomCeiling: BloomLevel.Analyze,
