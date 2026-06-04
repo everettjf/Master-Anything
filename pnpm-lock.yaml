@@ -42,6 +42,9 @@ importers:
       '@ma/core':
         specifier: workspace:*
         version: link:../core
+      '@ma/verifier':
+        specifier: workspace:*
+        version: link:../verifier
       hono:
         specifier: ^4.6.14
         version: 4.12.23

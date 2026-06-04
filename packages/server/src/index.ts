@@ -8,6 +8,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { addRepo, getRepo, listRepos } from "./store.js";
+import { createApplyAssessment, masteryFor, submitAttempt } from "./mastery-store.js";
 
 const app = new Hono();
 app.use("/*", cors());
@@ -85,6 +86,47 @@ app.get("/repos/:id/source", (c) => {
   } catch (err) {
     return c.json({ error: String(err) }, 500);
   }
+});
+
+// Generate an Apply (break-and-fix) assessment for a unit.
+app.post("/repos/:id/units/:unitId/assessment", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const unit = repo.units.get(c.req.param("unitId"));
+  if (!unit) return c.json({ error: "unit not found" }, 404);
+  try {
+    return c.json(await createApplyAssessment(repo, unit));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Submit a solution -> run real tests -> update mastery.
+app.post("/repos/:id/attempts", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const { userId, assessmentId, submission } = body as {
+    userId?: string;
+    assessmentId?: string;
+    submission?: string;
+  };
+  if (!assessmentId || typeof submission !== "string") {
+    return c.json({ error: "missing 'assessmentId' or 'submission'" }, 400);
+  }
+  try {
+    return c.json(await submitAttempt(repo, userId || "anon", assessmentId, submission));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Mastery dashboard for a learner across the repo's units.
+app.get("/repos/:id/mastery", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const userId = c.req.query("user") || "anon";
+  return c.json({ userId, units: masteryFor(userId, repo) });
 });
 
 const port = Number(process.env.PORT ?? 8787);
