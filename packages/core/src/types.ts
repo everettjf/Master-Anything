@@ -68,6 +68,8 @@ export interface KnowledgeGraph {
     edges: number;
     languages: Record<string, number>;
   };
+  /** repo-relative path -> content hash, for incremental rebuilds. */
+  fileHashes?: Record<string, string>;
   nodes: KnowledgeNode[];
   edges: KnowledgeEdge[];
 }

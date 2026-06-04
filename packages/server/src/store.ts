@@ -109,30 +109,35 @@ export interface AddRepoOptions {
 }
 
 export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<RepoRecord> {
-  // 1) Try the persisted artifact (commit the graph once, skip the pipeline).
-  if (!opts.fresh) {
-    const cached = tryLoadArtifact(root);
-    if (cached) {
-      const record: RepoRecord = {
-        id: randomUUID(),
-        root,
-        kind: cached.kind as RepoKind,
-        graph: cached.graph,
-        path: { units: cached.units, cycles: cached.cycles },
-        units: new Map(cached.units.map((u) => [u.id, u])),
-        index: await buildIndex(cached.graph),
-        createdAt: new Date().toISOString(),
-        fromArtifact: true,
-      };
-      repos.set(record.id, record);
-      return record;
-    }
+  const prev = opts.fresh ? undefined : readArtifact(root);
+
+  // 1) Repo unchanged since the artifact (same commit) -> load, skip the pipeline.
+  if (prev && prev.commit && prev.commit === gitCommit(root)) {
+    const record: RepoRecord = {
+      id: randomUUID(),
+      root,
+      kind: prev.kind as RepoKind,
+      graph: prev.graph,
+      path: { units: prev.units, cycles: prev.cycles },
+      units: new Map(prev.units.map((u) => [u.id, u])),
+      index: await buildIndex(prev.graph),
+      createdAt: new Date().toISOString(),
+      fromArtifact: true,
+    };
+    repos.set(record.id, record);
+    return record;
   }
 
-  // 2) Build from source.
+  // 2) (Re)build from source. Tree-sitter parsing is cheap; the expensive step
+  // is LLM enrichment, so reuse summaries for files whose hash is unchanged
+  // (incremental: only the affected subgraph is re-enriched).
   const kind = opts.kind ?? detectKind(root);
   const graph = await buildGraphFor(kind, root);
-  const units = await enrichUnits(buildUnits(graph), graph, llm);
+  const reuse = prev ? reusableSummaries(prev, graph) : undefined;
+  if (reuse?.size) {
+    console.log(`incremental: reusing ${reuse.size} summaries; re-enriching changed units only`);
+  }
+  const units = await enrichUnits(buildUnits(graph), graph, llm, { reuseSummaries: reuse });
   const path = orderUnits(units);
   const record: RepoRecord = {
     id: randomUUID(),
@@ -150,18 +155,31 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
   return record;
 }
 
-function tryLoadArtifact(root: string): RepoArtifact | undefined {
+/** Read the artifact regardless of commit (used as an incremental base). */
+function readArtifact(root: string): RepoArtifact | undefined {
   const file = artifactPath(root);
   if (!existsSync(file)) return undefined;
   try {
-    const artifact = parseArtifact(readFileSync(file, "utf8"));
-    // Invalidate if the repo moved to a new commit since the artifact was built.
-    const live = gitCommit(root);
-    if (live && artifact.commit && live !== artifact.commit) return undefined;
-    return artifact;
+    return parseArtifact(readFileSync(file, "utf8"));
   } catch {
     return undefined;
   }
+}
+
+/** Carry over summaries for units whose source file hash is unchanged. */
+function reusableSummaries(prev: RepoArtifact, next: KnowledgeGraph): Map<string, string> {
+  const prevHashes = prev.graph.fileHashes ?? {};
+  const nextHashes = next.fileHashes ?? {};
+  const unchanged = new Set(
+    Object.keys(nextHashes).filter((p) => prevHashes[p] && prevHashes[p] === nextHashes[p]),
+  );
+  const prevNodeById = new Map(prev.graph.nodes.map((n) => [n.id, n]));
+  const reuse = new Map<string, string>();
+  for (const u of prev.units) {
+    const node = prevNodeById.get(u.primary);
+    if (u.summary && node && unchanged.has(node.provenance.path)) reuse.set(u.id, u.summary);
+  }
+  return reuse;
 }
 
 function gitCommit(root: string): string | undefined {

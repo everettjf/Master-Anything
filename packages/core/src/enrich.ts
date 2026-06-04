@@ -38,13 +38,25 @@ function heuristicSummary(input: EnrichInput): string {
   return primary.signature ?? `Function \`${unit.title}\`.`;
 }
 
+export interface EnrichOptions {
+  /** unit id -> previously computed summary, reused to skip the LLM for
+   *  unchanged units during incremental rebuilds. */
+  reuseSummaries?: Map<string, string>;
+}
+
 export async function enrichUnits(
   units: LearningUnit[],
   graph: KnowledgeGraph,
   provider?: LlmProvider,
+  opts: EnrichOptions = {},
 ): Promise<LearningUnit[]> {
   const byId = new Map(graph.nodes.map((n) => [n.id, n]));
   for (const unit of units) {
+    const reused = opts.reuseSummaries?.get(unit.id);
+    if (reused) {
+      unit.summary = reused;
+      continue;
+    }
     const primary = byId.get(unit.primary)!;
     const memberSignatures = unit.members
       .map((id) => byId.get(id)?.signature)

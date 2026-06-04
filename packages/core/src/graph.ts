@@ -5,6 +5,7 @@
  * come in P0.1; here those fields are left empty.
  */
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { languageForExtension } from "./languages.js";
@@ -98,6 +99,7 @@ export function buildGraph(root: string, opts: BuildOptions = {}): KnowledgeGrap
   const nodes: KnowledgeNode[] = [];
   const edges: KnowledgeEdge[] = [];
   const languages: Record<string, number> = {};
+  const fileHashes: Record<string, string> = {};
   // name -> defining symbol node ids, for resolving call edges within the repo
   const nameIndex = new Map<string, string[]>();
 
@@ -118,6 +120,7 @@ export function buildGraph(root: string, opts: BuildOptions = {}): KnowledgeGrap
     } catch {
       continue;
     }
+    fileHashes[rel] = createHash("sha1").update(source).digest("hex");
 
     let parsed;
     try {
@@ -184,6 +187,7 @@ export function buildGraph(root: string, opts: BuildOptions = {}): KnowledgeGrap
       edges: edges.length,
       languages,
     },
+    fileHashes,
     nodes,
     edges,
   };
