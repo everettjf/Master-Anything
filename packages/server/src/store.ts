@@ -23,6 +23,7 @@ import {
   resolveProvider,
   serializeArtifact,
 } from "@ma/core";
+import { getRepoArtifact, putRepoArtifact } from "./db.js";
 
 export type RepoKind = "code" | "docs" | "pdf";
 
@@ -155,15 +156,29 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
   return record;
 }
 
-/** Read the artifact regardless of commit (used as an incremental base). */
+/**
+ * Read the artifact regardless of commit (used as an incremental base).
+ * Prefers the shareable on-disk artifact (committed with the repo), falling
+ * back to the SQLite copy.
+ */
 function readArtifact(root: string): RepoArtifact | undefined {
   const file = artifactPath(root);
-  if (!existsSync(file)) return undefined;
-  try {
-    return parseArtifact(readFileSync(file, "utf8"));
-  } catch {
-    return undefined;
+  if (existsSync(file)) {
+    try {
+      return parseArtifact(readFileSync(file, "utf8"));
+    } catch {
+      /* fall through to DB */
+    }
   }
+  const fromDb = getRepoArtifact(root);
+  if (fromDb) {
+    try {
+      return parseArtifact(fromDb);
+    } catch {
+      /* ignore */
+    }
+  }
+  return undefined;
 }
 
 /** Carry over summaries for units whose source file hash is unchanged. */
@@ -202,10 +217,18 @@ export function saveArtifact(repo: RepoRecord): void {
     units: repo.path.units,
     cycles: repo.path.cycles,
   };
+  const json = serializeArtifact(artifact);
+  // Durable, queryable copy in SQLite (replaces in-memory persistence)...
+  try {
+    putRepoArtifact(repo.root, repo.kind, artifact.commit, json);
+  } catch (err) {
+    console.warn(`could not persist artifact to db: ${String(err)}`);
+  }
+  // ...plus the shareable on-disk artifact teammates can commit.
   try {
     const file = artifactPath(repo.root);
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, serializeArtifact(artifact));
+    writeFileSync(file, json);
   } catch (err) {
     console.warn(`could not write graph artifact: ${String(err)}`);
   }

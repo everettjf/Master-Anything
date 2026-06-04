@@ -3,7 +3,7 @@
  * Generates break-and-fix Apply tasks and verifies submissions with pytest.
  */
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import {
   BloomLevel,
@@ -24,6 +24,7 @@ import {
   replaceLineRange,
   verifierForExtension,
 } from "@ma/verifier";
+import { getAllMastery, putMastery } from "./db.js";
 import { llm } from "./store.js";
 import type { RepoRecord } from "./store.js";
 
@@ -71,40 +72,24 @@ export interface ApplyAssessment {
 
 const assessments = new Map<string, ApplyAssessment>();
 
-// Learner state keyed by `${userId}:${repoRoot}:${unitId}` (repoRoot is stable
-// across restarts, unlike the per-process repo id) and persisted to disk.
+// Learner state cached in memory, durably backed by SQLite (write-through).
+// Keyed by `${userId}:${repoRoot}:${unitId}` — repoRoot is stable across restarts.
 const states = new Map<string, LearnerUnitState>();
-
-const DATA_DIR = process.env.MA_DATA_DIR ?? join(process.cwd(), ".ma-data");
-const STATE_FILE = join(DATA_DIR, "mastery.json");
-
-function loadStates(): void {
-  try {
-    const entries = JSON.parse(readFileSync(STATE_FILE, "utf8")) as [string, LearnerUnitState][];
-    for (const [k, v] of entries) states.set(k, v);
-  } catch {
-    /* no prior state */
-  }
-}
-loadStates();
-
-function persistStates(): void {
-  try {
-    mkdirSync(DATA_DIR, { recursive: true });
-    writeFileSync(STATE_FILE, JSON.stringify([...states.entries()]));
-  } catch (err) {
-    console.warn(`could not persist mastery: ${String(err)}`);
-  }
-}
-
-/** Record a learner state change and persist it. */
-function setState(key: string, state: LearnerUnitState): void {
-  states.set(key, state);
-  persistStates();
-}
 
 function stateKey(userId: string, repoRoot: string, unitId: string): string {
   return `${userId}:${repoRoot}:${unitId}`;
+}
+
+// Hydrate the in-memory cache from the DB on boot.
+for (const { user, repoRoot, state } of getAllMastery()) {
+  states.set(stateKey(user, repoRoot, state.unitId), state);
+}
+
+/** Record a learner state change and write it through to SQLite. */
+function setState(userId: string, repoRoot: string, state: LearnerUnitState): void {
+  const key = stateKey(userId, repoRoot, state.unitId);
+  states.set(key, state);
+  putMastery(userId, repoRoot, state);
 }
 
 export function getState(userId: string, repoRoot: string, unitId: string): LearnerUnitState {
@@ -197,7 +182,7 @@ export async function submitAttempt(
     verifier: "tests",
     at: new Date().toISOString(),
   });
-  setState(key, next);
+  setState(userId, repo.root, next);
 
   return {
     passed,
@@ -252,7 +237,7 @@ export function submitImpactAttempt(
     verifier: "graph",
     at: new Date().toISOString(),
   });
-  setState(key, next);
+  setState(userId, repo.root, next);
 
   return { passed: grade.passed, correctIds: grade.correctIds, missedIds: grade.missedIds, wrongIds: grade.wrongIds, state: next };
 }
@@ -298,7 +283,7 @@ export async function submitExplainAttempt(
     verifier: "llm",
     at: new Date().toISOString(),
   });
-  setState(key, next);
+  setState(userId, repo.root, next);
   return { ...grade, state: next };
 }
 
