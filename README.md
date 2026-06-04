@@ -115,12 +115,15 @@ pnpm --filter @ma/server dev        # 启动时打印 “LLM enrichment: vercel-
 |---|---|---|---|
 | 代码(Python) | Tree-sitter | 函数 / 类 | Understand · **Apply(pytest)** · **Analyze(图谱)** |
 | 代码(JavaScript) | Tree-sitter | 函数 / 类 | Understand · **Apply(node --test)** · **Analyze(图谱)** |
+| 代码(TypeScript) | Tree-sitter | 函数 / 类 | Understand · **Apply(node 类型剥离)** · **Analyze(图谱)** |
 | 文档(Markdown) | 按标题分节 | 章节 | Understand · **Analyze(图谱)** |
 | 文档(HTML/网页) | 按 `<h1..6>` 分节 | 章节 | Understand · **Analyze(图谱)** |
+| 文档(PDF) | 按页(unpdf 抽取) | 页 | Understand · **Analyze(图谱)** |
 
-> 持久化:首次连接把图谱写入 `<repo>/.master-anything/graph.json`,**再次连接直接加载、跳过流水线**
-> (commit 一次,队友零等待);掌握进度存到 `MA_DATA_DIR`,跨重启留存。
-> 示例:`examples/{py-calc,js-calc,md-guide,html-guide}`。
+> **持久化(SQLite)**:图谱工件与掌握进度存入 `better-sqlite3` 库(`MA_DB`/`MA_DATA_DIR`),
+> 跨重启留存、可查询;每个图谱另写一份可分享的 `<repo>/.master-anything/graph.json`
+> (commit 一次,队友零等待)。**增量更新**:文件哈希未变的单元复用摘要,只对改动子图重跑 LLM。
+> 示例:`examples/{py-calc,js-calc,ts-calc,md-guide,html-guide,pdf-guide}`。
 
 精通引擎、学习路径、Tutor、Understand/Analyze 评估**完全复用**,领域差异只存在于适配器内。
 
