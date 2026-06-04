@@ -8,16 +8,16 @@ import {
   buildUnits,
   enrichUnits,
   orderUnits,
-  providerFromEnv,
+  resolveProvider,
   type KnowledgeGraph,
   type LearningPath,
   type LearningUnit,
 } from "@ma/core";
 
-// Optional LLM enrichment backend (OpenRouter / LiteLLM proxy / Ollama / ...).
-// Configured via MA_LLM_BASE_URL + MA_LLM_MODEL; absent -> heuristic summaries.
-const llm = providerFromEnv();
-export const llmEnabled = Boolean(llm);
+// Optional LLM enrichment backend. token.js multi-provider (MA_LLM_PROVIDER) or
+// a generic OpenAI-compatible endpoint (MA_LLM_BASE_URL); absent -> heuristic.
+const { provider: llm, describe: llmDescribe } = resolveProvider();
+export { llmDescribe };
 
 export interface RepoRecord {
   id: string;
