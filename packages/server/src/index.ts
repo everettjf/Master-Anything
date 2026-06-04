@@ -11,9 +11,11 @@ import { answerQuestion } from "@ma/core";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
   createApplyAssessment,
+  createExplainAssessment,
   createImpactAssessment,
   masteryFor,
   submitAttempt,
+  submitExplainAttempt,
   submitImpactAttempt,
 } from "./mastery-store.js";
 
@@ -139,6 +141,39 @@ app.post("/repos/:id/ask", async (c) => {
     return c.json(await answerQuestion(repo.graph, query, llm, { index: repo.index }));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
+  }
+});
+
+// Understand level: tutor asks a comprehension question about a unit.
+app.post("/repos/:id/units/:unitId/explain", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const unit = repo.units.get(c.req.param("unitId"));
+  if (!unit) return c.json({ error: "unit not found" }, 404);
+  try {
+    return c.json(await createExplainAssessment(repo, unit));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Submit a prose answer -> LLM grades against source -> mastery to Understand.
+app.post("/repos/:id/explain-attempts", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const { userId, assessmentId, answer } = body as {
+    userId?: string;
+    assessmentId?: string;
+    answer?: string;
+  };
+  if (!assessmentId || typeof answer !== "string") {
+    return c.json({ error: "missing 'assessmentId' or 'answer'" }, 400);
+  }
+  try {
+    return c.json(await submitExplainAttempt(repo, userId || "anon", assessmentId, answer));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }
 });
 

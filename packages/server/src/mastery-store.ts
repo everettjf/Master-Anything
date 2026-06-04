@@ -12,13 +12,25 @@ import {
   type LearningUnit,
   buildImpactQuestion,
   emptyState,
+  generateExplainQuestion,
+  gradeExplain,
   gradeImpact,
   recordAttempt,
 } from "@ma/core";
 import { LocalPytestRunner, blankPythonFunction, replaceLineRange } from "@ma/verifier";
+import { llm } from "./store.js";
 import type { RepoRecord } from "./store.js";
 
 const runner = new LocalPytestRunner();
+
+/** Read the source lines a unit's primary node points at. */
+function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
+  const node = repo.graph.nodes.find((n) => n.id === unit.primary);
+  if (!node) throw new Error("unit primary node not found");
+  const lines = readFileSync(join(repo.root, node.provenance.path), "utf8").split("\n");
+  const text = lines.slice(node.provenance.startLine - 1, node.provenance.endLine).join("\n");
+  return { text, ref: `${node.provenance.path}:${node.provenance.startLine}` };
+}
 
 export interface ApplyAssessment {
   id: string;
@@ -190,6 +202,51 @@ export function submitImpactAttempt(
   states.set(key, next);
 
   return { passed: grade.passed, correctIds: grade.correctIds, missedIds: grade.missedIds, wrongIds: grade.wrongIds, state: next };
+}
+
+// --- Understand level: LLM question + source-grounded grading ---
+
+interface StoredExplain {
+  id: string;
+  repoId: string;
+  unitId: string;
+  title: string;
+  sourceText: string;
+  question: string;
+}
+const explains = new Map<string, StoredExplain>();
+
+export async function createExplainAssessment(repo: RepoRecord, unit: LearningUnit) {
+  if (!llm) throw new Error("Understand questions require an LLM (set MA_LLM_*)");
+  const { text } = unitSource(repo, unit);
+  const question = await generateExplainQuestion(unit.title, text, llm);
+  const id = randomUUID();
+  explains.set(id, { id, repoId: repo.id, unitId: unit.id, title: unit.title, sourceText: text, question });
+  return { id, unitId: unit.id, targetLevel: BloomLevel.Understand, question };
+}
+
+export async function submitExplainAttempt(
+  repo: RepoRecord,
+  userId: string,
+  assessmentId: string,
+  answer: string,
+) {
+  if (!llm) throw new Error("grading requires an LLM (set MA_LLM_*)");
+  const stored = explains.get(assessmentId);
+  if (!stored || stored.repoId !== repo.id) throw new Error("assessment not found");
+  const grade = await gradeExplain(stored.title, stored.sourceText, stored.question, answer, llm);
+
+  const key = stateKey(userId, repo.id, stored.unitId);
+  const prev = states.get(key) ?? emptyState(userId, stored.unitId);
+  const next = recordAttempt(prev, {
+    assessmentId,
+    targetLevel: BloomLevel.Understand,
+    passed: grade.passed,
+    verifier: "llm",
+    at: new Date().toISOString(),
+  });
+  states.set(key, next);
+  return { ...grade, state: next };
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {

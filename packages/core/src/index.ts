@@ -9,5 +9,6 @@ export * from "./retrieval.js";
 export * from "./embeddings.js";
 export * from "./analyze.js";
 export * from "./tutor.js";
+export * from "./understand.js";
 export * from "./providers/vercel.js";
 export * from "./providers/factory.js";
