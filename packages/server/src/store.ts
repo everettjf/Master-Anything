@@ -2,21 +2,25 @@
  * In-memory repo/graph/units store for the P0 MVP.
  * Swapped for a real DB + persisted JSON artifacts in later slices.
  */
+import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readdirSync } from "node:fs";
-import { extname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, extname, join } from "node:path";
 import {
   EmbeddingIndex,
+  type KnowledgeGraph,
+  type LearningPath,
+  type LearningUnit,
+  type RepoArtifact,
   buildDocsGraph,
   buildGraph,
   buildUnits,
   embeddingProviderFromEnv,
   enrichUnits,
   orderUnits,
+  parseArtifact,
   resolveProvider,
-  type KnowledgeGraph,
-  type LearningPath,
-  type LearningUnit,
+  serializeArtifact,
 } from "@ma/core";
 
 export type RepoKind = "code" | "docs";
@@ -66,24 +70,58 @@ export interface RepoRecord {
   units: Map<string, LearningUnit>;
   index?: EmbeddingIndex; // semantic retrieval index, when embeddings configured
   createdAt: string;
+  fromArtifact: boolean; // loaded from a persisted artifact (pipeline skipped)
 }
 
 const repos = new Map<string, RepoRecord>();
 
-export async function addRepo(root: string, kindHint?: RepoKind): Promise<RepoRecord> {
-  const kind = kindHint ?? detectKind(root);
+const ARTIFACT_REL = ".master-anything/graph.json";
+function artifactPath(root: string): string {
+  return join(root, ARTIFACT_REL);
+}
+
+async function buildIndex(graph: KnowledgeGraph): Promise<EmbeddingIndex | undefined> {
+  if (!embedder) return undefined;
+  try {
+    return await EmbeddingIndex.build(graph, embedder);
+  } catch (err) {
+    console.warn(`embedding index build failed, falling back to lexical: ${String(err)}`);
+    return undefined;
+  }
+}
+
+export interface AddRepoOptions {
+  kind?: RepoKind;
+  /** Ignore any persisted artifact and rebuild from source. */
+  fresh?: boolean;
+}
+
+export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<RepoRecord> {
+  // 1) Try the persisted artifact (commit the graph once, skip the pipeline).
+  if (!opts.fresh) {
+    const cached = tryLoadArtifact(root);
+    if (cached) {
+      const record: RepoRecord = {
+        id: randomUUID(),
+        root,
+        kind: cached.kind as RepoKind,
+        graph: cached.graph,
+        path: { units: cached.units, cycles: cached.cycles },
+        units: new Map(cached.units.map((u) => [u.id, u])),
+        index: await buildIndex(cached.graph),
+        createdAt: new Date().toISOString(),
+        fromArtifact: true,
+      };
+      repos.set(record.id, record);
+      return record;
+    }
+  }
+
+  // 2) Build from source.
+  const kind = opts.kind ?? detectKind(root);
   const graph = kind === "docs" ? buildDocsGraph(root) : buildGraph(root);
   const units = await enrichUnits(buildUnits(graph), graph, llm);
   const path = orderUnits(units);
-  // Build a semantic index if an embedding backend is configured (best-effort).
-  let index: EmbeddingIndex | undefined;
-  if (embedder) {
-    try {
-      index = await EmbeddingIndex.build(graph, embedder);
-    } catch (err) {
-      console.warn(`embedding index build failed, falling back to lexical: ${String(err)}`);
-    }
-  }
   const record: RepoRecord = {
     id: randomUUID(),
     root,
@@ -91,11 +129,56 @@ export async function addRepo(root: string, kindHint?: RepoKind): Promise<RepoRe
     graph,
     path,
     units: new Map(units.map((u) => [u.id, u])),
-    index,
+    index: await buildIndex(graph),
     createdAt: new Date().toISOString(),
+    fromArtifact: false,
   };
   repos.set(record.id, record);
+  saveArtifact(record);
   return record;
+}
+
+function tryLoadArtifact(root: string): RepoArtifact | undefined {
+  const file = artifactPath(root);
+  if (!existsSync(file)) return undefined;
+  try {
+    const artifact = parseArtifact(readFileSync(file, "utf8"));
+    // Invalidate if the repo moved to a new commit since the artifact was built.
+    const live = gitCommit(root);
+    if (live && artifact.commit && live !== artifact.commit) return undefined;
+    return artifact;
+  } catch {
+    return undefined;
+  }
+}
+
+function gitCommit(root: string): string | undefined {
+  try {
+    return execSync("git rev-parse HEAD", { cwd: root, stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return undefined;
+  }
+}
+
+export function saveArtifact(repo: RepoRecord): void {
+  const artifact: RepoArtifact = {
+    version: 1,
+    kind: repo.kind,
+    builtAt: repo.createdAt,
+    commit: repo.graph.repo.commit,
+    graph: repo.graph,
+    units: repo.path.units,
+    cycles: repo.path.cycles,
+  };
+  try {
+    const file = artifactPath(repo.root);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, serializeArtifact(artifact));
+  } catch (err) {
+    console.warn(`could not write graph artifact: ${String(err)}`);
+  }
 }
 
 export function getRepo(id: string): RepoRecord | undefined {

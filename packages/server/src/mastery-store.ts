@@ -3,7 +3,7 @@
  * Generates break-and-fix Apply tasks and verifies submissions with pytest.
  */
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import {
   BloomLevel,
@@ -68,15 +68,45 @@ export interface ApplyAssessment {
 }
 
 const assessments = new Map<string, ApplyAssessment>();
-// learner state keyed by `${userId}:${repoId}:${unitId}`
+
+// Learner state keyed by `${userId}:${repoRoot}:${unitId}` (repoRoot is stable
+// across restarts, unlike the per-process repo id) and persisted to disk.
 const states = new Map<string, LearnerUnitState>();
 
-function stateKey(userId: string, repoId: string, unitId: string): string {
-  return `${userId}:${repoId}:${unitId}`;
+const DATA_DIR = process.env.MA_DATA_DIR ?? join(process.cwd(), ".ma-data");
+const STATE_FILE = join(DATA_DIR, "mastery.json");
+
+function loadStates(): void {
+  try {
+    const entries = JSON.parse(readFileSync(STATE_FILE, "utf8")) as [string, LearnerUnitState][];
+    for (const [k, v] of entries) states.set(k, v);
+  } catch {
+    /* no prior state */
+  }
+}
+loadStates();
+
+function persistStates(): void {
+  try {
+    mkdirSync(DATA_DIR, { recursive: true });
+    writeFileSync(STATE_FILE, JSON.stringify([...states.entries()]));
+  } catch (err) {
+    console.warn(`could not persist mastery: ${String(err)}`);
+  }
 }
 
-export function getState(userId: string, repoId: string, unitId: string): LearnerUnitState {
-  return states.get(stateKey(userId, repoId, unitId)) ?? emptyState(userId, unitId);
+/** Record a learner state change and persist it. */
+function setState(key: string, state: LearnerUnitState): void {
+  states.set(key, state);
+  persistStates();
+}
+
+function stateKey(userId: string, repoRoot: string, unitId: string): string {
+  return `${userId}:${repoRoot}:${unitId}`;
+}
+
+export function getState(userId: string, repoRoot: string, unitId: string): LearnerUnitState {
+  return states.get(stateKey(userId, repoRoot, unitId)) ?? emptyState(userId, unitId);
 }
 
 /** Pick the target function node for a unit (the function itself, or a class method with a body). */
@@ -156,7 +186,7 @@ export async function submitAttempt(
 
   // Only a test-covered task counts as verified mastery; otherwise it's advisory.
   const passed = result.passed;
-  const key = stateKey(userId, repo.id, a.unitId);
+  const key = stateKey(userId, repo.root, a.unitId);
   const prev = states.get(key) ?? emptyState(userId, a.unitId);
   const next = recordAttempt(prev, {
     assessmentId,
@@ -165,7 +195,7 @@ export async function submitAttempt(
     verifier: "tests",
     at: new Date().toISOString(),
   });
-  states.set(key, next);
+  setState(key, next);
 
   return {
     passed,
@@ -211,7 +241,7 @@ export function submitImpactAttempt(
   if (!stored || stored.repoId !== repo.id) throw new Error("assessment not found");
   const grade = gradeImpact(stored.question, selectedIds);
 
-  const key = stateKey(userId, repo.id, stored.question.targetUnitId);
+  const key = stateKey(userId, repo.root, stored.question.targetUnitId);
   const prev = states.get(key) ?? emptyState(userId, stored.question.targetUnitId);
   const next = recordAttempt(prev, {
     assessmentId,
@@ -220,7 +250,7 @@ export function submitImpactAttempt(
     verifier: "graph",
     at: new Date().toISOString(),
   });
-  states.set(key, next);
+  setState(key, next);
 
   return { passed: grade.passed, correctIds: grade.correctIds, missedIds: grade.missedIds, wrongIds: grade.wrongIds, state: next };
 }
@@ -257,7 +287,7 @@ export async function submitExplainAttempt(
   if (!stored || stored.repoId !== repo.id) throw new Error("assessment not found");
   const grade = await gradeExplain(stored.title, stored.sourceText, stored.question, answer, llm);
 
-  const key = stateKey(userId, repo.id, stored.unitId);
+  const key = stateKey(userId, repo.root, stored.unitId);
   const prev = states.get(key) ?? emptyState(userId, stored.unitId);
   const next = recordAttempt(prev, {
     assessmentId,
@@ -266,13 +296,13 @@ export async function submitExplainAttempt(
     verifier: "llm",
     at: new Date().toISOString(),
   });
-  states.set(key, next);
+  setState(key, next);
   return { ...grade, state: next };
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {
   return repo.path.units.map((u) => {
-    const s = states.get(stateKey(userId, repo.id, u.id));
+    const s = states.get(stateKey(userId, repo.root, u.id));
     return {
       unitId: u.id,
       title: u.title,

@@ -34,12 +34,14 @@ app.post("/repos", async (c) => {
     return c.json({ error: `not a directory: ${path}` }, 400);
   }
   const kind = body.kind === "docs" || body.kind === "code" ? body.kind : undefined;
+  const fresh = body.fresh === true;
   try {
-    const repo = await addRepo(path, kind);
+    const repo = await addRepo(path, { kind, fresh });
     return c.json({
       id: repo.id,
       root: repo.root,
       kind: repo.kind,
+      fromArtifact: repo.fromArtifact,
       stats: { ...repo.graph.stats, units: repo.units.size },
       createdAt: repo.createdAt,
     });
