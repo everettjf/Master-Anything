@@ -1,25 +1,39 @@
 /**
- * In-memory repo/graph store for the P0.0 walking skeleton.
+ * In-memory repo/graph/units store for the P0 MVP.
  * Swapped for a real DB + persisted JSON artifacts in later slices.
  */
 import { randomUUID } from "node:crypto";
-import { buildGraph, type KnowledgeGraph } from "@ma/core";
+import {
+  buildGraph,
+  buildUnits,
+  enrichUnits,
+  orderUnits,
+  type KnowledgeGraph,
+  type LearningPath,
+  type LearningUnit,
+} from "@ma/core";
 
 export interface RepoRecord {
   id: string;
   root: string;
   graph: KnowledgeGraph;
+  path: LearningPath;
+  units: Map<string, LearningUnit>;
   createdAt: string;
 }
 
 const repos = new Map<string, RepoRecord>();
 
-export function addRepo(root: string): RepoRecord {
+export async function addRepo(root: string): Promise<RepoRecord> {
   const graph = buildGraph(root);
+  const units = await enrichUnits(buildUnits(graph), graph);
+  const path = orderUnits(units);
   const record: RepoRecord = {
     id: randomUUID(),
     root,
     graph,
+    path,
+    units: new Map(units.map((u) => [u.id, u])),
     createdAt: new Date().toISOString(),
   };
   repos.set(record.id, record);

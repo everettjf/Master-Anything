@@ -23,8 +23,13 @@ app.post("/repos", async (c) => {
     return c.json({ error: `not a directory: ${path}` }, 400);
   }
   try {
-    const repo = addRepo(path);
-    return c.json({ id: repo.id, root: repo.root, stats: repo.graph.stats, createdAt: repo.createdAt });
+    const repo = await addRepo(path);
+    return c.json({
+      id: repo.id,
+      root: repo.root,
+      stats: { ...repo.graph.stats, units: repo.units.size },
+      createdAt: repo.createdAt,
+    });
   } catch (err) {
     return c.json({ error: String(err) }, 500);
   }
@@ -40,6 +45,24 @@ app.get("/repos/:id/graph", (c) => {
   const repo = getRepo(c.req.param("id"));
   if (!repo) return c.json({ error: "repo not found" }, 404);
   return c.json(repo.graph);
+});
+
+// Dependency-ordered learning path (units, prerequisites first).
+app.get("/repos/:id/path", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  return c.json({
+    cycles: repo.path.cycles,
+    units: repo.path.units.map((u) => ({
+      id: u.id,
+      title: u.title,
+      kind: u.kind,
+      summary: u.summary,
+      provenance: u.provenance,
+      prerequisites: u.prerequisites,
+      bloomCeiling: u.bloomCeiling,
+    })),
+  });
 });
 
 // Read the source slice a node points at (provenance-grounded UI).
