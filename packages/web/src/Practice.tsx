@@ -28,11 +28,13 @@ export function Practice({
   repoId: string;
   unit: PathUnit;
   userId: string;
-  repoKind: "code" | "docs" | "pdf";
+  repoKind: "code" | "docs" | "pdf" | "mixed";
   onClose: () => void;
   onMastered: () => void;
 }) {
-  const codeApply = repoKind === "code";
+  // Apply (break-and-fix) is available per-unit for code files, even inside a
+  // mixed repo where other units are docs.
+  const codeApply = /\.(py|js|mjs|cjs|ts|tsx|jsx)$/.test(unit.provenance.path);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);

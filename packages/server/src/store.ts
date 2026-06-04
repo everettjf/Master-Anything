@@ -18,6 +18,7 @@ import {
   buildUnits,
   embeddingProviderFromEnv,
   enrichUnits,
+  mergeGraphs,
   orderUnits,
   parseArtifact,
   resolveProvider,
@@ -25,47 +26,73 @@ import {
 } from "@ma/core";
 import { getRepoArtifact, putRepoArtifact } from "./db.js";
 
-export type RepoKind = "code" | "docs" | "pdf";
+// "mixed" = more than one domain present (e.g. code + a README/docs).
+export type RepoKind = "code" | "docs" | "pdf" | "mixed";
 
 const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst", ".html", ".htm"]);
 
 const CODE_EXT = new Set([".py", ".js", ".ts", ".tsx", ".jsx", ".mjs", ".cjs"]);
 
-/** Auto-detect adapter: code if any code, else docs, else pdf. */
-function detectKind(root: string): RepoKind {
-  let docs = 0;
-  let code = 0;
-  let pdf = 0;
+interface Domains {
+  code: boolean;
+  docs: boolean;
+  pdf: boolean;
+}
+
+/** Scan which domains are present in a repo (a real repo is often several). */
+function scanDomains(root: string): Domains {
+  const d: Domains = { code: false, docs: false, pdf: false };
   const walk = (dir: string, depth: number) => {
-    if (depth > 3) return;
+    if (depth > 6) return;
     let entries: import("node:fs").Dirent[];
     try {
       entries = readdirSync(dir, { withFileTypes: true });
     } catch {
       return;
     }
-    for (const d of entries) {
-      if (d.name.startsWith(".") || d.name === "node_modules") continue;
-      if (d.isDirectory()) walk(`${dir}/${d.name}`, depth + 1);
+    for (const e of entries) {
+      if (e.name.startsWith(".") || e.name === "node_modules") continue;
+      if (e.isDirectory()) walk(`${dir}/${e.name}`, depth + 1);
       else {
-        const ext = extname(d.name).toLowerCase();
-        if (ext === ".pdf") pdf++;
-        else if (DOC_EXT.has(ext)) docs++;
-        else if (CODE_EXT.has(ext)) code++;
+        const ext = extname(e.name).toLowerCase();
+        if (ext === ".pdf") d.pdf = true;
+        else if (DOC_EXT.has(ext)) d.docs = true;
+        else if (CODE_EXT.has(ext)) d.code = true;
       }
     }
   };
   walk(root, 0);
-  if (code > 0) return "code";
-  if (docs > 0) return "docs";
-  if (pdf > 0) return "pdf";
+  return d;
+}
+
+function kindOf(d: Domains): RepoKind {
+  const n = Number(d.code) + Number(d.docs) + Number(d.pdf);
+  if (n > 1) return "mixed";
+  if (d.code) return "code";
+  if (d.docs) return "docs";
+  if (d.pdf) return "pdf";
   return "code";
 }
 
-async function buildGraphFor(kind: RepoKind, root: string): Promise<KnowledgeGraph> {
-  if (kind === "pdf") return buildPdfGraph(root);
-  if (kind === "docs") return buildDocsGraph(root);
-  return buildGraph(root);
+/**
+ * Build a unified graph across every domain present in the repo. A code repo
+ * with a README gets both code units and doc-section units; an explicit kind
+ * hint restricts to that single domain.
+ */
+async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: KnowledgeGraph; kind: RepoKind }> {
+  const present =
+    hint && hint !== "mixed"
+      ? { code: hint === "code", docs: hint === "docs", pdf: hint === "pdf" }
+      : scanDomains(root);
+
+  const graphs: KnowledgeGraph[] = [];
+  if (present.code) graphs.push(buildGraph(root));
+  if (present.docs) graphs.push(buildDocsGraph(root));
+  if (present.pdf) graphs.push(await buildPdfGraph(root));
+  if (graphs.length === 0) graphs.push(buildGraph(root)); // empty repo -> empty code graph
+
+  const graph = graphs.length === 1 ? graphs[0]! : mergeGraphs(graphs, root);
+  return { graph, kind: kindOf(present) };
 }
 
 // Optional LLM enrichment + tutor backend (MA_LLM_*); absent -> heuristic.
@@ -132,8 +159,7 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
   // 2) (Re)build from source. Tree-sitter parsing is cheap; the expensive step
   // is LLM enrichment, so reuse summaries for files whose hash is unchanged
   // (incremental: only the affected subgraph is re-enriched).
-  const kind = opts.kind ?? detectKind(root);
-  const graph = await buildGraphFor(kind, root);
+  const { graph, kind } = await buildGraphFor(root, opts.kind);
   const reuse = prev ? reusableSummaries(prev, graph) : undefined;
   if (reuse?.size) {
     console.log(`incremental: reusing ${reuse.size} summaries; re-enriching changed units only`);
