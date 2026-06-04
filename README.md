@@ -44,10 +44,16 @@ pnpm --filter @ma/web dev
 ### 体验闭环
 
 1. **Graph** 标签:浏览知识图谱,点节点看源码(provenance 回链)。
-2. **Learn** 标签:看依赖排序的学习路径;点一个单元进入 **Practice**。
-3. Practice 会把一个真实函数"改坏",你重写函数体,点 **Run tests**——
-   系统在沙箱里**跑真实测试**判定;通过(且被测试覆盖)才算掌握到 **Apply** 级,
-   掌握度徽章随之更新。
+2. **Learn** 标签:看依赖排序的学习路径;点一个单元进入 **Practice**:
+   - **Apply(可验证)**:把真实函数"改坏",你重写函数体 → **跑真实 pytest** 判定 →
+     通过(且被测试覆盖)升到 **Apply** 级。
+   - **Analyze(图谱判分)**:"改了这个单元会波及谁?"——答案图谱里就有,**用调用图客观判分** →
+     选全对升到 **Analyze** 级。
+3. **Tutor** 标签:用自然语言问代码,回答**基于知识图谱 grounding**、引用 `文件:行`(GraphRAG);
+   没配 LLM 时仍会给出最相关的代码位置。
+
+> 这就是 "Master" 与 "Understand" 的区别:不止解释(Tutor),还能用**真实测试**和**图谱真值**
+> **验证**你是否真的掌握(Apply / Analyze),而不是 AI 主观打分。
 
 > 命令行也能单独建图谱:`pnpm --filter @ma/core graph <绝对路径> --out artifacts/graph.json`
 
@@ -90,9 +96,11 @@ pnpm --filter @ma/server dev        # 启动时打印 “LLM enrichment: vercel-
 - ✅ **P0.1** 学习单元聚合 + 依赖排序学习路径(语义补全可插拔,无 key 时降级为启发式)
 - ✅ **P0.2/3** 精通引擎 + 可验证 Apply(改坏-修复,真实 pytest 判定)
 - ✅ **P0.4** Web 端"学 → 测 → 验"闭环
+- ✅ **Analyze**(图谱判分的影响分析)+ **Tutor**(GraphRAG,基于图谱 grounding 的问答)
+- ✅ LLM 层统一到 **Vercel AI SDK**(OpenAI / Anthropic / Google / 任意 OpenAI 兼容端点)
 
-> 后续:LLM 语义补全接入(`ANTHROPIC_API_KEY`)、Analyze 级图谱判分、Docker 沙箱、
-> 多语言验证器、增量更新。详见 [docs/P0-CODE-MVP.md](./docs/P0-CODE-MVP.md)。
+> 后续:嵌入式检索(替换词法检索)、Understand 级问答评分、Docker 沙箱、多语言验证器、
+> 增量更新、P1 文档适配器。详见 [docs/P0-CODE-MVP.md](./docs/P0-CODE-MVP.md)。
 
 ---
 
