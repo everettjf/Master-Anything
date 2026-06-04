@@ -23,7 +23,7 @@ export function tokenize(text: string): string[] {
   );
 }
 
-function nodeText(n: KnowledgeNode): string {
+export function nodeText(n: KnowledgeNode): string {
   return [n.name, n.summary ?? "", n.signature ?? "", n.role ?? "", n.domain ?? ""].join(" ");
 }
 
@@ -68,7 +68,15 @@ export interface ContextItem {
 
 /** Build a grounding context for the LLM: top hits + their direct neighbors. */
 export function buildContext(graph: KnowledgeGraph, query: string, k = 6): ContextItem[] {
-  const hits = retrieve(graph, query, k);
+  return expandHits(graph, retrieve(graph, query, k), k);
+}
+
+/** Expand ranked hits with direct neighbors and project to context items. */
+export function expandHits(
+  graph: KnowledgeGraph,
+  hits: RetrievedNode[],
+  k = 6,
+): ContextItem[] {
   const picked = new Map<string, KnowledgeNode>();
   for (const { node } of hits) {
     picked.set(node.id, node);

@@ -4,9 +4,16 @@
  * "Master" value comes from grounding every claim in the graph rather than the
  * model's memory.
  */
+import type { EmbeddingIndex } from "./embeddings.js";
 import type { LlmProvider } from "./enrich.js";
-import { type ContextItem, buildContext } from "./retrieval.js";
+import { type ContextItem, buildContext, expandHits } from "./retrieval.js";
 import type { KnowledgeGraph } from "./types.js";
+
+export interface TutorOptions {
+  k?: number;
+  /** When provided, retrieval is semantic (embeddings) instead of lexical. */
+  index?: EmbeddingIndex;
+}
 
 export interface TutorAnswer {
   answer: string;
@@ -34,9 +41,12 @@ export async function answerQuestion(
   graph: KnowledgeGraph,
   query: string,
   provider: LlmProvider | undefined,
-  k = 6,
+  opts: TutorOptions = {},
 ): Promise<TutorAnswer> {
-  const citations = buildContext(graph, query, k);
+  const k = opts.k ?? 6;
+  const citations = opts.index
+    ? expandHits(graph, await opts.index.query(query, k), k)
+    : buildContext(graph, query, k);
 
   if (!provider) {
     // Degraded mode: no LLM — surface the most relevant pieces honestly.

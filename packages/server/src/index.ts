@@ -8,7 +8,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { answerQuestion } from "@ma/core";
-import { addRepo, getRepo, listRepos, llm, llmDescribe } from "./store.js";
+import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
   createApplyAssessment,
   createImpactAssessment,
@@ -136,7 +136,7 @@ app.post("/repos/:id/ask", async (c) => {
   const query = typeof body.query === "string" ? body.query.trim() : "";
   if (!query) return c.json({ error: "missing 'query'" }, 400);
   try {
-    return c.json(await answerQuestion(repo.graph, query, llm));
+    return c.json(await answerQuestion(repo.graph, query, llm, { index: repo.index }));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
   }
@@ -187,4 +187,5 @@ const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`@ma/server listening on http://localhost:${info.port}`);
   console.log(`  LLM enrichment: ${llmDescribe}`);
+  console.log(`  Embeddings:     ${embedDescribe}`);
 });
