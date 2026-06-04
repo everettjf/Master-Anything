@@ -172,6 +172,45 @@ export async function ask(id: string, query: string): Promise<TutorAnswer> {
   );
 }
 
+// --- Understand (LLM question + source-grounded grading) ---
+
+export interface ExplainQuestion {
+  id: string;
+  unitId: string;
+  targetLevel: number;
+  question: string;
+}
+
+export async function createExplain(id: string, unitId: string): Promise<ExplainQuestion> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/units/${encodeURIComponent(unitId)}/explain`, {
+      method: "POST",
+    }),
+  );
+}
+
+export interface ExplainResult {
+  passed: boolean;
+  score: number;
+  feedback: string;
+  state: { level: number };
+}
+
+export async function submitExplain(
+  id: string,
+  userId: string,
+  assessmentId: string,
+  answer: string,
+): Promise<ExplainResult> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/explain-attempts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId, assessmentId, answer }),
+    }),
+  );
+}
+
 // --- Analyze (graph-verified impact) ---
 
 export interface ImpactQuestion {

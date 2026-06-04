@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import {
   type Assessment,
   type AttemptResult,
+  type ExplainQuestion,
+  type ExplainResult,
   type ImpactQuestion,
   type ImpactResult,
   type PathUnit,
   createAssessment,
+  createExplain,
   createImpact,
   submitAttempt,
+  submitExplain,
   submitImpact,
 } from "./api.js";
 
@@ -116,7 +120,93 @@ export function Practice({
             </div>
           )}
 
+          <UnderstandChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
           <AnalyzeChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Understand-level challenge: tutor asks, you answer in prose, LLM grades vs source. */
+function UnderstandChallenge({
+  repoId,
+  unit,
+  userId,
+  onMastered,
+}: {
+  repoId: string;
+  unit: PathUnit;
+  userId: string;
+  onMastered: () => void;
+}) {
+  const [q, setQ] = useState<ExplainQuestion | null>(null);
+  const [answer, setAnswer] = useState("");
+  const [result, setResult] = useState<ExplainResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    setAnswer("");
+    try {
+      setQ(await createExplain(repoId, unit.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submit = async () => {
+    if (!q || !answer.trim()) return;
+    setBusy(true);
+    try {
+      const r = await submitExplain(repoId, userId, q.id, answer);
+      setResult(r);
+      if (r.passed) onMastered();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="analyze">
+      <h4 style={{ color: "#58a6ff" }}>Understand challenge · LLM-graded vs source</h4>
+      {error && <div className="error">{error}</div>}
+      {!q && (
+        <button onClick={load} disabled={busy}>
+          {busy ? "…" : "Ask me a question"}
+        </button>
+      )}
+      {q && (
+        <>
+          <div className="prompt">{q.question}</div>
+          <textarea
+            rows={4}
+            spellCheck={false}
+            placeholder="Explain in your own words…"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+          />
+          {!result && (
+            <button onClick={submit} disabled={busy || !answer.trim()}>
+              {busy ? "Grading…" : "Submit answer"}
+            </button>
+          )}
+          {result && (
+            <div className={`result ${result.passed ? "pass" : "fail"}`}>
+              <b>
+                {result.passed ? "✓ Mastered (Understand)" : "✗ Not yet"} · score {result.score}
+              </b>
+              <div className="summary">level {result.state.level}</div>
+              {result.feedback && <div>{result.feedback}</div>}
+            </div>
+          )}
         </>
       )}
     </div>
