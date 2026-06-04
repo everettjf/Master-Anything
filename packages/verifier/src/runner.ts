@@ -40,7 +40,7 @@ export interface TestRunner {
 
 const SKIP_DIRS = new Set([".git", "node_modules", "__pycache__", ".venv", "venv", ".pytest_cache"]);
 
-function lastMeaningfulLine(output: string): string {
+export function lastMeaningfulLine(output: string): string {
   const lines = output
     .split("\n")
     .map((l) => l.trim())
@@ -48,18 +48,24 @@ function lastMeaningfulLine(output: string): string {
   return lines[lines.length - 1] ?? "";
 }
 
+/** Copy a repo to an isolated temp dir and apply edits. Caller must clean up. */
+export async function materializeRepo(repoRoot: string, edits: FileEdit[] = []): Promise<string> {
+  const work = await mkdtemp(join(tmpdir(), "ma-verify-"));
+  await cp(repoRoot, work, {
+    recursive: true,
+    filter: (src) => !src.split("/").some((seg) => SKIP_DIRS.has(seg)),
+  });
+  for (const edit of edits) {
+    await writeFile(join(work, edit.path), edit.content, "utf8");
+  }
+  return work;
+}
+
 export class LocalPytestRunner implements TestRunner {
   async run(repoRoot: string, opts: RunOptions = {}): Promise<TestResult> {
     const timeoutMs = opts.timeoutMs ?? 30_000;
-    const work = await mkdtemp(join(tmpdir(), "ma-verify-"));
+    const work = await materializeRepo(repoRoot, opts.edits ?? []);
     try {
-      await cp(repoRoot, work, {
-        recursive: true,
-        filter: (src) => !src.split("/").some((seg) => SKIP_DIRS.has(seg)),
-      });
-      for (const edit of opts.edits ?? []) {
-        await writeFile(join(work, edit.path), edit.content, "utf8");
-      }
       return await this.spawnPytest(work, opts, timeoutMs);
     } finally {
       await rm(work, { recursive: true, force: true });

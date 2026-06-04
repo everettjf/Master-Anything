@@ -14,6 +14,7 @@ import {
   createExplainAssessment,
   createImpactAssessment,
   masteryFor,
+  runnerDescribe,
   submitAttempt,
   submitExplainAttempt,
   submitImpactAttempt,
@@ -223,4 +224,5 @@ serve({ fetch: app.fetch, port }, (info) => {
   console.log(`@ma/server listening on http://localhost:${info.port}`);
   console.log(`  LLM enrichment: ${llmDescribe}`);
   console.log(`  Embeddings:     ${embedDescribe}`);
+  runnerDescribe().then((d) => console.log(`  Test sandbox:   ${d}`));
 });

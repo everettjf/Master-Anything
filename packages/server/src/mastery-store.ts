@@ -17,11 +17,19 @@ import {
   gradeImpact,
   recordAttempt,
 } from "@ma/core";
-import { LocalPytestRunner, blankPythonFunction, replaceLineRange } from "@ma/verifier";
+import { type TestRunner, blankPythonFunction, makeRunner, replaceLineRange } from "@ma/verifier";
 import { llm } from "./store.js";
 import type { RepoRecord } from "./store.js";
 
-const runner = new LocalPytestRunner();
+// Test runner chosen from MA_SANDBOX (docker | local). Resolved lazily/once.
+let runnerPromise: Promise<{ runner: TestRunner; describe: string }> | undefined;
+function getRunner() {
+  runnerPromise ??= makeRunner();
+  return runnerPromise;
+}
+export async function runnerDescribe(): Promise<string> {
+  return (await getRunner()).describe;
+}
 
 /** Read the source lines a unit's primary node points at. */
 function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
@@ -85,6 +93,7 @@ export async function createApplyAssessment(
   const blank = blankPythonFunction(source, fn.provenance.startLine, fn.provenance.endLine);
 
   // Coverage probe: blank the function and run tests. If they fail, it's verifiable.
+  const { runner } = await getRunner();
   const probe = await runner.run(repo.root, {
     edits: [{ path: fn.provenance.path, content: blank.fileWithBlank }],
   });
@@ -131,6 +140,7 @@ export async function submitAttempt(
 
   const source = readFileSync(join(repo.root, a.path), "utf8");
   const edited = replaceLineRange(source, a.startLine, a.endLine, submission);
+  const { runner } = await getRunner();
   const result = await runner.run(repo.root, { edits: [{ path: a.path, content: edited }] });
 
   // Only a test-covered task counts as verified mastery; otherwise it's advisory.
