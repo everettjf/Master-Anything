@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HTTP API Reference</title>
+  </head>
+  <body>
+    <h1 id="overview">HTTP API Reference</h1>
+    <p>
+      This service exposes a small REST API. Read the
+      <a href="#authentication">authentication</a> section before calling any
+      endpoint.
+    </p>
+
+    <h2 id="authentication">Authentication</h2>
+    <p>
+      All requests must send a bearer token in the Authorization header. Tokens
+      are issued by the login endpoint and expire after one hour.
+    </p>
+
+    <h2 id="endpoints">Endpoints</h2>
+    <p>
+      Every endpoint requires <a href="#authentication">authentication</a> and
+      returns JSON. Errors use standard HTTP status codes.
+    </p>
+
+    <h2 id="rate-limits">Rate Limits</h2>
+    <p>
+      Clients are limited to 100 requests per minute. Exceeding the limit on the
+      <a href="#endpoints">endpoints</a> returns a 429 response.
+    </p>
+  </body>
+</html>

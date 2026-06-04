@@ -25,7 +25,7 @@ import {
 
 export type RepoKind = "code" | "docs";
 
-const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst"]);
+const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst", ".html", ".htm"]);
 
 const CODE_EXT = new Set([".py", ".js", ".ts", ".tsx", ".jsx", ".mjs", ".cjs"]);
 

@@ -113,8 +113,14 @@ pnpm --filter @ma/server dev        # 启动时打印 “LLM enrichment: vercel-
 
 | 领域 | 适配器 | 单元 | 可练的 Bloom 级 |
 |---|---|---|---|
-| 代码 | Tree-sitter | 函数 / 类 | Understand · **Apply(真实测试)** · **Analyze(图谱)** |
-| 文档 | Markdown 分节 | 章节 | Understand · **Analyze(图谱)**(无可执行 Apply) |
+| 代码(Python) | Tree-sitter | 函数 / 类 | Understand · **Apply(pytest)** · **Analyze(图谱)** |
+| 代码(JavaScript) | Tree-sitter | 函数 / 类 | Understand · **Apply(node --test)** · **Analyze(图谱)** |
+| 文档(Markdown) | 按标题分节 | 章节 | Understand · **Analyze(图谱)** |
+| 文档(HTML/网页) | 按 `<h1..6>` 分节 | 章节 | Understand · **Analyze(图谱)** |
+
+> 持久化:首次连接把图谱写入 `<repo>/.master-anything/graph.json`,**再次连接直接加载、跳过流水线**
+> (commit 一次,队友零等待);掌握进度存到 `MA_DATA_DIR`,跨重启留存。
+> 示例:`examples/{py-calc,js-calc,md-guide,html-guide}`。
 
 精通引擎、学习路径、Tutor、Understand/Analyze 评估**完全复用**,领域差异只存在于适配器内。
 

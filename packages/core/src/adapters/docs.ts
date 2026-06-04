@@ -14,7 +14,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { BloomLevel, type KnowledgeEdge, type KnowledgeGraph, type KnowledgeNode } from "../types.js";
 
-const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst"]);
+const DOC_EXT = new Set([".md", ".markdown", ".mdx", ".txt", ".rst", ".html", ".htm"]);
+const HTML_EXT = new Set([".html", ".htm"]);
 const IGNORED_DIRS = new Set([".git", "node_modules", "dist", "build", ".venv", "venv", "artifacts"]);
 
 interface Section {
@@ -52,6 +53,44 @@ function parseSections(source: string): Section[] {
     const body = lines.slice(h.line, endLine).join("\n").trim();
     return { title: h.title, level: h.level, startLine: h.line, endLine, anchor: slug(h.title), body };
   });
+}
+
+function stripTags(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Split an HTML document into sections by <h1>..<h6> headings (line-based). */
+function parseHtmlSections(source: string): Section[] {
+  const lines = source.split("\n");
+  const heads: { title: string; level: number; line: number; anchor: string }[] = [];
+  const headRe = /<h([1-6])\b([^>]*)>([\s\S]*?)<\/h\1>/i;
+  lines.forEach((line, i) => {
+    const m = headRe.exec(line);
+    if (!m) return;
+    const level = Number(m[1]);
+    const idAttr = /\bid\s*=\s*["']([^"']+)["']/i.exec(m[2]!)?.[1];
+    const title = stripTags(m[3]!);
+    heads.push({ title, level, line: i + 1, anchor: idAttr ?? slug(title) });
+  });
+  if (heads.length === 0) return [];
+  return heads.map((h, idx) => {
+    const endLine = idx + 1 < heads.length ? heads[idx + 1]!.line - 1 : lines.length;
+    const body = stripTags(lines.slice(h.line, endLine).join("\n"));
+    return { title: h.title, level: h.level, startLine: h.line, endLine, anchor: h.anchor, body };
+  });
+}
+
+function sectionsFor(path: string, source: string): Section[] {
+  return HTML_EXT.has(extname(path).toLowerCase()) ? parseHtmlSections(source) : parseSections(source);
 }
 
 function firstSentence(body: string): string {
@@ -116,7 +155,8 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
 
   for (const abs of files) {
     const rel = relative(root, abs).split(sep).join("/");
-    languages.markdown = (languages.markdown ?? 0) + 1;
+    const lang = HTML_EXT.has(extname(abs).toLowerCase()) ? "html" : "markdown";
+    languages[lang] = (languages[lang] ?? 0) + 1;
     let source: string;
     try {
       source = readFileSync(abs, "utf8");
@@ -133,7 +173,7 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
       bloomCeiling: BloomLevel.Understand,
     });
 
-    const sections = parseSections(source);
+    const sections = sectionsFor(rel, source);
     let prevByLevel: Record<number, string> = {};
     sections.forEach((sec) => {
       const id = `section:${rel}#${sec.anchor}:${sec.startLine}`;
@@ -160,8 +200,8 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
     });
   }
 
-  // Resolve markdown cross-reference links into refers-to edges.
-  const linkRe = /\[[^\]]+\]\(([^)]+)\)/g;
+  // Resolve cross-reference links into refers-to edges (markdown + HTML href).
+  const linkRe = /\[[^\]]+\]\(([^)]+)\)|href\s*=\s*["']([^"']+)["']/gi;
   for (const node of nodes) {
     if (node.kind !== "section") continue;
     const abs = join(root, node.provenance.path);
@@ -175,7 +215,9 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
       continue;
     }
     for (const m of body.matchAll(linkRe)) {
-      const target = resolveLink(m[1]!, node.provenance.path, anchorIndex);
+      const href = m[1] ?? m[2];
+      if (!href) continue;
+      const target = resolveLink(href, node.provenance.path, anchorIndex);
       if (target && target !== node.id) edges.push({ from: node.id, to: target, type: "refers-to", weight: 1 });
     }
   }
