@@ -8,7 +8,12 @@
  */
 import type { SupportedLanguage } from "./breakfix.js";
 import { DockerPytestRunner, dockerAvailable } from "./docker.js";
-import { LocalNodeTestRunner, LocalPytestRunner, type TestRunner } from "./runner.js";
+import {
+  LocalNodeTestRunner,
+  LocalPytestRunner,
+  LocalTsTestRunner,
+  type TestRunner,
+} from "./runner.js";
 
 export interface RunnerInfo {
   runner: TestRunner;
@@ -25,6 +30,9 @@ export async function makeRunner(
 ): Promise<RunnerInfo> {
   if (language === "javascript") {
     return { runner: new LocalNodeTestRunner(), describe: "local node --test" };
+  }
+  if (language === "typescript") {
+    return { runner: new LocalTsTestRunner(), describe: "local node --test (TS type-stripping)" };
   }
   if ((env.MA_SANDBOX ?? "").toLowerCase() === "docker") {
     if (await dockerAvailable()) {

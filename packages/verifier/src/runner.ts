@@ -145,3 +145,10 @@ export class LocalNodeTestRunner extends LocalProcessRunner {
     super("node", ["--test"]);
   }
 }
+
+/** TypeScript: Node's test runner with built-in type stripping (no extra deps). */
+export class LocalTsTestRunner extends LocalProcessRunner {
+  constructor() {
+    super("node", ["--test", "--experimental-strip-types"]);
+  }
+}

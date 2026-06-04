@@ -96,7 +96,7 @@ export function blankJsFunction(source: string, startLine: number, endLine: numb
   };
 }
 
-export type SupportedLanguage = "python" | "javascript";
+export type SupportedLanguage = "python" | "javascript" | "typescript";
 
 /** Language config for the Apply (break-and-fix) loop, keyed by file extension. */
 export interface LanguageVerifier {
@@ -109,6 +109,9 @@ const BY_EXT: Record<string, LanguageVerifier> = {
   ".js": { language: "javascript", blank: blankJsFunction },
   ".mjs": { language: "javascript", blank: blankJsFunction },
   ".cjs": { language: "javascript", blank: blankJsFunction },
+  // TS/TSX share JS brace-based blanking; run via node --test type stripping.
+  ".ts": { language: "typescript", blank: blankJsFunction },
+  ".tsx": { language: "typescript", blank: blankJsFunction },
 };
 
 export function verifierForExtension(ext: string): LanguageVerifier | undefined {
