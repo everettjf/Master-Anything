@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { addRepo, getRepo, listRepos } from "./store.js";
+import { addRepo, getRepo, listRepos, llmEnabled } from "./store.js";
 import { createApplyAssessment, masteryFor, submitAttempt } from "./mastery-store.js";
 
 const app = new Hono();
@@ -132,4 +132,7 @@ app.get("/repos/:id/mastery", (c) => {
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`@ma/server listening on http://localhost:${info.port}`);
+  console.log(
+    `  LLM enrichment: ${llmEnabled ? `on (${process.env.MA_LLM_BASE_URL} · ${process.env.MA_LLM_MODEL})` : "off — heuristic summaries"}`,
+  );
 });

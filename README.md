@@ -51,6 +51,33 @@ pnpm --filter @ma/web dev
 
 > 命令行也能单独建图谱:`pnpm --filter @ma/core graph <绝对路径> --out artifacts/graph.json`
 
+### 可选:接入 LLM 语义补全
+
+语义补全是**可插拔**的:不配就用启发式摘要,配了就走 LLM。Provider 是**通用 OpenAI 兼容**实现,
+一份代码同时支持 OpenRouter、LiteLLM 代理、Ollama、vLLM、OpenAI 等——只需设三个环境变量:
+
+```bash
+# OpenRouter
+export MA_LLM_BASE_URL=https://openrouter.ai/api/v1
+export MA_LLM_MODEL=anthropic/claude-3.5-sonnet
+export MA_LLM_API_KEY=sk-or-...
+
+# LiteLLM 代理(先 `litellm --config litellm.yaml` 起代理,默认 :4000)
+export MA_LLM_BASE_URL=http://localhost:4000
+export MA_LLM_MODEL=my-model        # litellm 配置里的 model 名
+export MA_LLM_API_KEY=sk-...        # 若代理设了 key
+
+# Ollama(本地,无需 key)
+export MA_LLM_BASE_URL=http://localhost:11434/v1
+export MA_LLM_MODEL=llama3.1
+
+pnpm --filter @ma/server dev        # 启动时会打印 LLM enrichment: on/off
+```
+
+> 说明:**LiteLLM 是 Python 库**,不能直接进 Node 进程;但它的 **proxy server 暴露 OpenAI 接口**,
+> 我们 Node 端用 HTTP 调即可。OpenRouter / Ollama 本身就是 HTTP 端点,直接用。
+> 任一后端不可用或报错时,会自动**降级为启发式摘要**,不影响主流程。
+
 ### 进度
 
 - ✅ **P0.0** 连接仓库 → 图谱 → 渲染

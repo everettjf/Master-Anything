@@ -8,10 +8,16 @@ import {
   buildUnits,
   enrichUnits,
   orderUnits,
+  providerFromEnv,
   type KnowledgeGraph,
   type LearningPath,
   type LearningUnit,
 } from "@ma/core";
+
+// Optional LLM enrichment backend (OpenRouter / LiteLLM proxy / Ollama / ...).
+// Configured via MA_LLM_BASE_URL + MA_LLM_MODEL; absent -> heuristic summaries.
+const llm = providerFromEnv();
+export const llmEnabled = Boolean(llm);
 
 export interface RepoRecord {
   id: string;
@@ -26,7 +32,7 @@ const repos = new Map<string, RepoRecord>();
 
 export async function addRepo(root: string): Promise<RepoRecord> {
   const graph = buildGraph(root);
-  const units = await enrichUnits(buildUnits(graph), graph);
+  const units = await enrichUnits(buildUnits(graph), graph, llm);
   const path = orderUnits(units);
   const record: RepoRecord = {
     id: randomUUID(),
