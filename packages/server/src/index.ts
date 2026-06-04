@@ -7,7 +7,8 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { answerQuestion } from "@ma/core";
+import { randomUUID } from "node:crypto";
+import { type ChatTurn, answerQuestion } from "@ma/core";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
   createApplyAssessment,
@@ -135,15 +136,29 @@ app.post("/repos/:id/attempts", async (c) => {
   }
 });
 
-// Tutor: graph-grounded Q&A with path:line citations (GraphRAG).
+// Multi-turn tutor memory: conversationId -> recent turns (in-memory, capped).
+const conversations = new Map<string, ChatTurn[]>();
+const MAX_TURNS = 12;
+
+// Tutor: graph-grounded Q&A with path:line citations (GraphRAG), with memory.
 app.post("/repos/:id/ask", async (c) => {
   const repo = getRepo(c.req.param("id"));
   if (!repo) return c.json({ error: "repo not found" }, 404);
   const body = await c.req.json().catch(() => ({}));
   const query = typeof body.query === "string" ? body.query.trim() : "";
   if (!query) return c.json({ error: "missing 'query'" }, 400);
+
+  const conversationId = typeof body.conversationId === "string" ? body.conversationId : randomUUID();
+  const history = conversations.get(conversationId) ?? [];
   try {
-    return c.json(await answerQuestion(repo.graph, query, llm, { index: repo.index }));
+    const answer = await answerQuestion(repo.graph, query, llm, { index: repo.index, history });
+    const turns: ChatTurn[] = [
+      ...history,
+      { role: "user", content: query },
+      { role: "assistant", content: answer.answer },
+    ];
+    conversations.set(conversationId, turns.slice(-MAX_TURNS));
+    return c.json({ ...answer, conversationId });
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
   }

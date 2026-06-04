@@ -161,14 +161,19 @@ export interface TutorAnswer {
   answer: string;
   citations: Citation[];
   grounded: boolean;
+  conversationId: string;
 }
 
-export async function ask(id: string, query: string): Promise<TutorAnswer> {
+export async function ask(
+  id: string,
+  query: string,
+  conversationId?: string,
+): Promise<TutorAnswer> {
   return jsonOrThrow(
     await fetch(`${BASE}/repos/${id}/ask`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, conversationId }),
     }),
   );
 }

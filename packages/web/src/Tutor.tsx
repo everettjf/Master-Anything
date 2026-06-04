@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { type TutorAnswer, ask } from "./api.js";
 
 interface Turn {
@@ -11,6 +11,8 @@ export function Tutor({ repoId }: { repoId: string }) {
   const [query, setQuery] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
+  // Persists across turns so the tutor remembers the conversation.
+  const conversationId = useRef<string | undefined>(undefined);
 
   const send = async () => {
     const q = query.trim();
@@ -20,7 +22,8 @@ export function Tutor({ repoId }: { repoId: string }) {
     const idx = turns.length;
     setTurns((t) => [...t, { q }]);
     try {
-      const a = await ask(repoId, q);
+      const a = await ask(repoId, q, conversationId.current);
+      conversationId.current = a.conversationId;
       setTurns((t) => t.map((turn, i) => (i === idx ? { ...turn, a } : turn)));
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
