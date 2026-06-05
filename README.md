@@ -54,6 +54,9 @@ pnpm --filter @ma/web dev
 
 > **混合仓库**:同一仓库里的代码、README/文档、PDF 会**合并进一张图谱**(`kind=mixed`),
 > 代码单元可做 Apply,文档单元做 Understand/Analyze——领域识别按文件、不再"单一胜出"。
+> 并会建立**跨域引用边**(文档章节 `--documents--> ` 代码符号):Tutor 能同时引用代码与其文档,
+> Analyze 能回答"改了 `Calculator` 会影响哪些文档章节"。
+> **Tutor 多轮记忆持久化在 SQLite**,跨重启留存(`examples/mixed-app` 可体验跨域)。
 
 > 这就是 "Master" 与 "Understand" 的区别:不止解释(Tutor),还能用**真实测试**和**图谱真值**
 > **验证**你是否真的掌握(Apply / Analyze),而不是 AI 主观打分。
