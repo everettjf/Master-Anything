@@ -9,6 +9,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { randomUUID } from "node:crypto";
 import { type ChatTurn, answerQuestion } from "@ma/core";
+import { getConversation, putConversation } from "./db.js";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
   createApplyAssessment,
@@ -136,8 +137,7 @@ app.post("/repos/:id/attempts", async (c) => {
   }
 });
 
-// Multi-turn tutor memory: conversationId -> recent turns (in-memory, capped).
-const conversations = new Map<string, ChatTurn[]>();
+// Multi-turn tutor memory is persisted in SQLite (survives restarts), capped.
 const MAX_TURNS = 12;
 
 // Tutor: graph-grounded Q&A with path:line citations (GraphRAG), with memory.
@@ -149,7 +149,7 @@ app.post("/repos/:id/ask", async (c) => {
   if (!query) return c.json({ error: "missing 'query'" }, 400);
 
   const conversationId = typeof body.conversationId === "string" ? body.conversationId : randomUUID();
-  const history = conversations.get(conversationId) ?? [];
+  const history = getConversation(conversationId);
   try {
     const answer = await answerQuestion(repo.graph, query, llm, { index: repo.index, history });
     const turns: ChatTurn[] = [
@@ -157,11 +157,16 @@ app.post("/repos/:id/ask", async (c) => {
       { role: "user", content: query },
       { role: "assistant", content: answer.answer },
     ];
-    conversations.set(conversationId, turns.slice(-MAX_TURNS));
+    putConversation(conversationId, repo.root, turns.slice(-MAX_TURNS));
     return c.json({ ...answer, conversationId });
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
   }
+});
+
+// Fetch a conversation's history (e.g. to resume the tutor after a reload).
+app.get("/conversations/:cid", (c) => {
+  return c.json({ conversationId: c.req.param("cid"), turns: getConversation(c.req.param("cid")) });
 });
 
 // Understand level: tutor asks a comprehension question about a unit.

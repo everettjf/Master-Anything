@@ -9,7 +9,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
-import type { LearnerUnitState } from "@ma/core";
+import type { ChatTurn, LearnerUnitState } from "@ma/core";
 
 function dbPath(): string {
   if (process.env.MA_DB) return process.env.MA_DB;
@@ -39,6 +39,12 @@ db.exec(`
     state      TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (user, repo_root, unit_id)
+  );
+  CREATE TABLE IF NOT EXISTS conversations (
+    conversation_id TEXT PRIMARY KEY,
+    repo_root       TEXT NOT NULL,
+    turns           TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
   );
 `);
 
@@ -88,4 +94,33 @@ export function getAllMastery(): { user: string; repoRoot: string; state: Learne
     repoRoot: r.repo_root,
     state: JSON.parse(r.state) as LearnerUnitState,
   }));
+}
+
+// --- tutor conversations (multi-turn memory, survives restarts) ---
+
+const upsertConversation = db.prepare(
+  `INSERT INTO conversations (conversation_id, repo_root, turns, updated_at)
+   VALUES (@id, @repo_root, @turns, @updated_at)
+   ON CONFLICT(conversation_id) DO UPDATE SET
+     repo_root=@repo_root, turns=@turns, updated_at=@updated_at`,
+);
+const selectConversation = db.prepare(`SELECT turns FROM conversations WHERE conversation_id = ?`);
+
+export function getConversation(id: string): ChatTurn[] {
+  const row = selectConversation.get(id) as { turns: string } | undefined;
+  if (!row) return [];
+  try {
+    return JSON.parse(row.turns) as ChatTurn[];
+  } catch {
+    return [];
+  }
+}
+
+export function putConversation(id: string, repoRoot: string, turns: ChatTurn[]): void {
+  upsertConversation.run({
+    id,
+    repo_root: repoRoot,
+    turns: JSON.stringify(turns),
+    updated_at: new Date().toISOString(),
+  });
 }
