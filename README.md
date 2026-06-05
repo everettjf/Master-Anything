@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./pages/assets/og.png" alt="Master-Anything — Master anything, verifiably" width="820" />
+
 # Master-Anything
 
 **Master anything, verifiably.** — go beyond *understanding* a codebase to *mastering* it, and prove it.
@@ -20,6 +22,11 @@ learning path, quizzes you, and — wherever possible — **verifies** that you'
 
 > Tools that *understand* a codebase give you a one-time map. Master-Anything tracks *your* mastery as a living
 > state and pushes it up Bloom's ladder — Understand → Apply → Analyze — with objective checks at each step.
+
+<div align="center">
+  <img src="./pages/assets/app-mock.png" alt="The Practice panel: a verified Apply challenge plus Understand and graph-verified Analyze" width="900" />
+  <br /><sub>The <b>Learn</b> tab — practice a unit; real tests and the graph verify your mastery.</sub>
+</div>
 
 ---
 

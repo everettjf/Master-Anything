@@ -140,6 +140,20 @@ h2 { font-size: clamp(26px, 4vw, 38px); margin: 0 0 12px; letter-spacing: -0.5px
 pre .c { color: #6e7681; } pre .k { color: #58a6ff; } pre .u { color: #58a6ff; font-weight: 700; }
 pre .a { color: #3fb950; font-weight: 700; } pre .n { color: #a371f7; font-weight: 700; }
 
+/* ---- screenshot ---- */
+.shot { text-align: center; }
+.shot .sub { margin-left: auto; margin-right: auto; }
+.shot-frame {
+  max-width: 1000px;
+  margin: 8px auto 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  background: var(--panel);
+}
+.shot-frame img { display: block; width: 100%; height: auto; }
+
 /* ---- comparison ---- */
 .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .cmp-col { border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; background: var(--panel); }
