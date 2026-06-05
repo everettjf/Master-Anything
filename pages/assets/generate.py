@@ -203,6 +203,84 @@ def gif_frame(stage):
     return practice_card(fixed, btn_idle, res_ok)
 
 
+# ---------- Tutor conversation card (for tutor.gif) ----------
+def _chip(x, y, name, ref):
+    w = 30 + len(name) * 7 + len(ref) * 6
+    s = (
+        f'<rect x="{x}" y="{y}" width="{w}" height="24" rx="12" fill="#0d1117" stroke="#2a313c"/>'
+        f'<text x="{x + 12}" y="{y + 16}" font-size="11.5" fill="#8b949e">{name} <tspan fill="#58a6ff" font-style="italic">{ref}</tspan></text>'
+    )
+    return s, x + w + 8
+
+
+def _answer_box(x, y, w, lines, badge=None):
+    h = 22 + len(lines) * 22 + 8
+    body = ""
+    yy = y + 30
+    if badge:
+        body += f'<rect x="{x + 16}" y="{y + 12}" width="168" height="20" rx="10" fill="#161b22" stroke="#2a313c"/><text x="{x + 26}" y="{y + 26}" font-size="11" fill="#8b949e">{badge}</text>'
+        yy = y + 56
+        h += 28
+    for ln in lines:
+        body += f'<text x="{x + 16}" y="{yy}" font-size="13.5" fill="#c9d1d9">{ln}</text>'
+        yy += 22
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="#0d1117" stroke="#2a313c"/>{body}', y + h
+
+
+def _thinking(x, y):
+    dots = "".join(f'<circle cx="{x + 16 + i * 14}" cy="{y + 20}" r="3.5" fill="#8b949e"/>' for i in range(3))
+    return f'<rect x="{x}" y="{y}" width="120" height="38" rx="10" fill="#0d1117" stroke="#2a313c"/>{dots}'
+
+
+A1 = ["It builds on <tspan font-family='monospace' fill='#79c0ff'>Calculator.add_many</tspan> to sum the list, then",
+      "divides by the count — 0 for an empty list (calc.py:14)."]
+A2 = ["<tspan font-family='monospace' fill='#79c0ff'>average</tspan> is documented by the <tspan fill='#a371f7'>Averages</tspan> section of the README",
+      "(a cross-domain <tspan font-family='monospace' fill='#79c0ff'>documents</tspan> edge), called from tests."]
+Q1 = "how is the average computed?"
+Q2 = "what about its callers?"
+
+
+def tutor_frame(stage):
+    W = 920
+    parts = []
+    # turn 1
+    if stage >= 1:
+        parts.append(f'<text x="20" y="44" font-size="14.5" font-weight="700" fill="#d6dde6">› {Q1}</text>')
+    if stage == 1:
+        parts.append(_thinking(20, 58))
+    if stage >= 2:
+        box, yend = _answer_box(20, 58, 852, A1)
+        parts.append(box)
+        c1, x = _chip(20, yend + 8, "average", "calc.py:14")
+        c2, _ = _chip(x, yend + 8, "Calculator.add_many", "calc.py:6")
+        parts.append(c1 + c2)
+    # turn 2
+    if stage >= 3:
+        parts.append(f'<text x="20" y="232" font-size="14.5" font-weight="700" fill="#d6dde6">› {Q2}</text>')
+    if stage == 3:
+        parts.append(_thinking(20, 246))
+    if stage >= 4:
+        box, yend = _answer_box(20, 246, 852, A2, badge="remembers context ↺")
+        parts.append(box)
+        c3, _ = _chip(20, yend + 8, "Averages", "README.md:9")
+        parts.append(c3)
+
+    # input bar
+    typed = ""
+    if stage == 0:
+        typed = f'<text x="40" y="565" font-size="13.5" fill="#c9d1d9">how is the aver<tspan fill="#58a6ff">|</tspan></text>'
+    else:
+        typed = '<text x="40" y="565" font-size="13.5" fill="#6e7681">Ask about this codebase…</text>'
+    inp = (
+        f'<rect x="20" y="544" width="724" height="40" rx="10" fill="#0d1117" stroke="#2a313c"/>{typed}'
+        f'<rect x="756" y="544" width="96" height="40" rx="10" fill="#58a6ff"/><text x="804" y="569" text-anchor="middle" font-size="14" font-weight="700" fill="#0d1117">Ask</text>'
+    )
+    return f"""<svg width="920" height="600" viewBox="0 0 920 600" xmlns="http://www.w3.org/2000/svg" font-family="{FONT}">
+  <rect width="920" height="600" rx="14" fill="#161b22" stroke="#2a313c"/>
+  <svg x="24" y="20">{''.join(parts)}{inp}</svg>
+</svg>"""
+
+
 def main():
     # static tab screenshots
     open(os.path.join(HERE, "app-graph.png"), "wb").write(to_png(window(sidebar("graph") + graph_main()), 1280, 800))
@@ -218,6 +296,16 @@ def main():
         save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True,
     )
     print("wrote demo.gif")
+
+    # Tutor GIF (GraphRAG conversation with memory)
+    tstages = [0, 1, 2, 3, 4]
+    tdur = [1400, 1100, 2600, 1300, 3000]
+    tframes = [Image.open(io.BytesIO(to_png(tutor_frame(s), 920, 600))).convert("RGB") for s in tstages]
+    tframes[0].save(
+        os.path.join(HERE, "tutor.gif"),
+        save_all=True, append_images=tframes[1:], duration=tdur, loop=0, optimize=True,
+    )
+    print("wrote tutor.gif")
 
 
 if __name__ == "__main__":

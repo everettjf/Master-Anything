@@ -153,7 +153,13 @@ pre .a { color: #3fb950; font-weight: 700; } pre .n { color: #a371f7; font-weigh
   background: var(--panel);
 }
 .shot-frame img { display: block; width: 100%; height: auto; }
-.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+.demos { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+.demos figure { margin: 0; }
+.demos figcaption { color: var(--muted); font-size: 14px; margin-top: 12px; text-align: center; }
+.demos figcaption b { color: var(--text); }
+@media (max-width: 820px) { .demos { grid-template-columns: 1fr; } }
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+.gallery.two { grid-template-columns: 1fr 1fr; }
 .gallery figure { margin: 0; text-align: left; }
 .gallery img {
   width: 100%;
