@@ -153,6 +153,21 @@ pre .a { color: #3fb950; font-weight: 700; } pre .n { color: #a371f7; font-weigh
   background: var(--panel);
 }
 .shot-frame img { display: block; width: 100%; height: auto; }
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+.gallery figure { margin: 0; text-align: left; }
+.gallery img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: block;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s, border-color 0.2s;
+}
+.gallery figure:hover img { transform: translateY(-3px); border-color: rgba(88, 166, 255, 0.5); }
+.gallery figcaption { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
+.gallery figcaption b { color: var(--text); }
+@media (max-width: 760px) { .gallery { grid-template-columns: 1fr; } }
 
 /* ---- comparison ---- */
 .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

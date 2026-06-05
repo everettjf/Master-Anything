@@ -24,8 +24,13 @@ learning path, quizzes you, and — wherever possible — **verifies** that you'
 > state and pushes it up Bloom's ladder — Understand → Apply → Analyze — with objective checks at each step.
 
 <div align="center">
-  <img src="./pages/assets/app-mock.png" alt="The Practice panel: a verified Apply challenge plus Understand and graph-verified Analyze" width="900" />
-  <br /><sub>The <b>Learn</b> tab — practice a unit; real tests and the graph verify your mastery.</sub>
+  <img src="./pages/assets/demo.gif" alt="The Apply loop — reimplement a blanked function, run the real test suite, get promoted to Apply" width="760" />
+  <br /><sub>The <b>Apply</b> loop — reimplement a function; the project's real tests verify your mastery.</sub>
+  <br /><br />
+  <img src="./pages/assets/app-graph.png" alt="Graph tab" width="410" />
+  &nbsp;
+  <img src="./pages/assets/app-tutor.png" alt="Tutor tab" width="410" />
+  <br /><sub><b>Graph</b> — explore + provenance &nbsp;·&nbsp; <b>Tutor</b> — grounded, multi-turn answers</sub>
 </div>
 
 ---
