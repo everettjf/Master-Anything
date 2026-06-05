@@ -1,138 +1,176 @@
+<div align="center">
+
 # Master-Anything
 
-> **Master anything, verifiably.** 不只让你看懂,而是练到会、并且能证明你会。
+**Master anything, verifiably.** — go beyond *understanding* a codebase to *mastering* it, and prove it.
 
-Master-Anything 把**任何知识**(首先是代码仓库)转化为知识图谱,并在其上叠加一个
-**精通引擎**:为每个学习者建模掌握度,生成自适应的学习路径、测验与练习,
-并尽可能用**可验证**的方式判定"你是否真的掌握了"。
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522-3c873a.svg)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-workspace-f69220.svg)](https://pnpm.io)
 
-与"看懂即止"的理解类工具不同,我们的核心是 **从理解到精通**,且面向 **Anything**——
-代码先行,逐步扩展到文档、论文、课程、网页等任意知识。
+</div>
 
-## 文档
+Master-Anything turns **any body of knowledge** — code first, then docs, papers, web pages, PDFs — into an interactive
+**knowledge graph**, and layers a **mastery engine** on top. It doesn't just explain things to you; it builds a
+learning path, quizzes you, and — wherever possible — **verifies** that you've actually mastered each piece using
+**real test execution** and **graph ground-truth**, not an LLM's opinion.
 
-- [愿景 VISION.md](./docs/VISION.md) — 定位、核心原则、"Anything" 扩展路线
-- [架构 ARCHITECTURE.md](./docs/ARCHITECTURE.md) — 分层架构、领域适配器、精通引擎
-- [P0 代码精通 MVP](./docs/P0-CODE-MVP.md) — 图谱构建、精通数据模型、可验证精通、里程碑
-
-## 开发(P0 MVP — 可验证精通闭环)
-
-monorepo(pnpm),四个包:
-
-- `packages/core` — 仓库 → 知识图谱(Tree-sitter:Python/JS/TS/TSX)+ 学习单元聚合 +
-  依赖排序的学习路径 + 领域无关的精通引擎(Bloom 分级)
-- `packages/verifier` — **可验证精通**:把函数"改坏",用真实测试判定修复是否成功
-  (可插拔 TestRunner;P0 内置本地 pytest 子进程运行器,Docker 沙箱后续接入)
-- `packages/server` — HTTP API(Hono):连接仓库 / 图谱 / 学习路径 / 出题 / 提交作答 / 掌握度
-- `packages/web` — Web 前端(React + Vite):力导向图 + 学习路径 + 练习面板
-
-### 跑起来
-
-```bash
-pnpm install
-python3 -m pip install pytest          # 本地测试运行器需要
-
-# 启动后端(默认 :8787)
-pnpm --filter @ma/server dev
-# 启动前端(默认 :5173,/api 代理到后端)
-pnpm --filter @ma/web dev
-```
-
-打开 http://localhost:5173 ,在输入框填一个**绝对仓库路径**。想直接看"可验证精通"闭环,
-填本仓库自带的示例:`<本仓库>/examples/py-calc`。
-
-### 体验闭环
-
-1. **Graph** 标签:浏览知识图谱,点节点看源码(provenance 回链)。
-2. **Learn** 标签:看依赖排序的学习路径;点一个单元进入 **Practice**:
-   - **Apply(可验证)**:把真实函数"改坏",你重写函数体 → **跑真实 pytest** 判定 →
-     通过(且被测试覆盖)升到 **Apply** 级。
-   - **Analyze(图谱判分)**:"改了这个单元会波及谁?"——答案图谱里就有,**用调用图客观判分** →
-     选全对升到 **Analyze** 级。
-3. **Tutor** 标签:用自然语言问代码,回答**基于知识图谱 grounding**、引用 `文件:行`(GraphRAG);
-   支持**多轮对话记忆**(追问"它的调用方呢?"能接上上文);没配 LLM 时仍会给出最相关的代码位置。
-
-> **混合仓库**:同一仓库里的代码、README/文档、PDF 会**合并进一张图谱**(`kind=mixed`),
-> 代码单元可做 Apply,文档单元做 Understand/Analyze——领域识别按文件、不再"单一胜出"。
-> 并会建立**跨域引用边**(文档章节 `--documents--> ` 代码符号):Tutor 能同时引用代码与其文档,
-> Analyze 能回答"改了 `Calculator` 会影响哪些文档章节"。
-> **Tutor 多轮记忆持久化在 SQLite**,跨重启留存(`examples/mixed-app` 可体验跨域)。
-
-> 这就是 "Master" 与 "Understand" 的区别:不止解释(Tutor),还能用**真实测试**和**图谱真值**
-> **验证**你是否真的掌握(Apply / Analyze),而不是 AI 主观打分。
-
-> 命令行也能单独建图谱:`pnpm --filter @ma/core graph <绝对路径> --out artifacts/graph.json`
-
-### 可选:接入 LLM 语义补全
-
-语义补全**可插拔**:不配就用启发式摘要,配了就走 LLM。统一基于 **[Vercel AI SDK](https://ai-sdk.dev)**
-(`ai` + `@ai-sdk/*`),纯 TypeScript。两种配置方式:
-
-**A) 指定 provider(OpenAI / Anthropic / Google)**
-```bash
-export MA_LLM_PROVIDER=anthropic
-export MA_LLM_MODEL=claude-3-5-sonnet-latest
-export ANTHROPIC_API_KEY=sk-ant-...          # 或 MA_LLM_API_KEY 覆盖
-# 其它:MA_LLM_PROVIDER=openai MA_LLM_MODEL=gpt-4o-mini (OPENAI_API_KEY)
-#       MA_LLM_PROVIDER=google MA_LLM_MODEL=gemini-1.5-pro (GOOGLE_GENERATIVE_AI_API_KEY)
-```
-
-**B) 任意 OpenAI 兼容端点(OpenRouter / LiteLLM 代理 / Ollama)**
-不设 `MA_LLM_PROVIDER`,只给 `MA_LLM_BASE_URL` 即走 `@ai-sdk/openai-compatible`:
-```bash
-# OpenRouter
-export MA_LLM_BASE_URL=https://openrouter.ai/api/v1
-export MA_LLM_MODEL=anthropic/claude-3.5-sonnet
-export MA_LLM_API_KEY=sk-or-...
-# LiteLLM 代理(Python:先 `litellm --config ...`,默认 :4000):MA_LLM_BASE_URL=http://localhost:4000
-# Ollama(本地,无需 key):MA_LLM_BASE_URL=http://localhost:11434/v1  MA_LLM_MODEL=llama3.1
-```
-
-```bash
-pnpm --filter @ma/server dev        # 启动时打印 “LLM enrichment: vercel-ai (...)” 或 off
-```
-
-> 说明:**LiteLLM 的库本身是 Python**,进不了 Node 进程;我们统一用 **Vercel AI SDK**——
-> 原生支持 OpenAI/Anthropic/Google,其余(OpenRouter、LiteLLM 代理、Ollama 等)走
-> `openai-compatible` 端点。任一后端报错都会**自动降级为启发式摘要**,不影响主流程。
-
-### 进度
-
-- ✅ **P0.0** 连接仓库 → 图谱 → 渲染
-- ✅ **P0.1** 学习单元聚合 + 依赖排序学习路径(语义补全可插拔,无 key 时降级为启发式)
-- ✅ **P0.2/3** 精通引擎 + 可验证 Apply(改坏-修复,真实 pytest 判定)
-- ✅ **P0.4** Web 端"学 → 测 → 验"闭环
-- ✅ **Analyze**(图谱判分的影响分析)+ **Tutor**(GraphRAG,基于图谱 grounding 的问答)
-- ✅ LLM 层统一到 **Vercel AI SDK**(OpenAI / Anthropic / Google / 任意 OpenAI 兼容端点)
-- ✅ **嵌入式语义检索**(`MA_EMBED_*`,缺省降级词法)
-- ✅ **Understand 级问答评分**(LLM 基于源码判分 → Understand 级)
-- ✅ **Docker 沙箱**运行器(`MA_SANDBOX=docker`,无 daemon 时降级本地)
-- ✅ **P1 文档适配器**:Markdown → 知识图谱,同一套 路径/精通/Tutor/Understand/Analyze
-  直接跑在文档上(连接 `examples/md-guide` 体验)。这验证了 "Anything":换适配器即换领域。
-
-> 后续:多语言验证器、增量更新、图存储、更多文档格式(PDF/网页/课程)。
-> 详见 [docs/P0-CODE-MVP.md](./docs/P0-CODE-MVP.md) 与 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
-
-### "Anything":代码 vs 文档
-
-连接路径会**自动识别领域**(也可在 `POST /repos` 传 `kind: "code"|"docs"`):
-
-| 领域 | 适配器 | 单元 | 可练的 Bloom 级 |
-|---|---|---|---|
-| 代码(Python) | Tree-sitter | 函数 / 类 | Understand · **Apply(pytest)** · **Analyze(图谱)** |
-| 代码(JavaScript) | Tree-sitter | 函数 / 类 | Understand · **Apply(node --test)** · **Analyze(图谱)** |
-| 代码(TypeScript) | Tree-sitter | 函数 / 类 | Understand · **Apply(node 类型剥离)** · **Analyze(图谱)** |
-| 文档(Markdown) | 按标题分节 | 章节 | Understand · **Analyze(图谱)** |
-| 文档(HTML/网页) | 按 `<h1..6>` 分节 | 章节 | Understand · **Analyze(图谱)** |
-| 文档(PDF) | 按页(unpdf 抽取) | 页 | Understand · **Analyze(图谱)** |
-
-> **持久化(SQLite)**:图谱工件与掌握进度存入 `better-sqlite3` 库(`MA_DB`/`MA_DATA_DIR`),
-> 跨重启留存、可查询;每个图谱另写一份可分享的 `<repo>/.master-anything/graph.json`
-> (commit 一次,队友零等待)。**增量更新**:文件哈希未变的单元复用摘要,只对改动子图重跑 LLM。
-> 示例:`examples/{py-calc,js-calc,ts-calc,md-guide,html-guide,pdf-guide}`。
-
-精通引擎、学习路径、Tutor、Understand/Analyze 评估**完全复用**,领域差异只存在于适配器内。
+> Tools that *understand* a codebase give you a one-time map. Master-Anything tracks *your* mastery as a living
+> state and pushes it up Bloom's ladder — Understand → Apply → Analyze — with objective checks at each step.
 
 ---
 
-> 规划文档(VISION / ARCHITECTURE / P0)是项目的北极星。
+## Why Master-Anything?
+
+|                | Understand-style tools         | **Master-Anything**                                   |
+| -------------- | ------------------------------ | ----------------------------------------------------- |
+| Goal           | Read & comprehend (view-only)  | **Practice to competence** (a mastery state)          |
+| Output         | A graph / dashboard            | Adaptive learning path **+ verifiable mastery**       |
+| Verification   | —                              | **Real tests** (Apply) and **graph truth** (Analyze)  |
+| Scope          | Usually one domain (code)      | **Anything** via pluggable adapters                   |
+| Data moat      | The content graph              | The content graph **+ each learner's mastery graph**  |
+
+The core insight: **a domain is just an input; once it's a knowledge graph, "how to make someone master it" is the
+same engine.** That's why Master-Anything supports code *and* documents with one mastery engine and swappable adapters.
+
+## Features
+
+- 🧠 **Verifiable mastery** — the differentiator:
+  - **Apply** — we blank a real function; you reimplement it; the project's **actual test suite** decides if you passed
+    (Python · JavaScript · TypeScript).
+  - **Analyze** — "if you change `X`, what's affected?" graded against the **call/dependency graph** (objective truth).
+  - **Understand** — the tutor asks a question; an LLM grades your answer **against the source**.
+- 🗺️ **Knowledge graph** — deterministic structure via [Tree-sitter](https://tree-sitter.github.io/), semantics via an LLM.
+- 🧩 **Anything, via adapters** — code (Python/JS/TS), Markdown, HTML, PDF; **mixed repos merge into one graph** with
+  **cross-domain edges** linking docs to the code they describe.
+- 💬 **Graph-grounded tutor (GraphRAG)** — answers cite `path:line`, with **multi-turn memory** and optional
+  embedding retrieval.
+- 🧭 **Adaptive learning path** — units ordered by dependency; mastery tracked per `(learner, unit)`.
+- 🔌 **Pluggable & degrades gracefully** — LLM via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI / Anthropic / Google /
+  any OpenAI-compatible endpoint); test sandbox local or Docker; **runs with no API key** (heuristic fallback).
+- 💾 **Persistent & incremental** — SQLite-backed; only changed files are re-enriched; a shareable graph artifact lets
+  teammates skip the pipeline.
+
+## How it works
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Interaction   Tutor (GraphRAG) · guided path · quizzes · tasks │  generic
+├──────────────────────────────────────────────────────────────┤
+│  Mastery engine   decompose · knowledge-trace (Bloom) ·        │  generic ★
+│                   adaptive path · assess · verify              │
+├──────────────────────────────────────────────────────────────┤
+│  Universal knowledge graph   nodes (concept/symbol/section) +  │  generic
+│                              edges (calls/contains/documents…) │
+├──────────────────────────────────────────────────────────────┤
+│  Domain adapters (pluggable)                                   │  per-domain
+│   📦 Code (tree-sitter)   📄 Markdown/HTML   📑 PDF             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+The top three layers are **domain-agnostic** — adding a domain means writing one adapter. See
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) and [`docs/VISION.md`](./docs/VISION.md).
+
+## Quick start
+
+**Prerequisites:** Node ≥ 22, [pnpm](https://pnpm.io), `git`. For Python Apply tasks: `python3` + `pytest`.
+
+```bash
+pnpm install
+python3 -m pip install pytest        # only needed for Python Apply tasks
+
+# start the API (http://localhost:8787) and the web app (http://localhost:5173)
+pnpm --filter @ma/server dev
+pnpm --filter @ma/web dev
+```
+
+Open **http://localhost:5173** and enter an **absolute repo path**. To see the full loop immediately, use a bundled
+example, e.g. `…/Master-Anything/examples/py-calc` (verifiable Apply) or `…/examples/mixed-app` (code + docs with
+cross-domain edges).
+
+### The mastery loop
+
+1. **Graph** — explore the knowledge graph; click a node to view its source (provenance-linked).
+2. **Learn** — follow the dependency-ordered path; open a unit to practice:
+   - **Understand** — answer a question; the LLM grades it against the source.
+   - **Apply** — reimplement a blanked function; the **real test suite** verifies it.
+   - **Analyze** — pick which units a change would affect; graded against the **graph**.
+3. **Tutor** — ask in natural language; answers are grounded in the graph and cite `path:line`, with multi-turn memory.
+
+| Domain                | Adapter           | Unit        | Verifiable levels                                   |
+| --------------------- | ----------------- | ----------- | --------------------------------------------------- |
+| Code — Python         | Tree-sitter       | fn / class  | Understand · **Apply (pytest)** · **Analyze (graph)** |
+| Code — JavaScript     | Tree-sitter       | fn / class  | Understand · **Apply (node --test)** · **Analyze**  |
+| Code — TypeScript     | Tree-sitter       | fn / class  | Understand · **Apply (node type-strip)** · **Analyze** |
+| Docs — Markdown       | heading sections  | section     | Understand · **Analyze (graph)**                    |
+| Docs — HTML           | `<h1..6>` sections| section     | Understand · **Analyze (graph)**                    |
+| Docs — PDF            | per page (unpdf)  | page        | Understand · **Analyze (graph)**                    |
+
+> In a **mixed repo**, all of the above merge into one graph and gain `documents` edges (a doc section → the code it
+> describes), so Analyze can answer *"change `Calculator` → which docs are affected?"* and the tutor cites code + docs together.
+
+## Configuration
+
+All optional — without any of these, Master-Anything runs with heuristic summaries, lexical retrieval, and a local
+test runner. Copy [`.env.example`](./.env.example) to `.env` or export in your shell.
+
+| Area          | Variables                                                              | Notes                                                                 |
+| ------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| LLM           | `MA_LLM_PROVIDER` (`openai`/`anthropic`/`google`), `MA_LLM_MODEL`, `MA_LLM_API_KEY` | Enables semantic enrichment, the tutor, and Understand grading. |
+| LLM (gateway) | `MA_LLM_BASE_URL`, `MA_LLM_MODEL`                                      | Any OpenAI-compatible endpoint (OpenRouter, LiteLLM proxy, Ollama).   |
+| Embeddings    | `MA_EMBED_PROVIDER`, `MA_EMBED_MODEL`, `MA_EMBED_BASE_URL`             | Semantic tutor retrieval; falls back to lexical.                      |
+| Test sandbox  | `MA_SANDBOX=docker`, `MA_SANDBOX_IMAGE`                                | Isolated test runs; falls back to a local subprocess.                 |
+| Persistence   | `MA_DB`, `MA_DATA_DIR`                                                 | SQLite location (mastery, graph artifacts, conversations).            |
+
+## CLI
+
+Build a knowledge-graph JSON for any directory without the server:
+
+```bash
+pnpm --filter @ma/core graph <absolute-path> --out artifacts/graph.json
+```
+
+## Project structure
+
+```
+packages/
+  core/       # graph build (tree-sitter), adapters (docs/pdf), merge + cross-link,
+              # units & path, mastery engine, tutor (GraphRAG), embeddings, LLM providers
+  verifier/   # break-and-fix + pluggable test runners (pytest / node / docker)
+  server/     # Hono API + SQLite persistence
+  web/        # React + Vite UI (graph, learn, tutor)
+examples/     # py-calc · js-calc · ts-calc · md-guide · html-guide · pdf-guide · mixed-app
+docs/         # VISION · ARCHITECTURE · P0-CODE-MVP (design docs)
+pages/        # GitHub Pages landing site
+```
+
+## Roadmap
+
+**Done:** verifiable Apply (Py/JS/TS) · graph-verified Analyze · GraphRAG tutor with persistent multi-turn memory ·
+Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · embeddings retrieval · incremental
+re-enrichment · SQLite persistence · Docker sandbox runner (with local fallback).
+
+**Planned:** Postgres backend for scale · real Docker-sandbox validation · spaced-repetition scheduling · more
+formats (slides, notebooks) · richer web UI for cross-domain navigation.
+
+## Documentation
+
+- [Vision](./docs/VISION.md) — positioning, principles, the "Anything" roadmap
+- [Architecture](./docs/ARCHITECTURE.md) — layers, adapters, the mastery engine
+- [P0 design](./docs/P0-CODE-MVP.md) — the code-mastery MVP in detail
+
+## Contributing
+
+Contributions are welcome. The whole codebase is TypeScript in a pnpm workspace.
+
+```bash
+pnpm install
+pnpm -r build        # build all packages
+```
+
+Please keep changes focused, match the surrounding style, and run the relevant package build before opening a PR.
+
+## License
+
+[MIT](./LICENSE)

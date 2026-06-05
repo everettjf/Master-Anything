@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Master-Anything — Master anything, verifiably</title>
+    <meta
+      name="description"
+      content="Go beyond understanding a codebase to mastering it — and prove it. A knowledge graph plus a mastery engine that verifies your skill with real tests and graph ground-truth."
+    />
+    <link rel="preconnect" href="https://github.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <canvas id="bg" aria-hidden="true"></canvas>
+
+    <header class="nav">
+      <a class="brand" href="#top">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="#why">Why</a>
+        <a href="#features">Features</a>
+        <a href="#mastery">Mastery</a>
+        <a href="#how">How it works</a>
+        <a href="#start">Quick start</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="tag">From understanding → mastery</div>
+        <h1>Master anything,<br /><span class="grad">verifiably.</span></h1>
+        <p class="lede">
+          Turn any codebase — or docs, PDFs, web pages — into an interactive <b>knowledge graph</b>, then
+          <b>prove</b> you've mastered it with <b>real test execution</b> and <b>graph ground-truth</b>, not an
+          LLM's opinion.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="#start">Get started</a>
+          <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star on GitHub</a>
+        </div>
+
+        <div class="hero-card">
+          <div class="bar"><i></i><i></i><i></i><span>the mastery loop</span></div>
+          <pre><code><span class="c"># 1. map a repo into a knowledge graph</span>
+<span class="k">connect</span> ./examples/py-calc          <span class="c"># tree-sitter + LLM → graph + units</span>
+
+<span class="c"># 2. learn a unit along the Bloom ladder</span>
+<span class="u">Understand</span>  explain it          <span class="c"># LLM grades vs source</span>
+<span class="a">Apply</span>       reimplement add()   <span class="c"># ✓ real pytest decides</span>
+<span class="n">Analyze</span>     impact of a change  <span class="c"># ✓ verified by the graph</span>
+
+<span class="c"># 3. ask the tutor (grounded, cited, multi-turn)</span>
+<span class="k">ask</span> "how is the average computed?"  <span class="c"># → calc.py:18</span></code></pre>
+        </div>
+      </section>
+
+      <!-- WHY -->
+      <section id="why" class="band">
+        <h2>Understanding is a snapshot. <span class="grad">Mastery is a state.</span></h2>
+        <p class="sub">
+          Tools that <i>understand</i> a codebase hand you a one-time map. Master-Anything tracks <i>your</i>
+          mastery and pushes it up Bloom's ladder — with an objective check at each step.
+        </p>
+        <div class="cmp">
+          <div class="cmp-col muted-col">
+            <h3>Understand-style tools</h3>
+            <ul>
+              <li>Read &amp; comprehend (view-only)</li>
+              <li>A graph / dashboard</li>
+              <li>No verification</li>
+              <li>Usually one domain</li>
+              <li>Moat: the content graph</li>
+            </ul>
+          </div>
+          <div class="cmp-col win-col">
+            <h3>Master-Anything</h3>
+            <ul>
+              <li><b>Practice to competence</b> (a mastery state)</li>
+              <li>Adaptive path <b>+ verifiable mastery</b></li>
+              <li><b>Real tests</b> &amp; <b>graph truth</b></li>
+              <li><b>Anything</b> via pluggable adapters</li>
+              <li>Moat: the content graph <b>+ your mastery graph</b></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section id="features" class="band">
+        <h2>Features</h2>
+        <div class="grid">
+          <article class="card">
+            <div class="ic">✅</div>
+            <h3>Verifiable mastery</h3>
+            <p>Reimplement a blanked function and the project's <b>actual test suite</b> decides — Python, JavaScript, TypeScript.</p>
+          </article>
+          <article class="card">
+            <div class="ic">🧭</div>
+            <h3>Graph-verified Analyze</h3>
+            <p>"Change <code>X</code> → what's affected?" graded against the real call/dependency graph. Objective, not guessed.</p>
+          </article>
+          <article class="card">
+            <div class="ic">💬</div>
+            <h3>Grounded tutor (GraphRAG)</h3>
+            <p>Answers cite <code>path:line</code>, with multi-turn memory and optional embedding retrieval.</p>
+          </article>
+          <article class="card">
+            <div class="ic">🧩</div>
+            <h3>Anything, via adapters</h3>
+            <p>Code, Markdown, HTML, PDF. Mixed repos merge into one graph with <b>cross-domain edges</b>.</p>
+          </article>
+          <article class="card">
+            <div class="ic">🔌</div>
+            <h3>Pluggable &amp; graceful</h3>
+            <p>LLM via the Vercel AI SDK (OpenAI / Anthropic / Google / any compatible endpoint). Runs with no key.</p>
+          </article>
+          <article class="card">
+            <div class="ic">💾</div>
+            <h3>Persistent &amp; incremental</h3>
+            <p>SQLite-backed. Only changed files are re-enriched. A shareable artifact lets teammates skip the pipeline.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- MASTERY LADDER -->
+      <section id="mastery" class="band">
+        <h2>One ladder, objective checks</h2>
+        <p class="sub">Every unit progresses along Bloom's taxonomy — and the hard levels are <b>verified</b>.</p>
+        <div class="ladder">
+          <div class="rung u">
+            <span class="lvl">Understand</span>
+            <p>The tutor asks; an LLM grades your answer <b>against the source</b>.</p>
+          </div>
+          <div class="rung a">
+            <span class="lvl">Apply</span>
+            <p>Reimplement a real function; <b>the test suite</b> passes or fails. Ground truth.</p>
+          </div>
+          <div class="rung n">
+            <span class="lvl">Analyze</span>
+            <p>Predict a change's blast radius; checked against the <b>dependency graph</b>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOMAINS -->
+      <section class="band">
+        <h2>Code <span class="dim">and</span> documents — one engine</h2>
+        <p class="sub">Adapters differ; the path, mastery, tutor, and assessments are shared.</p>
+        <div class="chips">
+          <span class="chip code">Python · pytest</span>
+          <span class="chip code">JavaScript · node --test</span>
+          <span class="chip code">TypeScript</span>
+          <span class="chip doc">Markdown</span>
+          <span class="chip doc">HTML</span>
+          <span class="chip doc">PDF</span>
+          <span class="chip mix">Mixed (code + docs, cross-linked)</span>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section id="how" class="band">
+        <h2>How it works</h2>
+        <div class="layers">
+          <div class="layer l1"><b>Interaction</b><span>Tutor · guided path · quizzes · tasks</span></div>
+          <div class="layer l2"><b>Mastery engine ★</b><span>decompose · knowledge-trace · adaptive path · assess · verify</span></div>
+          <div class="layer l3"><b>Universal knowledge graph</b><span>nodes (symbol / section) + edges (calls / contains / documents)</span></div>
+          <div class="layer l4"><b>Domain adapters</b><span>📦 Code (tree-sitter) · 📄 Markdown/HTML · 📑 PDF</span></div>
+        </div>
+        <p class="note">The top three layers are domain-agnostic — adding a domain means writing one adapter.</p>
+      </section>
+
+      <!-- QUICK START -->
+      <section id="start" class="band">
+        <h2>Quick start</h2>
+        <div class="terminal">
+          <div class="bar"><i></i><i></i><i></i><span>bash</span><button id="copy" class="copy">copy</button></div>
+          <pre id="snippet"><code>pnpm install
+python3 -m pip install pytest        # for Python Apply tasks
+
+pnpm --filter @ma/server dev         # API  → http://localhost:8787
+pnpm --filter @ma/web dev            # web  → http://localhost:5173
+# open the web app, enter examples/py-calc (or examples/mixed-app)</code></pre>
+        </div>
+        <p class="note">
+          No API key required — it runs with heuristic summaries and a local test runner. Add <code>MA_LLM_*</code>
+          to enable the tutor and LLM grading. See the
+          <a href="https://github.com/everettjf/Master-Anything#configuration">configuration docs</a>.
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div>
+        <span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i>
+      </div>
+      <div class="foot-links">
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/VISION.md">Vision</a>
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/ARCHITECTURE.md">Architecture</a>
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/LICENSE">MIT</a>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
