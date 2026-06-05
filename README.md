@@ -9,6 +9,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-workspace-f69220.svg)](https://pnpm.io)
 
+[**Website**](https://everettjf.github.io/Master-Anything/) · [Vision](./docs/VISION.md) · [Architecture](./docs/ARCHITECTURE.md)
+
 </div>
 
 Master-Anything turns **any body of knowledge** — code first, then docs, papers, web pages, PDFs — into an interactive
