@@ -21,7 +21,7 @@ export type NodeKind =
   | "document"
   | "section";
 
-export type EdgeType = "contains" | "imports" | "depends-on" | "calls" | "refers-to";
+export type EdgeType = "contains" | "imports" | "depends-on" | "calls" | "refers-to" | "documents";
 
 export interface Provenance {
   path: string; // repo-relative file path

@@ -3,6 +3,7 @@ export * from "./languages.js";
 export * from "./parser.js";
 export * from "./graph.js";
 export * from "./merge.js";
+export * from "./crosslink.js";
 export * from "./adapters/docs.js";
 export * from "./adapters/pdf.js";
 export * from "./units.js";

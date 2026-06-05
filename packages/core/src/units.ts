@@ -94,11 +94,12 @@ export function buildUnits(graph: KnowledgeGraph): LearningUnit[] {
     nodeToUnit.set(sec.id, sec.id);
   }
 
-  // Derive prerequisites from dependency edges: calls (code) or depends-on (docs).
+  // Derive prerequisites from dependency edges: calls (code), depends-on (docs),
+  // and documents (a section that describes a code symbol depends on it).
   const prereqs = new Map<string, Set<string>>();
   for (const u of units) prereqs.set(u.id, new Set());
   for (const e of graph.edges) {
-    if (e.type !== "calls" && e.type !== "depends-on") continue;
+    if (e.type !== "calls" && e.type !== "depends-on" && e.type !== "documents") continue;
     const from = nodeToUnit.get(e.from);
     const to = nodeToUnit.get(e.to);
     if (!from || !to || from === to) continue;

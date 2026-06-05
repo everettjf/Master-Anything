@@ -18,6 +18,7 @@ import {
   buildUnits,
   embeddingProviderFromEnv,
   enrichUnits,
+  linkCrossDomain,
   mergeGraphs,
   orderUnits,
   parseArtifact,
@@ -92,6 +93,11 @@ async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: Kn
   if (graphs.length === 0) graphs.push(buildGraph(root)); // empty repo -> empty code graph
 
   const graph = graphs.length === 1 ? graphs[0]! : mergeGraphs(graphs, root);
+  // Connect doc sections to the code they describe (mixed repos only).
+  if (present.code && (present.docs || present.pdf)) {
+    const { added } = linkCrossDomain(graph);
+    if (added) console.log(`cross-domain: linked ${added} doc->code reference edge(s)`);
+  }
   return { graph, kind: kindOf(present) };
 }
 
