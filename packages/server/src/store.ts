@@ -11,6 +11,7 @@ import {
   type KnowledgeGraph,
   type LearningPath,
   type LearningUnit,
+  type LlmProvider,
   type RepoArtifact,
   buildDocsGraph,
   buildGraph,
@@ -122,12 +123,32 @@ async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: Kn
   return { graph, kind: kindOf(present) };
 }
 
-// Optional LLM enrichment + tutor backend (MA_LLM_*); absent -> heuristic.
-const { provider: llm, describe: llmDescribe } = resolveProvider();
-export const providersAvailable = describeAvailableProviders();
+// LLM enrichment + tutor backend (MA_LLM_*); runtime-switchable via setLlm().
+let active = resolveProvider();
+export function getLlm(): LlmProvider | undefined {
+  return active.provider;
+}
+export function llmDescribe(): string {
+  return active.describe;
+}
+export function providersAvailable(): string {
+  return describeAvailableProviders();
+}
+/** Switch the active LLM at runtime by overriding env (used by POST /config). */
+export function setLlm(overrides: Record<string, string | undefined>): string {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  // A fresh selection: clear the env knobs the resolver reads, then apply overrides.
+  for (const k of ["MA_LLM_PROVIDER", "MA_LLM_MODEL", "MA_LLM_BASE_URL", "MA_LLM_FALLBACK"]) delete env[k];
+  for (const [k, v] of Object.entries(overrides)) {
+    if (v === undefined || v === "") delete env[k];
+    else env[k] = v;
+  }
+  active = resolveProvider(env);
+  return active.describe;
+}
 // Optional embedding backend for semantic retrieval (MA_EMBED_*); absent -> lexical.
 const { provider: embedder, describe: embedDescribe } = embeddingProviderFromEnv();
-export { llm, llmDescribe, embedDescribe };
+export { embedDescribe };
 
 export interface RepoRecord {
   id: string;
@@ -192,7 +213,7 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
   if (reuse?.size) {
     console.log(`incremental: reusing ${reuse.size} summaries; re-enriching changed units only`);
   }
-  const units = await enrichUnits(buildUnits(graph), graph, llm, { reuseSummaries: reuse });
+  const units = await enrichUnits(buildUnits(graph), graph, getLlm(), { reuseSummaries: reuse });
   annotateLayers(graph, units);
   const path = orderUnits(units);
   const record: RepoRecord = {

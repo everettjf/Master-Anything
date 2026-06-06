@@ -18,7 +18,7 @@ import {
   wikiFiles,
 } from "@ma/core";
 import { getConversation, putConversation } from "./db.js";
-import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe, providersAvailable } from "./store.js";
+import { addRepo, embedDescribe, getLlm, getRepo, listRepos, llmDescribe, providersAvailable, setLlm } from "./store.js";
 import {
   createApplyAssessment,
   createCreateAssessment,
@@ -42,8 +42,21 @@ app.get("/health", (c) => c.json({ ok: true }));
 // Runtime config: which LLM / embeddings are active, and which provider
 // credentials are detected in the environment.
 app.get("/config", (c) =>
-  c.json({ llm: llmDescribe, embeddings: embedDescribe, providersAvailable }),
+  c.json({ llm: llmDescribe(), embeddings: embedDescribe, providers: providersAvailable() }),
 );
+
+// Switch the active LLM at runtime (provider/model/baseUrl/fallback).
+app.post("/config", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { provider, model, baseUrl, fallback } = body as Record<string, string | undefined>;
+  const describe = setLlm({
+    MA_LLM_PROVIDER: provider,
+    MA_LLM_MODEL: model,
+    MA_LLM_BASE_URL: baseUrl,
+    MA_LLM_FALLBACK: fallback,
+  });
+  return c.json({ llm: describe, embeddings: embedDescribe, providers: providersAvailable() });
+});
 
 // Connect a repo by local path -> build graph.
 app.post("/repos", async (c) => {
@@ -127,7 +140,7 @@ async function getWiki(repoId: string): Promise<Wiki | undefined> {
   const wiki = await generateWiki({
     units: repo.path.units,
     sourceOf: (u) => unitSource(repo, u).text,
-    provider: llm,
+    provider: getLlm(),
   });
   wikiCache.set(repoId, wiki);
   return wiki;
@@ -178,7 +191,7 @@ app.post("/repos/:id/tour/:unitId/narrate", async (c) => {
   const step = tourSteps(repo.path.units).find((s) => s.unitId === unit.id);
   try {
     const { text } = unitSource(repo, unit);
-    const narration = await narrateStep(unit, text, step?.buildsOn ?? [], step?.usedBy ?? [], llm);
+    const narration = await narrateStep(unit, text, step?.buildsOn ?? [], step?.usedBy ?? [], getLlm());
     tourNarration.set(key, narration);
     return c.json({ narration, cached: false });
   } catch (err) {
@@ -255,7 +268,7 @@ app.post("/repos/:id/ask", async (c) => {
   const conversationId = typeof body.conversationId === "string" ? body.conversationId : randomUUID();
   const history = getConversation(conversationId);
   try {
-    const answer = await answerQuestion(repo.graph, query, llm, { index: repo.index, history });
+    const answer = await answerQuestion(repo.graph, query, getLlm(), { index: repo.index, history });
     const turns: ChatTurn[] = [
       ...history,
       { role: "user", content: query },
@@ -394,8 +407,8 @@ app.get("/repos/:id/reviews", (c) => {
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`@ma/server listening on http://localhost:${info.port}`);
-  console.log(`  LLM enrichment: ${llmDescribe}`);
+  console.log(`  LLM enrichment: ${llmDescribe()}`);
   console.log(`  Embeddings:     ${embedDescribe}`);
-  console.log(`  Provider keys:  ${providersAvailable}`);
+  console.log(`  Provider keys:  ${providersAvailable()}`);
   runnerDescribe().then((d) => console.log(`  Test sandbox:   ${d}`));
 });

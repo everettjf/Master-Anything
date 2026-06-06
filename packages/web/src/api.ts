@@ -47,6 +47,31 @@ export interface SourceSlice {
 
 const BASE = "/api";
 
+export interface MaConfig {
+  llm: string;
+  embeddings: string;
+  providers: string;
+}
+
+export async function fetchConfig(): Promise<MaConfig> {
+  return jsonOrThrow(await fetch(`${BASE}/config`));
+}
+
+export async function setConfig(body: {
+  provider?: string;
+  model?: string;
+  baseUrl?: string;
+  fallback?: string;
+}): Promise<MaConfig> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/config`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
 async function jsonOrThrow<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

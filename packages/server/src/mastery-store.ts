@@ -30,7 +30,7 @@ import {
   verifierForExtension,
 } from "@ma/verifier";
 import { getAllMastery, putMastery } from "./db.js";
-import { llm } from "./store.js";
+import { getLlm } from "./store.js";
 import type { RepoRecord } from "./store.js";
 
 // One runner per language, resolved lazily/once. Python honors MA_SANDBOX.
@@ -260,6 +260,7 @@ interface StoredExplain {
 const explains = new Map<string, StoredExplain>();
 
 export async function createExplainAssessment(repo: RepoRecord, unit: LearningUnit) {
+  const llm = getLlm();
   if (!llm) throw new Error("Understand questions require an LLM (set MA_LLM_*)");
   const { text } = unitSource(repo, unit);
   const question = await generateExplainQuestion(unit.title, text, llm);
@@ -274,6 +275,7 @@ export async function submitExplainAttempt(
   assessmentId: string,
   answer: string,
 ) {
+  const llm = getLlm();
   if (!llm) throw new Error("grading requires an LLM (set MA_LLM_*)");
   const stored = explains.get(assessmentId);
   if (!stored || stored.repoId !== repo.id) throw new Error("assessment not found");
@@ -352,6 +354,7 @@ export async function createCreateAssessment(repo: RepoRecord, unit: LearningUni
   let hiddenTest: string | undefined;
   let feature: string | undefined;
 
+  const llm = getLlm();
   if (llm) {
     try {
       const spec = await generateCreateSpec({

@@ -15,6 +15,7 @@ import {
   fetchReviews,
   fetchSource,
 } from "./api.js";
+import { ModelSettings } from "./ModelSettings.js";
 import { Practice } from "./Practice.js";
 import { Tour } from "./Tour.js";
 import { Tutor } from "./Tutor.js";
@@ -57,6 +58,7 @@ export function App() {
   const [practiceUnit, setPracticeUnit] = useState<PathUnit | null>(null);
   const [touring, setTouring] = useState(false);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
 
   const graphRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -149,6 +151,9 @@ export function App() {
           Master<span>-Anything</span>
         </div>
         <div className="tagline">Master anything, verifiably. · P0 MVP</div>
+        <button className="modelbtn" onClick={() => setShowSettings(true)}>
+          ⚙ Model settings
+        </button>
 
         <div className="field">
           <input
@@ -339,6 +344,8 @@ export function App() {
         {view === "wiki" && repo && <Wiki repoId={repo.id} />}
 
         {touring && repo && <Tour repoId={repo.id} onClose={() => setTouring(false)} />}
+
+        {showSettings && <ModelSettings onClose={() => setShowSettings(false)} />}
 
         {view === "learn" && !practiceUnit && (
           <div className="learn-hello">

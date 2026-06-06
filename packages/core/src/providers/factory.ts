@@ -33,25 +33,28 @@ function buildPreset(
   key: string,
   env: NodeJS.ProcessEnv,
   timeoutMs: number | undefined,
-  opts: { model?: string; apiKey?: string; baseURL?: string } = {},
+  opts: { model?: string; baseURL?: string } = {},
 ): Built | undefined {
   if (key === "openai-compatible") {
     const baseURL = opts.baseURL ?? env.MA_LLM_BASE_URL;
     const model = opts.model ?? env.MA_LLM_MODEL;
     if (!baseURL || !model) return undefined;
+    // A custom endpoint has no standard key var, so MA_LLM_API_KEY supplies it.
     return {
-      provider: new VercelAiProvider({ provider: "openai-compatible", model, apiKey: opts.apiKey ?? env.MA_LLM_API_KEY, baseURL, timeoutMs }),
+      provider: new VercelAiProvider({ provider: "openai-compatible", model, apiKey: env.MA_LLM_API_KEY, baseURL, timeoutMs }),
       label: `openai-compatible · ${baseURL}`,
       model,
     };
   }
   const preset = PROVIDER_PRESETS[key];
   if (!preset) return undefined;
-  const apiKey = opts.apiKey ?? env[preset.keyEnv];
   const model = opts.model ?? preset.defaultModel;
   const baseURL = opts.baseURL ?? preset.baseURL;
   const underlying = preset.native ?? "openai-compatible";
   if (underlying === "openai-compatible" && !baseURL) return undefined;
+  // Native providers read their own standard env var (ANTHROPIC_API_KEY, …) via
+  // the AI SDK; OpenAI-compatible presets need their key passed explicitly.
+  const apiKey = preset.native ? undefined : env[preset.keyEnv];
   return {
     provider: new VercelAiProvider({ provider: underlying, model, apiKey, baseURL, timeoutMs }),
     label: preset.label,
@@ -89,7 +92,6 @@ export function resolveProvider(env: NodeJS.ProcessEnv = process.env): ProviderI
 
   const primary = buildPreset(key, env, timeoutMs, {
     model: shorthandModel ?? env.MA_LLM_MODEL,
-    apiKey: env.MA_LLM_API_KEY,
     baseURL: env.MA_LLM_BASE_URL,
   });
   if (!primary) return { describe: `off — ${key} is missing a key/base URL/model` };

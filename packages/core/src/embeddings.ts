@@ -70,7 +70,8 @@ export function embeddingProviderFromEnv(
     provider: new VercelEmbeddingProvider({
       provider,
       model,
-      apiKey: env.MA_EMBED_API_KEY ?? env.OPENAI_API_KEY ?? env.MA_LLM_API_KEY,
+      // openai reads OPENAI_API_KEY via the SDK; a custom endpoint needs MA_EMBED_API_KEY.
+      apiKey: provider === "openai" ? undefined : env.MA_EMBED_API_KEY,
       baseURL,
     }),
     describe: `${provider}${auto ? ", auto-detected" : ""} · ${model}`,
