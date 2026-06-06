@@ -30,6 +30,11 @@ learning path, quizzes you, and — wherever possible — **verifies** that you'
   <img src="./pages/assets/tutor.gif" alt="GraphRAG tutor — grounded answers with citations and multi-turn memory" width="720" />
   <br /><sub>The <b>Tutor</b> — grounded answers with <code>path:line</code> citations and multi-turn memory.</sub>
   <br /><br />
+  <img src="./pages/assets/app-layers.png" alt="Layers tab" width="410" />
+  &nbsp;
+  <img src="./pages/assets/app-wiki.png" alt="Wiki tab" width="410" />
+  <br /><sub><b>Layers</b> — architectural depth &nbsp;·&nbsp; <b>Wiki</b> — auto-generated, exportable</sub>
+  <br /><br />
   <a href="https://everettjf.github.io/Master-Anything/">More on the website →</a>
 </div>
 

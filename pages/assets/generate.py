@@ -19,16 +19,24 @@ def to_png(svg: str, w: int, h: int) -> bytes:
 
 
 # ---------- shared window chrome + sidebar ----------
-def sidebar(active: str) -> str:
-    def tab(x, label, on):
+def sidebar(active: str, heading: str = "Learning path — prerequisites first", body: str = "") -> str:
+    def tab(x, label, on, w=49):
         fill = "#58a6ff" if on else "#0d1117"
         stroke = "" if on else 'stroke="#2a313c"'
         tcol = "#0d1117" if on else "#8b949e"
         weight = "700" if on else "400"
         return (
-            f'<rect x="{x}" y="268" width="84" height="30" rx="7" fill="{fill}" {stroke}/>'
-            f'<text x="{x + 42}" y="288" text-anchor="middle" font-size="12.5" font-weight="{weight}" fill="{tcol}">{label}</text>'
+            f'<rect x="{x}" y="268" width="{w}" height="30" rx="7" fill="{fill}" {stroke}/>'
+            f'<text x="{x + w / 2}" y="288" text-anchor="middle" font-size="11" font-weight="{weight}" fill="{tcol}">{label}</text>'
         )
+
+    tabs = "".join(
+        tab(x, lbl, active == key)
+        for x, (lbl, key) in zip(
+            [24, 78, 132, 186, 240],
+            [("Graph", "graph"), ("Learn", "learn"), ("Layers", "layers"), ("Wiki", "wiki"), ("Tutor", "tutor")],
+        )
+    )
 
     rows = [
         ("1", "Calculator", "class · calc.py", "Apply", "#3fb950", 196, 56),
@@ -70,9 +78,9 @@ def sidebar(active: str) -> str:
     <text x="124" y="228" font-size="17" font-weight="700" fill="#d6dde6">14</text><text x="124" y="243" font-size="10" fill="#8b949e">nodes</text>
     <rect x="200" y="204" width="88" height="48" rx="8" fill="#0d1117" stroke="#2a313c"/>
     <text x="212" y="228" font-size="17" font-weight="700" fill="#d6dde6">6</text><text x="212" y="243" font-size="10" fill="#8b949e">units</text>
-    {tab(24, "Graph", active == "graph")}{tab(114, "Learn", active == "learn")}{tab(204, "Tutor", active == "tutor")}
-    <text x="24" y="328" font-size="11.5" fill="#8b949e">Learning path — prerequisites first</text>
-    {rowsvg}
+    {tabs}
+    <text x="24" y="328" font-size="11.5" fill="#8b949e">{heading}</text>
+    {body or rowsvg}
     """
 
 
@@ -281,11 +289,113 @@ def tutor_frame(stage):
 </svg>"""
 
 
-def main():
-    # static tab screenshots
+# ---------- Layers tab ----------
+LAYER_C = {"Foundation": "#1f6feb", "Core": "#a371f7", "Interface": "#3fb950"}
+
+
+def layers_sidebar_body() -> str:
+    groups = [
+        ("Foundation", [("Calculator", "calc.py"), ("Overview", "README.md")]),
+        ("Core", [("average", "calc.py"), ("Using Calculator", "README.md")]),
+        ("Interface", [("Averages", "README.md")]),
+    ]
+    out = ""
+    y = 344
+    for band, units in groups:
+        c = LAYER_C[band]
+        out += f'<circle cx="30" cy="{y}" r="5" fill="{c}"/><text x="44" y="{y + 4}" font-size="11" font-weight="700" fill="#d6dde6" letter-spacing="0.4">{band.upper()}</text>'
+        y += 16
+        for title, sub in units:
+            out += (
+                f'<g transform="translate(24,{y})"><rect width="264" height="38" rx="9" fill="#0d1117" stroke="#2a313c"/>'
+                f'<text x="14" y="18" font-size="13" fill="#d6dde6" font-weight="600">{title}</text>'
+                f'<text x="14" y="31" font-size="10" fill="#8b949e">{sub}</text>'
+                f'<circle cx="248" cy="19" r="5" fill="{c}"/></g>'
+            )
+            y += 44
+        y += 8
+    return out
+
+
+def layers_main() -> str:
+    # same node layout as the graph, recolored by architectural layer
+    nodes = [
+        (560, 360, 13, "#1f6feb"), (700, 300, 9, "#1f6feb"), (640, 470, 8, "#a371f7"),
+        (820, 380, 8, "#a371f7"), (760, 520, 7, "#3fb950"), (900, 300, 7, "#1f6feb"),
+        (980, 430, 11, "#a371f7"), (1080, 360, 9, "#3fb950"), (520, 520, 7, "#1f6feb"),
+        (470, 380, 7, "#a371f7"), (880, 540, 7, "#3fb950"),
+    ]
+    edges = [(0, 1), (1, 2), (1, 3), (3, 4), (1, 5), (0, 9), (0, 8), (2, 4), (3, 6), (6, 7), (6, 10), (1, 6)]
+    e = "".join(
+        f'<line x1="{nodes[a][0]}" y1="{nodes[a][1]}" x2="{nodes[b][0]}" y2="{nodes[b][1]}" stroke="#8b949e" stroke-opacity="0.22" stroke-width="1.4"/>'
+        for a, b in edges
+    )
+    n = "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{c}"/>' for x, y, r, c in nodes)
+    seg = (
+        '<rect x="372" y="92" width="200" height="30" rx="8" fill="#0d1117" stroke="#2a313c"/>'
+        '<rect x="374" y="94" width="98" height="26" rx="7" fill="#0d1117"/><text x="423" y="111" text-anchor="middle" font-size="12" fill="#8b949e">by kind</text>'
+        '<rect x="472" y="94" width="98" height="26" rx="7" fill="#58a6ff"/><text x="521" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="#0d1117">by layer</text>'
+    )
+    legend = "".join(
+        f'<circle cx="372" cy="{700 + i * 24}" r="6" fill="{c}"/><text x="388" y="{705 + i * 24}" font-size="13" fill="#8b949e">{lab}</text>'
+        for i, (lab, c) in enumerate([("Foundation", "#1f6feb"), ("Core", "#a371f7"), ("Interface", "#3fb950")])
+    )
+    return f"{seg}{e}{n}{legend}"
+
+
+# ---------- Wiki tab ----------
+def wiki_sidebar_body() -> str:
+    pages = ["Calculator", "Overview", "average", "Using Calculator", "Averages"]
+    out = ""
+    for i, p in enumerate(pages):
+        y = 344 + i * 40
+        out += (
+            f'<g transform="translate(24,{y})"><rect width="264" height="32" rx="8" fill="#0d1117" stroke="#2a313c"/>'
+            f'<text x="14" y="21" font-size="12.5" fill="#58a6ff">{p}.md</text></g>'
+        )
+    return out
+
+
+def wiki_main() -> str:
+    return """
+    <rect x="344" y="78" width="904" height="684" rx="12" fill="#161b22" stroke="#2a313c"/>
+    <rect x="344" y="78" width="904" height="48" rx="12" fill="#0d1117"/>
+    <rect x="364" y="92" width="80" height="22" rx="7" fill="#161b22" stroke="#2a313c"/><text x="404" y="107" text-anchor="middle" font-size="12" fill="#8b949e">← Index</text>
+    <text x="470" y="107" font-size="11.5" fill="#8b949e">6 pages</text>
+    <rect x="1108" y="92" width="120" height="22" rx="7" fill="#58a6ff"/><text x="1168" y="107" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0d1117">Export markdown</text>
+
+    <text x="392" y="172" font-size="26" font-weight="800" fill="#d6dde6">Calculator</text>
+    <text x="392" y="196" font-size="12.5" font-family="monospace" fill="#8b949e">calc.py:4-12</text>
+    <text x="497" y="196" font-size="12.5" fill="#8b949e">· </text>
+    <text x="510" y="196" font-size="12.5" font-weight="700" fill="#1f6feb">Foundation</text>
+    <text x="606" y="196" font-size="12.5" fill="#8b949e">layer · class</text>
+    <text x="392" y="230" font-size="14.5" fill="#c9d1d9">The Calculator class provides add and add_many; it's the foundation the rest of</text>
+    <text x="392" y="251" font-size="14.5" fill="#c9d1d9">the app builds on (calc.py:4).</text>
+    <text x="392" y="286" font-size="13.5" fill="#c9d1d9">Used by: <tspan fill="#58a6ff">average</tspan> · <tspan fill="#58a6ff">Using the Calculator</tspan> · <tspan fill="#58a6ff">Averages</tspan></text>
+    <text x="392" y="330" font-size="17" font-weight="700" fill="#d6dde6">Source</text>
+    <rect x="392" y="344" width="808" height="150" rx="8" fill="#0d1117" stroke="#2a313c"/>
+    <g font-family="monospace" font-size="13.5">
+      <text x="408" y="370" fill="#ff7b72">class <tspan fill="#d2a8ff">Calculator</tspan><tspan fill="#c9d1d9">:</tspan></text>
+      <text x="408" y="392" fill="#ff7b72" xml:space="preserve">    def <tspan fill="#d2a8ff">add</tspan><tspan fill="#c9d1d9">(self, a, b):</tspan></text>
+      <text x="408" y="414" fill="#ff7b72" xml:space="preserve">        return <tspan fill="#c9d1d9">a + b</tspan></text>
+      <text x="408" y="436" fill="#ff7b72" xml:space="preserve">    def <tspan fill="#d2a8ff">add_many</tspan><tspan fill="#c9d1d9">(self, nums):</tspan></text>
+      <text x="408" y="458" fill="#c9d1d9" xml:space="preserve">        total = 0</text>
+      <text x="408" y="480" fill="#ff7b72" xml:space="preserve">        for <tspan fill="#c9d1d9">n in nums: total = self.add(total, n)</tspan></text>
+    </g>
+    <text x="392" y="528" font-size="13" fill="#58a6ff">← back to index</text>
+    """
+
+
+def main():    # static tab screenshots
     open(os.path.join(HERE, "app-graph.png"), "wb").write(to_png(window(sidebar("graph") + graph_main()), 1280, 800))
     open(os.path.join(HERE, "app-tutor.png"), "wb").write(to_png(window(sidebar("tutor") + tutor_main()), 1280, 800))
-    print("wrote app-graph.png, app-tutor.png")
+    open(os.path.join(HERE, "app-layers.png"), "wb").write(
+        to_png(window(sidebar("layers", "Architectural layers — foundation first", layers_sidebar_body()) + layers_main()), 1280, 800)
+    )
+    open(os.path.join(HERE, "app-wiki.png"), "wb").write(
+        to_png(window(sidebar("wiki", "6 pages", wiki_sidebar_body()) + wiki_main()), 1280, 800)
+    )
+    print("wrote app-graph.png, app-tutor.png, app-layers.png, app-wiki.png")
 
     # Apply-loop GIF
     stages = [0, 1, 2, 3]
