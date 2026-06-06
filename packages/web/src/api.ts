@@ -17,11 +17,12 @@ export interface RepoSummary {
 
 export interface GraphNode {
   id: string;
-  kind: "file" | "class" | "function" | "unit";
+  kind: "file" | "class" | "function" | "unit" | "document" | "section";
   name: string;
   signature?: string;
   provenance: { path: string; startLine: number; endLine: number };
   bloomCeiling: number;
+  layer?: number;
 }
 
 export interface GraphEdge {
@@ -76,15 +77,28 @@ export async function fetchSource(id: string, nodeId: string): Promise<SourceSli
 export interface PathUnit {
   id: string;
   title: string;
-  kind: "function" | "class";
+  kind: "function" | "class" | "section";
   summary?: string;
   provenance: { path: string; startLine: number; endLine: number };
   prerequisites: string[];
   bloomCeiling: number;
+  layer?: number;
+  band?: string;
+  module?: string;
 }
 
 export async function fetchPath(id: string): Promise<{ cycles: number; units: PathUnit[] }> {
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/path`));
+}
+
+export interface LayerBand {
+  band: string;
+  layer: number;
+  units: { id: string; title: string; kind: string; module?: string; layer: number }[];
+}
+
+export async function fetchLayers(id: string): Promise<{ bands: LayerBand[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/layers`));
 }
 
 export interface MasteryUnit {

@@ -78,8 +78,25 @@ app.get("/repos/:id/path", (c) => {
       provenance: u.provenance,
       prerequisites: u.prerequisites,
       bloomCeiling: u.bloomCeiling,
+      layer: u.layer ?? 0,
+      band: u.band ?? "Core",
+      module: u.module,
     })),
   });
+});
+
+// Architectural layers: units grouped into bands, foundation first.
+app.get("/repos/:id/layers", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const byBand = new Map<string, { band: string; layer: number; units: unknown[] }>();
+  for (const u of repo.path.units) {
+    const key = u.band ?? "Core";
+    if (!byBand.has(key)) byBand.set(key, { band: key, layer: u.layer ?? 0, units: [] });
+    byBand.get(key)!.units.push({ id: u.id, title: u.title, kind: u.kind, module: u.module, layer: u.layer ?? 0 });
+  }
+  const bands = [...byBand.values()].sort((a, b) => a.layer - b.layer);
+  return c.json({ bands });
 });
 
 // Read the source slice a node points at (provenance-grounded UI).

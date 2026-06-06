@@ -25,6 +25,9 @@ const KIND_COLOR: Record<string, string> = {
 };
 const BLOOM = ["None", "Remember", "Understand", "Apply", "Analyze", "Create"];
 const BLOOM_COLOR = ["#30363d", "#6e7681", "#58a6ff", "#3fb950", "#a371f7", "#f778ba"];
+// Layer palette: foundational (deep) → interface (bright).
+const LAYER_COLOR = ["#1f6feb", "#388bfd", "#a371f7", "#db61a2", "#f0883e", "#3fb950"];
+const layerColor = (l: number) => LAYER_COLOR[Math.min(l, LAYER_COLOR.length - 1)] ?? "#58a6ff";
 
 interface FGNode {
   id: string;
@@ -37,7 +40,8 @@ interface FGNode {
 
 export function App() {
   const [path, setPath] = useState("");
-  const [view, setView] = useState<"graph" | "learn" | "tutor">("graph");
+  const [view, setView] = useState<"graph" | "learn" | "layers" | "tutor">("graph");
+  const [colorMode, setColorMode] = useState<"kind" | "layer">("kind");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repo, setRepo] = useState<RepoSummary | null>(null);
@@ -108,14 +112,28 @@ export function App() {
       name: n.name,
       kind: n.kind,
       val: n.kind === "file" ? 6 : n.kind === "class" ? 4 : 2,
-      color: KIND_COLOR[n.kind] ?? "#888",
+      color:
+        colorMode === "layer" && n.layer !== undefined
+          ? layerColor(n.layer)
+          : KIND_COLOR[n.kind] ?? "#888",
       node: n,
     }));
     const links = graph.edges
       .filter((e) => ids.has(e.from) && ids.has(e.to))
       .map((e) => ({ source: e.from, target: e.to, type: e.type }));
     return { nodes, links };
-  }, [graph]);
+  }, [graph, colorMode]);
+
+  // Units grouped into architectural bands (foundation first).
+  const bands = useMemo(() => {
+    const m = new Map<string, { band: string; layer: number; units: PathUnit[] }>();
+    for (const u of units) {
+      const key = u.band ?? "Core";
+      if (!m.has(key)) m.set(key, { band: key, layer: u.layer ?? 0, units: [] });
+      m.get(key)!.units.push(u);
+    }
+    return [...m.values()].sort((a, b) => a.layer - b.layer);
+  }, [units]);
 
   return (
     <div className="app">
@@ -173,16 +191,65 @@ export function App() {
               <button className={view === "learn" ? "tab on" : "tab"} onClick={() => setView("learn")}>
                 Learn
               </button>
+              <button className={view === "layers" ? "tab on" : "tab"} onClick={() => setView("layers")}>
+                Layers
+              </button>
               <button className={view === "tutor" ? "tab on" : "tab"} onClick={() => setView("tutor")}>
                 Tutor
               </button>
             </div>
 
             {view === "graph" && (
-              <div className="legend">
-                {Object.entries(KIND_COLOR).map(([k, c]) => (
-                  <div key={k}>
-                    <span className="dot" style={{ background: c }} /> {k}
+              <>
+                <div className="seg">
+                  <button className={colorMode === "kind" ? "on" : ""} onClick={() => setColorMode("kind")}>
+                    by kind
+                  </button>
+                  <button className={colorMode === "layer" ? "on" : ""} onClick={() => setColorMode("layer")}>
+                    by layer
+                  </button>
+                </div>
+                <div className="legend">
+                  {colorMode === "kind"
+                    ? Object.entries(KIND_COLOR).map(([k, c]) => (
+                        <div key={k}>
+                          <span className="dot" style={{ background: c }} /> {k}
+                        </div>
+                      ))
+                    : bands.map((b) => (
+                        <div key={b.band}>
+                          <span className="dot" style={{ background: layerColor(b.layer) }} /> {b.band}
+                        </div>
+                      ))}
+                </div>
+              </>
+            )}
+
+            {view === "layers" && (
+              <div className="path-list">
+                <div className="hint" style={{ marginBottom: 8 }}>
+                  Architectural layers — foundation first. Click a unit to practice.
+                </div>
+                {bands.map((b) => (
+                  <div key={b.band} className="band-group">
+                    <div className="band-head">
+                      <span className="dot" style={{ background: layerColor(b.layer) }} /> {b.band}
+                      <span className="band-count">{b.units.length}</span>
+                    </div>
+                    {b.units.map((u) => {
+                      const lvl = mastery.get(u.id)?.level ?? 0;
+                      return (
+                        <button key={u.id} className="unit-row" onClick={() => setPracticeUnit(u)}>
+                          <span className="unit-main">
+                            <span className="unit-title">{u.title}</span>
+                            <span className="unit-sub">{u.module ?? u.kind}</span>
+                          </span>
+                          <span className="lvl" style={{ background: BLOOM_COLOR[lvl], color: lvl ? "#0d1117" : "#8b949e" }}>
+                            {BLOOM[lvl]}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -240,6 +307,16 @@ export function App() {
             <p>
               We'll blank a real function, you reimplement it, and the project's actual test suite
               decides whether you've mastered it.
+            </p>
+          </div>
+        )}
+
+        {view === "layers" && !practiceUnit && (
+          <div className="learn-hello">
+            <h2>Architectural layers</h2>
+            <p>
+              Units ranked by dependency depth — <b>Foundation</b> at the bottom, <b>Interface</b> at
+              the top. Switch the Graph to <b>color by layer</b> to see the same structure visually.
             </p>
           </div>
         )}

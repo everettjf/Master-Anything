@@ -15,11 +15,14 @@ import {
   buildDocsGraph,
   buildGraph,
   buildPdfGraph,
+  bandName,
   buildUnits,
+  computeLayers,
   embeddingProviderFromEnv,
   enrichUnits,
   linkCrossDomain,
   mergeGraphs,
+  moduleOf,
   orderUnits,
   parseArtifact,
   resolveProvider,
@@ -80,6 +83,23 @@ function kindOf(d: Domains): RepoKind {
  * with a README gets both code units and doc-section units; an explicit kind
  * hint restricts to that single domain.
  */
+/** Assign architectural layers to units and tag graph nodes for coloring. */
+function annotateLayers(graph: KnowledgeGraph, units: LearningUnit[]): void {
+  const { depth, maxDepth } = computeLayers(units);
+  const nodeToLayer = new Map<string, number>();
+  for (const u of units) {
+    const d = depth.get(u.id) ?? 0;
+    u.layer = d;
+    u.band = bandName(d, maxDepth);
+    u.module = moduleOf(u.provenance.path);
+    for (const m of u.members) nodeToLayer.set(m, d);
+  }
+  for (const n of graph.nodes) {
+    const d = nodeToLayer.get(n.id);
+    if (d !== undefined) n.layer = d;
+  }
+}
+
 async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: KnowledgeGraph; kind: RepoKind }> {
   const present =
     hint && hint !== "mixed"
@@ -171,6 +191,7 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
     console.log(`incremental: reusing ${reuse.size} summaries; re-enriching changed units only`);
   }
   const units = await enrichUnits(buildUnits(graph), graph, llm, { reuseSummaries: reuse });
+  annotateLayers(graph, units);
   const path = orderUnits(units);
   const record: RepoRecord = {
     id: randomUUID(),

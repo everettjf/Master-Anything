@@ -7,6 +7,7 @@ export * from "./crosslink.js";
 export * from "./adapters/docs.js";
 export * from "./adapters/pdf.js";
 export * from "./units.js";
+export * from "./layers.js";
 export * from "./artifact.js";
 export * from "./enrich.js";
 export * from "./mastery.js";

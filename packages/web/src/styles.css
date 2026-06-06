@@ -134,3 +134,13 @@ code { background: #0d1117; border: 1px solid var(--border); border-radius: 4px;
 .cite em { color: var(--accent); font-style: normal; }
 .tutor-input { display: flex; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--panel); }
 .tutor-input input { flex: 1; padding: 10px; border-radius: 8px; background: #0d1117; color: var(--text); border: 1px solid var(--border); }
+
+/* color-mode segmented toggle */
+.seg { display: flex; gap: 0; margin: 12px 0 8px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { flex: 1; background: #0d1117; color: var(--muted); border: none; border-radius: 0; padding: 6px 8px; font-size: 12px; cursor: pointer; }
+.seg button.on { background: var(--accent); color: #0d1117; font-weight: 600; }
+
+/* architectural layer bands */
+.band-group { margin-bottom: 14px; }
+.band-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text); margin: 6px 0; text-transform: uppercase; letter-spacing: 0.4px; }
+.band-count { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 11px; }

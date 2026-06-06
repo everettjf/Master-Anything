@@ -17,6 +17,9 @@ export interface LearningUnit {
   summary?: string; // filled by enrichment (P0.1 heuristic / later LLM)
   prerequisites: string[]; // unit ids that should be learned first
   bloomCeiling: BloomLevel;
+  layer?: number; // architectural depth (0 = foundational), attached post-build
+  band?: string; // human layer label (Foundation/Core/Application/Interface)
+  module?: string; // top-level area/dir
 }
 
 export interface LearningPath {

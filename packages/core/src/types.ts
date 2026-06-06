@@ -45,6 +45,8 @@ export interface KnowledgeNode {
   text?: string;
   prerequisites: string[]; // prerequisite node ids
   bloomCeiling: BloomLevel;
+  /** Architectural layer depth (0 = foundational), attached post-build. */
+  layer?: number;
 }
 
 export interface KnowledgeEdge {
