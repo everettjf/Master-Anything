@@ -5,13 +5,19 @@
   "description": "Master anything, verifiably. From understanding to mastery.",
   "scripts": {
     "build": "pnpm -r build",
+    "pretest": "pnpm --filter @ma/core --filter @ma/verifier build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "graph": "pnpm --filter @ma/core graph",
     "server": "pnpm --filter @ma/server dev",
     "web": "pnpm --filter @ma/web dev"
   },
   "devDependencies": {
+    "@ma/core": "workspace:*",
+    "@ma/verifier": "workspace:*",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
   },
   "packageManager": "pnpm@10.33.0",
   "pnpm": {

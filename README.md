@@ -6,6 +6,7 @@
 
 ### Don't just *understand* — **master it, and prove it.**
 
+[![CI](https://github.com/everettjf/Master-Anything/actions/workflows/ci.yml/badge.svg)](https://github.com/everettjf/Master-Anything/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-3c873a.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
@@ -207,10 +208,12 @@ Contributions are welcome. The whole codebase is TypeScript in a pnpm workspace.
 
 ```bash
 pnpm install
-pnpm -r build        # build all packages
+pnpm -r build        # build all packages (typecheck)
+pnpm test            # Vitest: pure logic + real pytest/node-test integration
 ```
 
-Please keep changes focused, match the surrounding style, and run the relevant package build before opening a PR.
+CI (build + tests) runs on every push and PR. Please keep changes focused, match the surrounding style, and make sure
+`pnpm -r build` and `pnpm test` pass before opening a PR.
 
 ## License
 
