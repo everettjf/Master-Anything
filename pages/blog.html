@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Don't just understand your codebase — master it · Master-Anything</title>
+    <meta
+      name="description"
+      content="A walkthrough of Master-Anything: turn any codebase, doc, or PDF into a knowledge graph, then prove you've mastered it with real tests and graph ground-truth — not an LLM's opinion."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Don't just understand your codebase — master it, verifiably" />
+    <meta
+      property="og:description"
+      content="Turn any codebase, doc, or PDF into a knowledge graph, then prove mastery with real tests and graph ground-truth."
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Don't just understand your codebase — master it, verifiably" />
+    <meta
+      name="twitter:description"
+      content="Turn any codebase, doc, or PDF into a knowledge graph, then prove mastery with real tests and graph ground-truth."
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      /* article-prose tweaks layered on top of the shared .tut container */
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.75; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.7; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.7;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      .article .lvl-tag {
+        display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px;
+        border-radius: 999px; margin-right: 6px; vertical-align: middle;
+      }
+      .lvl-tag.u { background: #58a6ff; color: #0d1117; }
+      .lvl-tag.a { background: #3fb950; color: #0d1117; }
+      .lvl-tag.n { background: #a371f7; color: #0d1117; }
+      .lvl-tag.cr { background: #f778ba; color: #0d1117; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./index.html#features">Features</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1>Don't just <span class="grad">understand</span> your codebase —<br />master it, verifiably</h1>
+      <p class="meta">
+        A walkthrough of Master-Anything · also available in
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/blog/getting-started-with-master-anything.zh.md">中文</a>
+      </p>
+
+      <blockquote>
+        A walkthrough of <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a>: an open-source tool
+        that turns any codebase (or docs, web pages, PDFs) into a knowledge graph, then <b>proves</b> you've mastered it
+        with real tests and graph ground-truth — not an LLM's opinion.
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        A whole category of tools now promises to help you "understand" a codebase: point them at a repo and they render
+        a pretty map — a call graph, an architecture diagram, an auto-generated wiki. That's genuinely useful. But if
+        you've ever read all the docs, nodded along to the diagram, and <i>still</i> couldn't confidently change the
+        code… you know the gap.
+      </p>
+      <p>
+        <b>Understanding is a one-time snapshot. Mastery is a state you reach, prove, and retain.</b> Master-Anything is
+        built for that second thing. Here's how it works and how to use it.
+      </p>
+
+      <h2>The idea in one sentence</h2>
+      <p>
+        A domain is just an <i>input</i>. Once you turn it into a <b>knowledge graph</b>, "how do I make a person
+        actually master this?" becomes the same engine — regardless of whether the input is Python, a README, or a PDF.
+      </p>
+      <p>So Master-Anything has two layers:</p>
+      <ul>
+        <li>
+          <b>Domain adapters</b> turn an input into a universal knowledge graph (Tree-sitter for code; heading/page
+          splitting for docs/PDF).
+        </li>
+        <li>
+          A <b>mastery engine</b> sits on top and drives <i>your</i> skill up Bloom's ladder —
+          <b>Understand → Apply → Analyze → Create</b> — with an objective check at each rung.
+        </li>
+      </ul>
+      <p>The headline feature is that those checks are <i>real</i>, not vibes.</p>
+
+      <h2>A 5-minute tour</h2>
+      <p>It's a pnpm + TypeScript monorepo. You need Node ≥ 22 and (for Python exercises) <code>pytest</code>.</p>
+      <div class="code">
+        <button class="copy" data-copy>copy</button>
+        <pre><code>git clone https://github.com/everettjf/Master-Anything.git
+cd Master-Anything
+pnpm install
+python3 -m pip install pytest          # for Python Apply/Create tasks
+
+pnpm --filter @ma/server dev           # API  → http://localhost:8787
+pnpm --filter @ma/web dev              # web  → http://localhost:5173</code></pre>
+      </div>
+      <p>
+        Open the web app, paste an <b>absolute repo path</b>, and hit <i>Map</i>. To see everything at once, use a
+        bundled example like <code>examples/mixed-app</code> (code + docs) or <code>examples/py-calc</code> (pure
+        Python). You'll land on a knowledge graph with five tabs: <b>Graph · Learn · Layers · Wiki · Tutor</b>.
+      </p>
+
+      <h3>Climb the ladder (the core loop)</h3>
+      <p>Open the <b>Learn</b> tab and click a unit — say, the <code>Calculator</code> class. You get four challenges:</p>
+      <figure class="shot-frame">
+        <img src="./assets/demo.gif" loading="lazy" alt="The Apply loop: reimplement a blanked function, run the real test suite, get promoted to Apply." />
+      </figure>
+      <ul>
+        <li>
+          <span class="lvl-tag u">Understand</span> the tutor asks a comprehension question; an LLM grades your answer
+          <i>against the source</i>.
+        </li>
+        <li>
+          <span class="lvl-tag a">Apply</span> the body of a real function is blanked out. You reimplement it, hit
+          <b>Run tests</b>, and the project's <b>actual test suite</b> decides whether you pass. Get it right and you're
+          promoted to <i>Apply</i>. This is the moment that separates "I think I get it" from "I can provably do it."
+        </li>
+        <li>
+          <span class="lvl-tag n">Analyze</span> "If you change <code>Calculator</code>, which units are affected?" Your
+          answer is graded against the real <b>call/dependency graph</b> — objective truth, computed from the code.
+        </li>
+        <li>
+          <span class="lvl-tag cr">Create</span> add a <i>new</i> capability (e.g. a <code>mul</code> method) <b>and a
+          test for it</b>. The whole suite must stay green with strictly more passing tests than before. You don't just
+          reproduce existing code; you extend it and prove it works.
+        </li>
+      </ul>
+      <p>
+        Every promotion above <i>Understand</i> is backed by an objective check — real test execution or graph
+        ground-truth. No "great job!" from a model that never ran your code.
+      </p>
+      <p>
+        And because mastery should <i>last</i>, units you've mastered resurface on a <b>spaced-repetition</b> schedule.
+        Fail a review and your level drops a rung — forgetting is modeled, so "mastered" means <i>retained</i>.
+      </p>
+
+      <h2>It works on more than code</h2>
+      <p>
+        Point it at a folder of Markdown, HTML, or PDFs and the same engine kicks in — each section (or PDF page)
+        becomes a learning unit with Understand and graph-verified Analyze challenges.
+      </p>
+      <p>
+        The fun part is <b>mixed repos</b>: a project with code <i>and</i> a README gets merged into one graph, and
+        Master-Anything draws <b>cross-domain edges</b> linking a doc section to the code symbol it describes. Now
+        Analyze can answer a very "senior engineer" question: <i>"If I change <code>Calculator</code>, which docs go
+        stale?"</i> — and the tutor can cite code and its docs together.
+      </p>
+
+      <h2>Navigate, not just drill</h2>
+      <p>Beyond the mastery loop, three features help you find your way around:</p>
+      <ul>
+        <li>
+          <b>Architectural layers</b> rank units by dependency depth — Foundation at the bottom, Interface at the top —
+          so you can see the <i>system</i>, not just functions. Color the graph by layer to see it at a glance.
+        </li>
+        <li>
+          <b>Guided tours</b> turn the dependency-ordered path into a narrated walkthrough: what each unit is, why it
+          matters, and what it connects to.
+        </li>
+        <li>
+          An <b>auto-generated wiki</b> produces a cross-linked Markdown page per unit (grouped by layer) — viewable
+          in-app and <b>exportable to commit into your repo</b>. Or run it straight from the CLI:
+        </li>
+      </ul>
+      <div class="code">
+        <button class="copy" data-copy>copy</button>
+        <pre><code>pnpm --filter @ma/core wiki /abs/path/to/project   # writes &lt;repo&gt;/.master-anything/wiki/</code></pre>
+      </div>
+
+      <h2>Bring any model — or none</h2>
+      <p>
+        The tutor and LLM-graded steps run on the <a href="https://ai-sdk.dev">Vercel AI SDK</a> with <b>11 vendor
+        presets</b> (OpenAI, Anthropic, Google, OpenRouter, Groq, DeepSeek, Mistral, xAI, Together, Fireworks, Ollama)
+        plus any OpenAI-compatible endpoint. The DX is deliberately low-friction:
+      </p>
+      <div class="code">
+        <button class="copy" data-copy>copy</button>
+        <pre><code>export ANTHROPIC_API_KEY=sk-ant-...     # that's it — auto-detected, default model chosen</code></pre>
+      </div>
+      <p>
+        You can also pick a provider explicitly, use <code>provider/model</code> shorthand, set a <b>failover</b> chain,
+        or switch live from a <b>Model settings</b> panel in the UI. Best of all: with <b>no key at all</b>, it still
+        runs — falling back to heuristic summaries and lexical search, so the graph, layers, wiki, and the verifiable
+        Apply/Analyze loops all work offline.
+      </p>
+
+      <h2>Honest about what's verified</h2>
+      <p>I think credibility matters more than hype, so to be clear:</p>
+      <ul>
+        <li>
+          <b>Apply</b> and <b>Analyze</b> are objectively verified (real tests; the graph). This is the real, defensible
+          core.
+        </li>
+        <li><b>Understand</b> is LLM-graded against the source — useful, but it's a model's judgment.</li>
+        <li>
+          <b>Create</b> comes in two flavors: an "open" mode (you add a feature + test; the suite must stay green with
+          new coverage) and, with an LLM, a "spec" mode (a hidden acceptance test that must fail on the current code,
+          then pass after your change).
+        </li>
+        <li>
+          What it does <i>not</i> yet claim: a validated study that using it makes you learn faster. That's an empirical
+          question for real usage.
+        </li>
+      </ul>
+      <p>
+        Apply works for Python, JavaScript, and TypeScript today (pytest / <code>node --test</code>). Everything is
+        SQLite-backed and incremental, with a CI-checked test suite covering the graph, mastery, and the real
+        break-and-fix loop.
+      </p>
+
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Repo:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>Website &amp; tutorial:</b> <a href="./tutorial.html">the step-by-step tutorial</a></li>
+      </ul>
+      <p>
+        If you've ever shipped a change to code you only <i>thought</i> you understood, give it a folder and try to reach
+        <i>Apply</i> on one unit. The first time a real test suite turns green because of code <i>you</i> wrote into a
+        function you'd never seen — that's the difference between understanding and mastery, and it's the whole point.
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/VISION.md">Vision</a>
+      </div>
+    </footer>
+
+    <script>
+      for (const b of document.querySelectorAll("[data-copy]")) {
+        b.addEventListener("click", async () => {
+          const code = b.parentElement.querySelector("code").innerText;
+          try {
+            await navigator.clipboard.writeText(code);
+            b.textContent = "copied ✓";
+            setTimeout(() => (b.textContent = "copy"), 1500);
+          } catch {
+            b.textContent = "select & copy";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

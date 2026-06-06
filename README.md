@@ -203,6 +203,8 @@ formats (slides, notebooks) · richer web UI for cross-domain navigation.
 - [Vision](./docs/VISION.md) — positioning, principles, the "Anything" roadmap
 - [Architecture](./docs/ARCHITECTURE.md) — layers, adapters, the mastery engine
 - [P0 design](./docs/P0-CODE-MVP.md) — the code-mastery MVP in detail
+- Blog: [Getting started](./docs/blog/getting-started-with-master-anything.md)
+  ([中文](./docs/blog/getting-started-with-master-anything.zh.md)) — a usage walkthrough
 
 ## Contributing
 
