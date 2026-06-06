@@ -2,15 +2,19 @@ import { useEffect, useState } from "react";
 import {
   type Assessment,
   type AttemptResult,
+  type CreateAssessment,
+  type CreateResult,
   type ExplainQuestion,
   type ExplainResult,
   type ImpactQuestion,
   type ImpactResult,
   type PathUnit,
   createAssessment,
+  createCreate,
   createExplain,
   createImpact,
   submitAttempt,
+  submitCreate,
   submitExplain,
   submitImpact,
 } from "./api.js";
@@ -136,6 +140,122 @@ export function Practice({
         <>
           <UnderstandChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
           <AnalyzeChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
+          {codeApply && (
+            <CreateChallenge repoId={repoId} unit={unit} userId={userId} onMastered={onMastered} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Create-level challenge: extend the code with a new capability, verified by real tests. */
+function CreateChallenge({
+  repoId,
+  unit,
+  userId,
+  onMastered,
+}: {
+  repoId: string;
+  unit: PathUnit;
+  userId: string;
+  onMastered: () => void;
+}) {
+  const [a, setA] = useState<CreateAssessment | null>(null);
+  const [code, setCode] = useState("");
+  const [test, setTest] = useState("");
+  const [result, setResult] = useState<CreateResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const asmt = await createCreate(repoId, unit.id);
+      setA(asmt);
+      setCode(asmt.code);
+      setTest("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submit = async () => {
+    if (!a) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await submitCreate(repoId, userId, a.id, code, test);
+      setResult(r);
+      if (r.passed) onMastered();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="analyze">
+      <h4 style={{ color: "#f778ba" }}>Create challenge · build something new, verified by tests</h4>
+      {error && <div className="error">{error}</div>}
+      {!a && (
+        <button onClick={load} disabled={busy}>
+          {busy ? "…" : "Start create challenge"}
+        </button>
+      )}
+      {a && (
+        <>
+          <div className="prompt">{a.prompt}</div>
+          <div className="path">
+            edit <code>{a.codePath}</code>
+            {a.mode === "open" && (
+              <>
+                {" "}
+                · add a test in <code>{a.testPath}</code>
+              </>
+            )}
+            {a.mode === "spec" && <> · a hidden acceptance test will run</>}
+          </div>
+
+          <div className="hint" style={{ margin: "6px 0" }}>{a.codePath}</div>
+          <textarea
+            spellCheck={false}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            rows={Math.min(16, code.split("\n").length + 1)}
+          />
+          {a.mode === "open" && (
+            <>
+              <div className="hint" style={{ margin: "6px 0" }}>{a.testPath} (your test)</div>
+              <textarea
+                spellCheck={false}
+                placeholder="Write a test that proves your new capability…"
+                value={test}
+                onChange={(e) => setTest(e.target.value)}
+                rows={6}
+              />
+            </>
+          )}
+
+          {!result && (
+            <button onClick={submit} disabled={busy}>
+              {busy ? "Running tests…" : "Run tests"}
+            </button>
+          )}
+          {result && (
+            <div className={`result ${result.passed ? "pass" : "fail"}`}>
+              <b>{result.passed ? "✓ Mastered (Create) — verified by tests" : "✗ Not yet"}</b>
+              <div className="summary">
+                {result.reason} · {result.summary} · level {result.state.level}
+              </div>
+              <pre>{result.raw}</pre>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -4,23 +4,27 @@
  */
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { extname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import {
   BloomLevel,
+  OPEN_CREATE_PROMPT,
   type ImpactQuestion,
   type LearnerUnitState,
   type LearningUnit,
   buildImpactQuestion,
   emptyState,
+  generateCreateSpec,
   generateExplainQuestion,
   gradeExplain,
   gradeImpact,
+  gradeOpenCreate,
   recordAttempt,
 } from "@ma/core";
 import {
   type RunnerInfo,
   type SupportedLanguage,
   makeRunner,
+  parseTestCounts,
   replaceLineRange,
   verifierForExtension,
 } from "@ma/verifier";
@@ -285,6 +289,153 @@ export async function submitExplainAttempt(
   });
   setState(userId, repo.root, next);
   return { ...grade, state: next };
+}
+
+// --- Create level: extend the codebase with a new capability, verified by tests ---
+
+interface StoredCreate {
+  id: string;
+  repoId: string;
+  unitId: string;
+  mode: "spec" | "open";
+  language: SupportedLanguage;
+  codePath: string;
+  testPath: string;
+  hiddenTest?: string; // spec mode: the acceptance test (not sent to client)
+  baseTotal: number;
+  basePassed: number;
+}
+const creates = new Map<string, StoredCreate>();
+const baselineCache = new Map<string, { passed: number; total: number }>();
+
+async function baseline(repo: RepoRecord, language: SupportedLanguage) {
+  const key = `${repo.id}:${language}`;
+  const cached = baselineCache.get(key);
+  if (cached) return cached;
+  const { runner } = await getRunner(language);
+  const res = await runner.run(repo.root, {});
+  const c = parseTestCounts(res.raw);
+  const v = { passed: c.passed, total: c.total };
+  baselineCache.set(key, v);
+  return v;
+}
+
+function importHint(language: SupportedLanguage, codePath: string): string {
+  const mod = basename(codePath).replace(/\.[^.]+$/, "");
+  if (language === "python") return `from ${mod} import ...`;
+  if (language === "typescript") return `import { ... } from "./${basename(codePath)}"`;
+  return `const { ... } = require("./${mod}")`;
+}
+
+function newTestPath(language: SupportedLanguage, codePath: string): string {
+  const dir = dirname(codePath);
+  const p = (n: string) => (dir === "." ? n : `${dir}/${n}`);
+  if (language === "python") return p("test_ma_create.py");
+  if (language === "typescript") return p("ma_create.test.ts");
+  return p("ma_create.test.js");
+}
+
+export async function createCreateAssessment(repo: RepoRecord, unit: LearningUnit) {
+  const node = repo.graph.nodes.find((n) => n.id === unit.primary);
+  if (!node) throw new Error("unit primary node not found");
+  const verifier = verifierForExtension(extname(node.provenance.path));
+  if (!verifier) throw new Error("Create challenges are for code units (Python/JS/TS)");
+
+  const codePath = node.provenance.path;
+  const language = verifier.language;
+  const code = readFileSync(join(repo.root, codePath), "utf8");
+  const testPath = newTestPath(language, codePath);
+  const base = await baseline(repo, language);
+
+  let mode: "spec" | "open" = "open";
+  let hiddenTest: string | undefined;
+  let feature: string | undefined;
+
+  if (llm) {
+    try {
+      const spec = await generateCreateSpec({
+        moduleName: basename(codePath),
+        language,
+        importHint: importHint(language, codePath),
+        source: code,
+        provider: llm,
+      });
+      // The acceptance test must FAIL on current code (feature absent) to be valid.
+      const { runner } = await getRunner(language);
+      const probe = await runner.run(repo.root, { edits: [{ path: testPath, content: spec.test }] });
+      if (parseTestCounts(probe.raw).failed > 0) {
+        mode = "spec";
+        hiddenTest = spec.test;
+        feature = spec.feature;
+      }
+    } catch {
+      /* fall back to open mode */
+    }
+  }
+
+  const id = randomUUID();
+  creates.set(id, {
+    id,
+    repoId: repo.id,
+    unitId: unit.id,
+    mode,
+    language,
+    codePath,
+    testPath,
+    hiddenTest,
+    baseTotal: base.total,
+    basePassed: base.passed,
+  });
+
+  return {
+    id,
+    unitId: unit.id,
+    targetLevel: BloomLevel.Create,
+    mode,
+    language,
+    prompt:
+      mode === "spec"
+        ? `Implement this new feature so the hidden acceptance test passes: ${feature}`
+        : OPEN_CREATE_PROMPT,
+    feature,
+    codePath,
+    code, // starter: current file content
+    testPath,
+    testStarter: mode === "open" ? "" : undefined,
+  };
+}
+
+export async function submitCreateAttempt(
+  repo: RepoRecord,
+  userId: string,
+  assessmentId: string,
+  code: string,
+  test?: string,
+) {
+  const a = creates.get(assessmentId);
+  if (!a || a.repoId !== repo.id) throw new Error("assessment not found");
+
+  const edits = [{ path: a.codePath, content: code }];
+  if (a.mode === "spec") edits.push({ path: a.testPath, content: a.hiddenTest! });
+  else edits.push({ path: a.testPath, content: test ?? "" });
+
+  const { runner } = await getRunner(a.language);
+  const result = await runner.run(repo.root, { edits });
+  const counts = parseTestCounts(result.raw);
+  const grade = gradeOpenCreate({ passed: a.basePassed, total: a.baseTotal }, counts);
+
+  const key = stateKey(userId, repo.root, a.unitId);
+  const prev = states.get(key) ?? emptyState(userId, a.unitId);
+  const next = recordAttempt(prev, {
+    assessmentId,
+    targetLevel: BloomLevel.Create,
+    passed: grade.passed,
+    verifier: "tests",
+    at: new Date().toISOString(),
+  });
+  setState(userId, repo.root, next);
+
+  return { passed: grade.passed, reason: grade.reason, summary: result.summary, raw: result.raw, state: next };
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {

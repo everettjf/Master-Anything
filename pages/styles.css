@@ -201,14 +201,16 @@ pre .a { color: #3fb950; font-weight: 700; } pre .n { color: #a371f7; font-weigh
 @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
 
 /* ---- ladder ---- */
-.ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ladder { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .rung { border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; background: var(--panel); border-top-width: 3px; }
 .rung .lvl { font-weight: 700; font-size: 18px; display: block; margin-bottom: 8px; }
 .rung p { margin: 0; color: var(--muted); font-size: 15px; }
 .rung.u { border-top-color: var(--accent); } .rung.u .lvl { color: var(--accent); }
 .rung.a { border-top-color: var(--green); } .rung.a .lvl { color: var(--green); }
 .rung.n { border-top-color: var(--purple); } .rung.n .lvl { color: var(--purple); }
-@media (max-width: 720px) { .ladder { grid-template-columns: 1fr; } }
+.rung.cr { border-top-color: #f778ba; } .rung.cr .lvl { color: #f778ba; }
+@media (max-width: 900px) { .ladder { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .ladder { grid-template-columns: 1fr; } }
 
 /* ---- chips ---- */
 .chips { display: flex; flex-wrap: wrap; gap: 12px; }

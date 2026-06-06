@@ -265,6 +265,51 @@ export async function submitExplain(
   );
 }
 
+// --- Create (extend the codebase, verified by real tests) ---
+
+export interface CreateAssessment {
+  id: string;
+  unitId: string;
+  mode: "spec" | "open";
+  language: string;
+  targetLevel: number;
+  prompt: string;
+  feature?: string;
+  codePath: string;
+  code: string;
+  testPath: string;
+}
+
+export async function createCreate(id: string, unitId: string): Promise<CreateAssessment> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/units/${encodeURIComponent(unitId)}/create`, { method: "POST" }),
+  );
+}
+
+export interface CreateResult {
+  passed: boolean;
+  reason: string;
+  summary: string;
+  raw: string;
+  state: { level: number };
+}
+
+export async function submitCreate(
+  id: string,
+  userId: string,
+  assessmentId: string,
+  code: string,
+  test: string,
+): Promise<CreateResult> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/create-attempts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId, assessmentId, code, test }),
+    }),
+  );
+}
+
 // --- Analyze (graph-verified impact) ---
 
 export interface ImpactQuestion {

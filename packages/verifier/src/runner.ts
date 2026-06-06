@@ -61,6 +61,31 @@ export function summarize(output: string): string {
   return lastMeaningfulLine(output);
 }
 
+export interface TestCounts {
+  passed: number;
+  failed: number;
+  total: number;
+}
+
+/** Parse pass/fail/total counts from pytest or node --test output. */
+export function parseTestCounts(output: string): TestCounts {
+  const num = (re: RegExp) => {
+    const m = output.match(re);
+    return m ? Number(m[1]) : 0;
+  };
+  // node --test
+  if (/^#\s*tests\s+\d+/m.test(output)) {
+    const passed = num(/^#\s*pass\s+(\d+)/m);
+    const failed = num(/^#\s*fail\s+(\d+)/m);
+    const total = num(/^#\s*tests\s+(\d+)/m) || passed + failed;
+    return { passed, failed, total };
+  }
+  // pytest
+  const passed = num(/(\d+) passed/);
+  const failed = num(/(\d+) failed/) + num(/(\d+) error/);
+  return { passed, failed, total: passed + failed };
+}
+
 /** Copy a repo to an isolated temp dir and apply edits. Caller must clean up. */
 export async function materializeRepo(repoRoot: string, edits: FileEdit[] = []): Promise<string> {
   const work = await mkdtemp(join(tmpdir(), "ma-verify-"));

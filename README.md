@@ -55,11 +55,13 @@ same engine.** That's why Master-Anything supports code *and* documents with one
 
 ## Features
 
-- 🧠 **Verifiable mastery** — the differentiator:
+- 🧠 **Verifiable mastery** — the differentiator, up Bloom's ladder:
+  - **Understand** — the tutor asks a question; an LLM grades your answer **against the source**.
   - **Apply** — we blank a real function; you reimplement it; the project's **actual test suite** decides if you passed
     (Python · JavaScript · TypeScript).
   - **Analyze** — "if you change `X`, what's affected?" graded against the **call/dependency graph** (objective truth).
-  - **Understand** — the tutor asks a question; an LLM grades your answer **against the source**.
+  - **Create** — extend the codebase with a **new capability**; verified by real tests (no regression + a new passing
+    test, or a hidden LLM-generated acceptance test).
 - 🗺️ **Knowledge graph** — deterministic structure via [Tree-sitter](https://tree-sitter.github.io/), semantics via an LLM.
 - 🧩 **Anything, via adapters** — code (Python/JS/TS), Markdown, HTML, PDF; **mixed repos merge into one graph** with
   **cross-domain edges** linking docs to the code they describe.
@@ -115,6 +117,7 @@ cross-domain edges).
    - **Understand** — answer a question; the LLM grades it against the source.
    - **Apply** — reimplement a blanked function; the **real test suite** verifies it.
    - **Analyze** — pick which units a change would affect; graded against the **graph**.
+   - **Create** — add a new capability (+ a test that proves it); real tests enforce no regression.
 3. **Tutor** — ask in natural language; answers are grounded in the graph and cite `path:line`, with multi-turn memory.
 
 | Domain                | Adapter           | Unit        | Verifiable levels                                   |
@@ -176,7 +179,8 @@ pages/        # GitHub Pages landing site
 
 ## Roadmap
 
-**Done:** verifiable Apply (Py/JS/TS) · graph-verified Analyze · GraphRAG tutor with persistent multi-turn memory ·
+**Done:** verifiable Apply (Py/JS/TS) · graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
+GraphRAG tutor with persistent multi-turn memory ·
 Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · architectural layers · guided tours ·
 auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
 Docker sandbox runner (with local fallback).

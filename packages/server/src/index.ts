@@ -21,11 +21,13 @@ import { getConversation, putConversation } from "./db.js";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
   createApplyAssessment,
+  createCreateAssessment,
   createExplainAssessment,
   createImpactAssessment,
   masteryFor,
   runnerDescribe,
   submitAttempt,
+  submitCreateAttempt,
   submitExplainAttempt,
   submitImpactAttempt,
   unitSource,
@@ -325,6 +327,40 @@ app.post("/repos/:id/analyze-attempts", async (c) => {
   }
   try {
     return c.json(submitImpactAttempt(repo, userId || "anon", assessmentId, selectedIds));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Create level: extend the codebase with a new capability.
+app.post("/repos/:id/units/:unitId/create", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const unit = repo.units.get(c.req.param("unitId"));
+  if (!unit) return c.json({ error: "unit not found" }, 404);
+  try {
+    return c.json(await createCreateAssessment(repo, unit));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// Submit a new feature (+ test in open mode) -> real tests verify -> Create mastery.
+app.post("/repos/:id/create-attempts", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const { userId, assessmentId, code, test } = body as {
+    userId?: string;
+    assessmentId?: string;
+    code?: string;
+    test?: string;
+  };
+  if (!assessmentId || typeof code !== "string") {
+    return c.json({ error: "missing 'assessmentId' or 'code'" }, 400);
+  }
+  try {
+    return c.json(await submitCreateAttempt(repo, userId || "anon", assessmentId, code, test));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }
