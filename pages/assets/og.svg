@@ -55,24 +55,31 @@
     <text x="86" y="44" font-size="30" font-weight="700" fill="#d6dde6">Master<tspan fill="#8b949e">·Anything</tspan></text>
   </g>
 
+  <!-- eyebrow -->
+  <text x="92" y="232" font-size="22" font-weight="700" fill="#58a6ff" letter-spacing="0.5">EVERY OTHER TOOL STOPS AT “UNDERSTAND”</text>
+
   <!-- headline -->
-  <text x="90" y="300" font-size="86" font-weight="800" fill="#d6dde6" letter-spacing="-2">Master anything,</text>
-  <text x="90" y="392" font-size="86" font-weight="800" fill="url(#grad)" letter-spacing="-2">verifiably.</text>
+  <text x="90" y="306" font-size="74" font-weight="800" fill="#d6dde6" letter-spacing="-2">Don't just understand.</text>
+  <text x="90" y="392" font-size="74" font-weight="800" fill="url(#grad)" letter-spacing="-2">Master it — and prove it.</text>
 
   <!-- subhead -->
-  <text x="92" y="452" font-size="27" fill="#8b949e">From understanding → mastery. Prove it with real tests &amp; graph truth.</text>
+  <text x="92" y="448" font-size="26" fill="#8b949e">Drive your skill up Bloom's full ladder — verified by real tests &amp; graph truth.</text>
 
   <!-- bloom pills -->
-  <g transform="translate(92,500)" font-size="22" font-weight="700">
-    <rect width="190" height="48" rx="24" fill="#0d1117" stroke="#58a6ff" stroke-opacity="0.5"/>
-    <text x="95" y="31" text-anchor="middle" fill="#58a6ff">Understand</text>
-    <g transform="translate(210,0)">
-      <rect width="130" height="48" rx="24" fill="#0d1117" stroke="#3fb950" stroke-opacity="0.6"/>
-      <text x="65" y="31" text-anchor="middle" fill="#3fb950">Apply</text>
+  <g transform="translate(92,492)" font-size="21" font-weight="700">
+    <rect width="180" height="46" rx="23" fill="#0d1117" stroke="#58a6ff" stroke-opacity="0.5"/>
+    <text x="90" y="30" text-anchor="middle" fill="#58a6ff">Understand</text>
+    <g transform="translate(198,0)">
+      <rect width="120" height="46" rx="23" fill="#0d1117" stroke="#3fb950" stroke-opacity="0.6"/>
+      <text x="60" y="30" text-anchor="middle" fill="#3fb950">Apply</text>
     </g>
-    <g transform="translate(360,0)">
-      <rect width="150" height="48" rx="24" fill="#0d1117" stroke="#a371f7" stroke-opacity="0.6"/>
-      <text x="75" y="31" text-anchor="middle" fill="#a371f7">Analyze</text>
+    <g transform="translate(336,0)">
+      <rect width="140" height="46" rx="23" fill="#0d1117" stroke="#a371f7" stroke-opacity="0.6"/>
+      <text x="70" y="30" text-anchor="middle" fill="#a371f7">Analyze</text>
+    </g>
+    <g transform="translate(494,0)">
+      <rect width="120" height="46" rx="23" fill="#0d1117" stroke="#f778ba" stroke-opacity="0.65"/>
+      <text x="60" y="30" text-anchor="middle" fill="#f778ba">Create</text>
     </g>
   </g>
 </svg>

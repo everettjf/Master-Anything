@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./pages/assets/og.png" alt="Master-Anything — Master anything, verifiably" width="820" />
+<img src="./pages/assets/og.png" alt="Master-Anything — Don't just understand. Master it, and prove it." width="820" />
 
 # Master-Anything
 
