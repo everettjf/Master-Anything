@@ -105,6 +105,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); margin: 0 0 12px; letter-spacing: -0.5px
   z-index: -1;
   pointer-events: none;
 }
+.tag em { font-style: italic; }
 .tag {
   display: inline-block;
   font-size: 13px;
