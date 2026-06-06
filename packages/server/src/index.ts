@@ -8,7 +8,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { randomUUID } from "node:crypto";
-import { type ChatTurn, answerQuestion } from "@ma/core";
+import { type ChatTurn, answerQuestion, narrateStep, tourSteps } from "@ma/core";
 import { getConversation, putConversation } from "./db.js";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
@@ -20,6 +20,7 @@ import {
   submitAttempt,
   submitExplainAttempt,
   submitImpactAttempt,
+  unitSource,
 } from "./mastery-store.js";
 
 const app = new Hono();
@@ -97,6 +98,34 @@ app.get("/repos/:id/layers", (c) => {
   }
   const bands = [...byBand.values()].sort((a, b) => a.layer - b.layer);
   return c.json({ bands });
+});
+
+// Guided tour: ordered steps over the learning path.
+app.get("/repos/:id/tour", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  return c.json({ steps: tourSteps(repo.path.units) });
+});
+
+// Narrate one tour step (lazy, LLM if configured, cached).
+const tourNarration = new Map<string, string>();
+app.post("/repos/:id/tour/:unitId/narrate", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const unit = repo.units.get(c.req.param("unitId"));
+  if (!unit) return c.json({ error: "unit not found" }, 404);
+  const key = `${repo.id}:${unit.id}`;
+  const cached = tourNarration.get(key);
+  if (cached) return c.json({ narration: cached, cached: true });
+  const step = tourSteps(repo.path.units).find((s) => s.unitId === unit.id);
+  try {
+    const { text } = unitSource(repo, unit);
+    const narration = await narrateStep(unit, text, step?.buildsOn ?? [], step?.usedBy ?? [], llm);
+    tourNarration.set(key, narration);
+    return c.json({ narration, cached: false });
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
+  }
 });
 
 // Read the source slice a node points at (provenance-grounded UI).

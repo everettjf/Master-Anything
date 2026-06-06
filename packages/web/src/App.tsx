@@ -14,6 +14,7 @@ import {
   fetchSource,
 } from "./api.js";
 import { Practice } from "./Practice.js";
+import { Tour } from "./Tour.js";
 import { Tutor } from "./Tutor.js";
 
 const USER = "demo";
@@ -51,6 +52,7 @@ export function App() {
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [source, setSource] = useState<SourceSlice | null>(null);
   const [practiceUnit, setPracticeUnit] = useState<PathUnit | null>(null);
+  const [touring, setTouring] = useState(false);
 
   const graphRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -257,7 +259,10 @@ export function App() {
 
             {view === "learn" && (
               <div className="path-list">
-                <div className="hint" style={{ marginBottom: 8 }}>
+                <button className="tourbtn" onClick={() => setTouring(true)}>
+                  ▶ Start guided tour
+                </button>
+                <div className="hint" style={{ margin: "8px 0" }}>
                   Learning path — prerequisites first. Click a unit to practice.
                 </div>
                 {units.map((u, i) => {
@@ -300,6 +305,8 @@ export function App() {
         )}
 
         {view === "tutor" && repo && <Tutor repoId={repo.id} />}
+
+        {touring && repo && <Tour repoId={repo.id} onClose={() => setTouring(false)} />}
 
         {view === "learn" && !practiceUnit && (
           <div className="learn-hello">

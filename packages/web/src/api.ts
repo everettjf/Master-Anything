@@ -91,6 +91,25 @@ export async function fetchPath(id: string): Promise<{ cycles: number; units: Pa
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/path`));
 }
 
+export interface TourStep {
+  unitId: string;
+  title: string;
+  kind: string;
+  ref: string;
+  buildsOn: string[];
+  usedBy: string[];
+}
+
+export async function fetchTour(id: string): Promise<{ steps: TourStep[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/tour`));
+}
+
+export async function narrateTourStep(id: string, unitId: string): Promise<{ narration: string }> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/tour/${encodeURIComponent(unitId)}/narrate`, { method: "POST" }),
+  );
+}
+
 export interface LayerBand {
   band: string;
   layer: number;

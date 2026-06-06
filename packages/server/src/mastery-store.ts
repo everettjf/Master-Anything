@@ -43,7 +43,7 @@ export async function runnerDescribe(): Promise<string> {
 }
 
 /** Read the source lines a unit's primary node points at. */
-function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
+export function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
   const node = repo.graph.nodes.find((n) => n.id === unit.primary);
   if (!node) throw new Error("unit primary node not found");
   const ref = `${node.provenance.path}:${node.provenance.startLine}`;
