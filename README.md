@@ -4,7 +4,7 @@
 
 # Master-Anything
 
-**Master anything, verifiably.** — go beyond *understanding* a codebase to *mastering* it, and prove it.
+### Don't just *understand* a codebase — **master it, and prove it.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-3c873a.svg)](https://nodejs.org)
@@ -15,13 +15,18 @@
 
 </div>
 
-Master-Anything turns **any body of knowledge** — code first, then docs, papers, web pages, PDFs — into an interactive
-**knowledge graph**, and layers a **mastery engine** on top. It doesn't just explain things to you; it builds a
-learning path, quizzes you, and — wherever possible — **verifies** that you've actually mastered each piece using
-**real test execution** and **graph ground-truth**, not an LLM's opinion.
+> ### Every other tool stops at *understand*.
+> They render a pretty map of your codebase and call the job done. **Master-Anything is built for what comes next —
+> *mastery*.** It treats **your** skill as a living state and drives it up Bloom's **entire** ladder —
+> **Understand → Apply → Analyze → Create** — with an **objective check at every rung** (real test execution and
+> graph ground-truth, *never* an LLM's opinion), then keeps it sharp with **spaced repetition**.
+>
+> *Understanding is a one-time snapshot. **Mastery is a state you reach, prove, and retain.***
 
-> Tools that *understand* a codebase give you a one-time map. Master-Anything tracks *your* mastery as a living
-> state and pushes it up Bloom's ladder — Understand → Apply → Analyze — with objective checks at each step.
+Master-Anything turns **any body of knowledge** — code first, then docs, web pages, PDFs — into an interactive
+**knowledge graph**, and layers a **mastery engine** on top: a dependency-ordered learning path, quizzes, hands-on
+coding challenges, and — wherever possible — **verifiable proof** that you've actually mastered each piece, using
+**real tests** and **graph truth** rather than an LLM's say-so.
 
 <div align="center">
   <img src="./pages/assets/demo.gif" alt="The Apply loop — reimplement a blanked function, run the real test suite, get promoted to Apply" width="720" />
