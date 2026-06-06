@@ -254,3 +254,32 @@ pre .a { color: #3fb950; font-weight: 700; } pre .n { color: #a371f7; font-weigh
   .layer span { text-align: left; }
   .demos figcaption, .gallery figcaption { font-size: 13px; }
 }
+
+/* ---- tutorial page ---- */
+.tut { max-width: 880px; margin: 0 auto; padding: clamp(32px, 6vw, 64px) clamp(16px, 5vw, 32px) 80px; }
+.tut .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 13px; margin: 0 0 6px; }
+.tut h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; letter-spacing: -1px; margin: 0 0 16px; }
+.tut .lead { color: var(--muted); font-size: 18px; max-width: 68ch; }
+.tut .lead b { color: var(--text); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 24px 0 8px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.toc a { color: var(--muted); font-size: 14px; }
+.toc a:hover { color: var(--accent); }
+.step { display: flex; gap: 18px; padding: 30px 0; border-top: 1px solid rgba(42, 49, 60, 0.6); }
+.step-n { flex: 0 0 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, #58a6ff, #a371f7); color: #0b0e13; font-weight: 800; }
+.step-body { flex: 1; min-width: 0; }
+.step-body h2 { font-size: 24px; margin: 2px 0 12px; }
+.step-body p { color: var(--text); }
+.step-body ul, .step-body ol { color: var(--muted); padding-left: 20px; }
+.step-body li { margin: 8px 0; }
+.step-body li b { color: var(--text); }
+.code { position: relative; margin: 14px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #0d1117; }
+.code pre, pre.log { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.7; }
+pre.log { border: 1px solid var(--border); border-radius: 10px; background: #0d1117; color: var(--muted); margin: 12px 0; }
+.code .copy { position: absolute; top: 8px; right: 8px; background: var(--panel2); color: var(--muted); border: 1px solid var(--border); border-radius: 7px; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+.code .copy:hover { color: var(--text); border-color: var(--accent); }
+.tut .note { color: var(--muted); font-size: 14px; border-left: 2px solid var(--accent); padding-left: 12px; margin: 12px 0; }
+.tabs-list li, .rungs li { margin: 10px 0; }
+.rungs .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-right: 8px; }
+.pill.u { background: #58a6ff; color: #0d1117; } .pill.a { background: #3fb950; color: #0d1117; }
+.pill.n { background: #a371f7; color: #0d1117; } .pill.cr { background: #f778ba; color: #0d1117; }
+.tut-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }

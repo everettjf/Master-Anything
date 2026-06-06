@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tutorial · Master-Anything</title>
+    <meta
+      name="description"
+      content="Step-by-step: install Master-Anything, connect a repo, and climb Bloom's ladder from Understand to Create — verified by real tests."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/tutorial.html" />
+    <meta property="og:title" content="Tutorial · Master-Anything" />
+    <meta property="og:description" content="From zero to your first verified mastery, step by step." />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./index.html#features">Features</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut">
+      <p class="eyebrow">Tutorial</p>
+      <h1>From zero to your first <span class="grad">verified mastery</span></h1>
+      <p class="lead">
+        In ~5 minutes you'll run Master-Anything locally, connect a sample repo, and climb Bloom's ladder —
+        <b>Understand → Apply → Analyze → Create</b> — with each rung checked by <b>real tests</b> and the
+        <b>graph</b>, not an LLM's opinion. No API key required.
+      </p>
+
+      <nav class="toc">
+        <a href="#prereq">1. Prerequisites</a>
+        <a href="#install">2. Install</a>
+        <a href="#run">3. Run</a>
+        <a href="#connect">4. Connect a repo</a>
+        <a href="#tabs">5. The five tabs</a>
+        <a href="#ladder">6. Climb the ladder</a>
+        <a href="#review">7. Spaced repetition</a>
+        <a href="#cli">8. CLI</a>
+        <a href="#llm">9. Add an LLM</a>
+        <a href="#trouble">Troubleshooting</a>
+      </nav>
+
+      <section id="prereq" class="step">
+        <div class="step-n">1</div>
+        <div class="step-body">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li><b>Node ≥ 22</b> and <a href="https://pnpm.io">pnpm</a>, plus <code>git</code>.</li>
+            <li>For Python <b>Apply/Create</b> challenges: <code>python3</code> + <code>pytest</code>
+              (<code>python3 -m pip install pytest</code>). JavaScript/TypeScript use Node's built-in test runner — nothing to install.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="install" class="step">
+        <div class="step-n">2</div>
+        <div class="step-body">
+          <h2>Install &amp; build</h2>
+          <div class="code">
+            <button class="copy" data-copy>copy</button>
+            <pre><code>git clone https://github.com/everettjf/Master-Anything.git
+cd Master-Anything
+pnpm install
+pnpm -r build        # compiles all 5 TypeScript packages</code></pre>
+          </div>
+          <p class="note">A clean <code>pnpm -r build</code> is itself a health check — it typechecks the whole workspace.</p>
+        </div>
+      </section>
+
+      <section id="run" class="step">
+        <div class="step-n">3</div>
+        <div class="step-body">
+          <h2>Run the API + web app</h2>
+          <p>In two terminals:</p>
+          <div class="code">
+            <button class="copy" data-copy>copy</button>
+            <pre><code>pnpm --filter @ma/server dev    # API → http://localhost:8787
+pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
+          </div>
+          <p>The server prints its configuration on startup:</p>
+          <pre class="log"><code>@ma/server listening on http://localhost:8787
+  LLM enrichment: off — heuristic summaries
+  Embeddings:     off — lexical retrieval
+  Test sandbox:   local pytest (subprocess)</code></pre>
+        </div>
+      </section>
+
+      <section id="connect" class="step">
+        <div class="step-n">4</div>
+        <div class="step-body">
+          <h2>Connect a sample repo</h2>
+          <p>
+            Open <a href="http://localhost:5173">http://localhost:5173</a> and paste an <b>absolute path</b> into the
+            box. Use a bundled example to see everything at once:
+          </p>
+          <ul>
+            <li><code>&lt;repo&gt;/examples/mixed-app</code> — code <i>and</i> docs (shows cross-domain links).</li>
+            <li><code>&lt;repo&gt;/examples/py-calc</code> — pure Python (fastest Apply/Create loop).</li>
+          </ul>
+          <div class="shot-frame">
+            <img src="./assets/app-mock.png" loading="lazy" alt="The Learn tab after connecting a repo" />
+          </div>
+        </div>
+      </section>
+
+      <section id="tabs" class="step">
+        <div class="step-n">5</div>
+        <div class="step-body">
+          <h2>The five tabs</h2>
+          <ul class="tabs-list">
+            <li><b>Graph</b> — explore the knowledge graph; click a node for its source. Toggle <i>by kind / by layer</i> coloring.</li>
+            <li><b>Learn</b> — the dependency-ordered path; click a unit to practice the Bloom ladder.</li>
+            <li><b>Layers</b> — units grouped by architectural depth (Foundation → Interface).</li>
+            <li><b>Wiki</b> — an auto-generated, cross-linked wiki; <b>Export markdown</b> to commit it into the repo.</li>
+            <li><b>Tutor</b> — ask in natural language; grounded answers cite <code>path:line</code>, with multi-turn memory.</li>
+          </ul>
+          <div class="gallery two">
+            <figure><img src="./assets/app-layers.png" loading="lazy" alt="Layers tab" /><figcaption><b>Layers</b></figcaption></figure>
+            <figure><img src="./assets/app-wiki.png" loading="lazy" alt="Wiki tab" /><figcaption><b>Wiki</b></figcaption></figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="ladder" class="step">
+        <div class="step-n">6</div>
+        <div class="step-body">
+          <h2>Climb the ladder (the core loop)</h2>
+          <p>In <b>Learn</b>, click the <b>Calculator</b> unit. You'll get four challenges:</p>
+          <ol class="rungs">
+            <li><span class="pill u">Understand</span> Answer a question in prose — an LLM grades it against the source (needs an LLM; see step 9).</li>
+            <li><span class="pill a">Apply</span> The body of <code>add</code> is blanked. Type <code>return a + b</code> and hit <b>Run tests</b> — the project's <b>real pytest suite</b> turns you green and promotes you to <b>Apply</b>.</li>
+            <li><span class="pill n">Analyze</span> "If you change <code>Calculator</code>, what's affected?" Select the dependents — graded against the <b>call graph</b>.</li>
+            <li><span class="pill cr">Create</span> Add a <b>new</b> capability (e.g. a <code>mul</code> method) <i>and a test for it</i>. The suite must stay green with strictly more tests → <b>Create</b>.</li>
+          </ol>
+          <div class="shot-frame">
+            <img src="./assets/demo.gif" loading="lazy" alt="The Apply loop: blank a function, fix it, run real tests, get promoted" />
+          </div>
+          <p class="note">Every promotion above Understand is backed by an objective check — real test execution or graph ground-truth.</p>
+        </div>
+      </section>
+
+      <section id="review" class="step">
+        <div class="step-n">7</div>
+        <div class="step-body">
+          <h2>Retention: spaced repetition</h2>
+          <p>
+            Mastered units resurface on a decaying schedule. When something is due, a <b>↻ count badge</b> appears on the
+            Learn tab and a <b>Due for review</b> list lets you re-practice. Fail a review and the level drops one rung —
+            mastery means <i>retained</i> mastery.
+          </p>
+        </div>
+      </section>
+
+      <section id="cli" class="step">
+        <div class="step-n">8</div>
+        <div class="step-body">
+          <h2>CLI (no server needed)</h2>
+          <div class="code">
+            <button class="copy" data-copy>copy</button>
+            <pre><code># knowledge-graph JSON for any directory
+pnpm --filter @ma/core graph /abs/path/to/project --out artifacts/graph.json
+
+# generate a cross-linked markdown wiki (writes &lt;repo&gt;/.master-anything/wiki/)
+pnpm --filter @ma/core wiki /abs/path/to/project</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="llm" class="step">
+        <div class="step-n">9</div>
+        <div class="step-body">
+          <h2>Optional: add an LLM</h2>
+          <p>Everything runs without a key (heuristics). Add one to enable the Tutor, Understand grading, and richer Create specs:</p>
+          <div class="code">
+            <button class="copy" data-copy>copy</button>
+            <pre><code>export MA_LLM_PROVIDER=anthropic
+export MA_LLM_MODEL=claude-3-5-sonnet-latest
+export ANTHROPIC_API_KEY=sk-ant-...
+# or any OpenAI-compatible endpoint:
+#   export MA_LLM_BASE_URL=https://openrouter.ai/api/v1
+#   export MA_LLM_MODEL=anthropic/claude-3.5-sonnet
+#   export MA_LLM_API_KEY=sk-or-...</code></pre>
+          </div>
+          <p class="note">See <code>.env.example</code> for embeddings, the Docker sandbox, and persistence options.</p>
+        </div>
+      </section>
+
+      <section id="trouble" class="step">
+        <div class="step-n">?</div>
+        <div class="step-body">
+          <h2>Troubleshooting</h2>
+          <ul>
+            <li><b>"not a directory"</b> — the path must be <b>absolute</b> and on the machine running the server.</li>
+            <li><b>Apply says "not test-covered"</b> — that function has no test; it falls back to advisory (not counted). Try a covered unit like <code>Calculator</code>.</li>
+            <li><b>Python challenges error</b> — install pytest: <code>python3 -m pip install pytest</code>.</li>
+            <li><b>Tutor/Understand unavailable</b> — those need an LLM (step 9); without one the Tutor still returns the most relevant code locations.</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="https://github.com/everettjf/Master-Anything">Star on GitHub</a>
+        <a class="btn ghost" href="./index.html">← Back to home</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/VISION.md">Vision</a>
+      </div>
+    </footer>
+
+    <script>
+      for (const b of document.querySelectorAll("[data-copy]")) {
+        b.addEventListener("click", async () => {
+          const code = b.parentElement.querySelector("code").innerText;
+          try {
+            await navigator.clipboard.writeText(code);
+            b.textContent = "copied ✓";
+            setTimeout(() => (b.textContent = "copy"), 1500);
+          } catch {
+            b.textContent = "select & copy";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
