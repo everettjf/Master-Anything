@@ -4,7 +4,7 @@
 
 # Master-Anything
 
-### Don't just *understand* a codebase — **master it, and prove it.**
+### Don't just *understand* — **master it, and prove it.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-3c873a.svg)](https://nodejs.org)
@@ -16,7 +16,7 @@
 </div>
 
 > ### Every other tool stops at *understand*.
-> They render a pretty map of your codebase and call the job done. **Master-Anything is built for what comes next —
+> They render a pretty map — of a codebase, a doc, a paper, a PDF — and call the job done. **Master-Anything is built for what comes next —
 > *mastery*.** It treats **your** skill as a living state and drives it up Bloom's **entire** ladder —
 > **Understand → Apply → Analyze → Create** — with an **objective check at every rung** (real test execution and
 > graph ground-truth, *never* an LLM's opinion), then keeps it sharp with **spaced repetition**.
