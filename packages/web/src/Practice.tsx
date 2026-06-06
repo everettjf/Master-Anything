@@ -4,15 +4,15 @@ import {
   type AttemptResult,
   type CreateAssessment,
   type CreateResult,
+  createAssessment,
+  createCreate,
+  createExplain,
+  createImpact,
   type ExplainQuestion,
   type ExplainResult,
   type ImpactQuestion,
   type ImpactResult,
   type PathUnit,
-  createAssessment,
-  createCreate,
-  createExplain,
-  createImpact,
   submitAttempt,
   submitCreate,
   submitExplain,
@@ -25,14 +25,12 @@ export function Practice({
   repoId,
   unit,
   userId,
-  repoKind,
   onClose,
   onMastered,
 }: {
   repoId: string;
   unit: PathUnit;
   userId: string;
-  repoKind: "code" | "docs" | "pdf" | "mixed";
   onClose: () => void;
   onMastered: () => void;
 }) {
@@ -222,7 +220,9 @@ function CreateChallenge({
             {a.mode === "spec" && <> · a hidden acceptance test will run</>}
           </div>
 
-          <div className="hint" style={{ margin: "6px 0" }}>{a.codePath}</div>
+          <div className="hint" style={{ margin: "6px 0" }}>
+            {a.codePath}
+          </div>
           <textarea
             spellCheck={false}
             value={code}
@@ -231,7 +231,9 @@ function CreateChallenge({
           />
           {a.mode === "open" && (
             <>
-              <div className="hint" style={{ margin: "6px 0" }}>{a.testPath} (your test)</div>
+              <div className="hint" style={{ margin: "6px 0" }}>
+                {a.testPath} (your test)
+              </div>
               <textarea
                 spellCheck={false}
                 placeholder="Write a test that proves your new capability…"

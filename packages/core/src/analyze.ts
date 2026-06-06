@@ -55,9 +55,7 @@ export function buildImpactQuestion(
   const correctIds = deps.get(targetUnitId) ?? new Set<string>();
 
   const correct = [...correctIds].map((id) => byId.get(id)!).filter(Boolean);
-  const distractors = units.filter(
-    (u) => u.id !== targetUnitId && !correctIds.has(u.id),
-  );
+  const distractors = units.filter((u) => u.id !== targetUnitId && !correctIds.has(u.id));
 
   const chosen = [...correct, ...distractors].slice(0, Math.max(maxOptions, correct.length));
   // stable order by title so the UI is deterministic

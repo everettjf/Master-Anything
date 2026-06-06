@@ -40,10 +40,7 @@ const REVIEW_HOURS: Record<number, number> = { 1: 12, 2: 24, 3: 72, 4: 168, 5: 3
  * a level already reached) demotes by one — modelling forgetting — while
  * failing a fresh, higher-level attempt only dents confidence.
  */
-export function recordAttempt(
-  state: LearnerUnitState,
-  attempt: AttemptRecord,
-): LearnerUnitState {
+export function recordAttempt(state: LearnerUnitState, attempt: AttemptRecord): LearnerUnitState {
   const attempts = [...state.attempts, attempt];
   let level = state.level;
   let confidence = state.confidence;
@@ -72,7 +69,5 @@ export function isDue(state: LearnerUnitState, now: number = Date.now()): boolea
 }
 
 export function bloomName(level: BloomLevel): string {
-  return (
-    ["None", "Remember", "Understand", "Apply", "Analyze", "Create"][level] ?? String(level)
-  );
+  return ["None", "Remember", "Understand", "Apply", "Analyze", "Create"][level] ?? String(level);
 }

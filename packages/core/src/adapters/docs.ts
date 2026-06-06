@@ -10,7 +10,7 @@
  *   section  --refers-to--> linked section ([text](other.md#anchor))
  */
 import { execSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { BloomLevel, type KnowledgeEdge, type KnowledgeGraph, type KnowledgeNode } from "../types.js";
 
@@ -117,7 +117,7 @@ function listDocs(root: string): string[] {
     for (const entry of entries) {
       if (entry.startsWith(".")) continue;
       const full = join(dir, entry);
-      let st;
+      let st: import("node:fs").Stats;
       try {
         st = statSync(full);
       } catch {
@@ -174,7 +174,7 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
     });
 
     const sections = sectionsFor(rel, source);
-    let prevByLevel: Record<number, string> = {};
+    const prevByLevel: Record<number, string> = {};
     sections.forEach((sec) => {
       const id = `section:${rel}#${sec.anchor}:${sec.startLine}`;
       nodes.push({
@@ -219,7 +219,8 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
       const href = m[1] ?? m[2];
       if (!href) continue;
       const target = resolveLink(href, node.provenance.path, anchorIndex);
-      if (target && target !== node.id) edges.push({ from: node.id, to: target, type: "refers-to", weight: 1 });
+      if (target && target !== node.id)
+        edges.push({ from: node.id, to: target, type: "refers-to", weight: 1 });
     }
   }
 
@@ -232,11 +233,7 @@ export function buildDocsGraph(root: string): KnowledgeGraph {
   };
 }
 
-function resolveLink(
-  href: string,
-  fromPath: string,
-  anchorIndex: Map<string, string>,
-): string | undefined {
+function resolveLink(href: string, fromPath: string, anchorIndex: Map<string, string>): string | undefined {
   if (href.startsWith("http")) return undefined;
   const [pathPart, anchor] = href.split("#");
   const targetPath = pathPart ? normalizeRel(fromPath, pathPart) : fromPath;

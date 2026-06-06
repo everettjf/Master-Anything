@@ -44,5 +44,5 @@ if (args.out) {
   writeFileSync(outPath, JSON.stringify(graph, null, 2));
   console.error(`  wrote ${outPath}`);
 } else {
-  process.stdout.write(JSON.stringify(graph, null, 2) + "\n");
+  process.stdout.write(`${JSON.stringify(graph, null, 2)}\n`);
 }

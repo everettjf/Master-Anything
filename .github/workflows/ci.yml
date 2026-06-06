@@ -26,6 +26,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Lint & format (Biome)
+        run: pnpm lint
+
       - name: Build all packages (typecheck)
         run: pnpm -r build
 

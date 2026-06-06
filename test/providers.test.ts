@@ -56,19 +56,33 @@ describe("provider/model shorthand + failover", () => {
   });
 
   it("keeps OpenRouter slashed model ids when provider is explicit", () => {
-    const r = resolveProvider({ MA_LLM_PROVIDER: "openrouter", OPENROUTER_API_KEY: "k", MA_LLM_MODEL: "anthropic/claude-3.5-sonnet" });
+    const r = resolveProvider({
+      MA_LLM_PROVIDER: "openrouter",
+      OPENROUTER_API_KEY: "k",
+      MA_LLM_MODEL: "anthropic/claude-3.5-sonnet",
+    });
     expect(r.describe).toContain("OpenRouter");
     expect(r.describe).toContain("anthropic/claude-3.5-sonnet");
   });
 
   it("builds a failover chain", () => {
-    const r = resolveProvider({ MA_LLM_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "k", MA_LLM_FALLBACK: "groq,openai", GROQ_API_KEY: "g", OPENAI_API_KEY: "o" });
+    const r = resolveProvider({
+      MA_LLM_PROVIDER: "anthropic",
+      ANTHROPIC_API_KEY: "k",
+      MA_LLM_FALLBACK: "groq,openai",
+      GROQ_API_KEY: "g",
+      OPENAI_API_KEY: "o",
+    });
     expect(r.describe).toContain("failover");
     expect(r.describe).toContain("Groq");
   });
 
   it("FailoverProvider tries the next provider on error", async () => {
-    const boom = { complete: async () => { throw new Error("down"); } };
+    const boom = {
+      complete: async () => {
+        throw new Error("down");
+      },
+    };
     const ok = { complete: async () => "second" };
     const fo = new FailoverProvider([boom, ok]);
     expect(await fo.complete({ prompt: "x" })).toBe("second");

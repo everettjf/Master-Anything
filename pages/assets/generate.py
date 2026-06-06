@@ -460,6 +460,39 @@ def main():    # static tab screenshots
     )
     print("wrote tut-apply.png, tut-tabs.png, tut-connect.png")
 
+    # Model settings modal mock (composited over the app)
+    field = lambda y, label, val, ph=False: (  # noqa: E731
+        f'<text x="410" y="{y}" font-size="12" fill="#8b949e">{label}</text>'
+        f'<rect x="410" y="{y + 8}" width="440" height="34" rx="6" fill="#0d1117" stroke="#2a313c"/>'
+        f'<text x="424" y="{y + 30}" font-size="13" fill="{"#6e7681" if ph else "#c9d1d9"}">{val}</text>'
+    )
+    modal = (
+        '<rect x="0" y="0" width="1280" height="800" fill="#000" opacity="0.55"/>'
+        '<rect x="380" y="150" width="500" height="500" rx="12" fill="#161b22" stroke="#2a313c"/>'
+        '<text x="404" y="190" font-size="18" font-weight="700" fill="#d6dde6">Model settings</text>'
+        '<text x="852" y="188" font-size="20" fill="#8b949e">×</text>'
+        # current config
+        '<rect x="404" y="206" width="452" height="86" rx="8" fill="#0d1117" stroke="#2a313c"/>'
+        '<text x="418" y="230" font-size="12.5"><tspan fill="#8b949e">LLM        </tspan><tspan fill="#c9d1d9">vercel-ai (Anthropic, auto-detected)</tspan></text>'
+        '<text x="418" y="252" font-size="12.5"><tspan fill="#8b949e">Embeddings </tspan><tspan fill="#c9d1d9">off — lexical retrieval</tspan></text>'
+        '<text x="418" y="274" font-size="12.5"><tspan fill="#8b949e">Keys       </tspan><tspan fill="#c9d1d9">Anthropic, Groq</tspan></text>'
+        + field(308, "Provider", "groq ▾")
+        + field(360, "Model  (optional — preset default if blank)", "llama-3.3-70b-versatile")
+        + field(412, "Failover  (optional, comma-separated)", "openai,anthropic")
+        + '<rect x="410" y="470" width="110" height="38" rx="8" fill="#58a6ff"/>'
+        + '<text x="465" y="494" text-anchor="middle" font-size="14" font-weight="700" fill="#0d1117">Apply</text>'
+        + '<text x="404" y="540" font-size="11.5" fill="#8b949e">API keys come from the server environment (e.g. ANTHROPIC_API_KEY).</text>'
+    )
+    annotate(
+        "app-graph.png",
+        modal
+        + ann_ring(404, 300, 452, 50)
+        + ann_arrow(900, 326, 862, 330)
+        + ann_label(906, 312, "switch vendor/model — no env edits"),
+        "app-settings.png",
+    )
+    print("wrote app-settings.png")
+
     # Apply-loop GIF
     stages = [0, 1, 2, 3]
     durations = [1500, 1400, 900, 2600]

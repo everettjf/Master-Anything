@@ -6,16 +6,11 @@
  */
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { languageForExtension } from "./languages.js";
 import { type ParsedSymbol, parseSource } from "./parser.js";
-import {
-  BloomLevel,
-  type KnowledgeEdge,
-  type KnowledgeGraph,
-  type KnowledgeNode,
-} from "./types.js";
+import { BloomLevel, type KnowledgeEdge, type KnowledgeGraph, type KnowledgeNode } from "./types.js";
 
 const IGNORED_DIRS = new Set([
   "node_modules",
@@ -53,7 +48,7 @@ function listSourceFiles(root: string, maxFiles: number): string[] {
       if (out.length >= maxFiles) return;
       if (entry.startsWith(".") && entry !== ".") continue;
       const full = join(dir, entry);
-      let st;
+      let st: import("node:fs").Stats;
       try {
         st = statSync(full);
       } catch {
@@ -122,7 +117,7 @@ export function buildGraph(root: string, opts: BuildOptions = {}): KnowledgeGrap
     }
     fileHashes[rel] = createHash("sha1").update(source).digest("hex");
 
-    let parsed;
+    let parsed: ReturnType<typeof parseSource>;
     try {
       parsed = parseSource(source, lang);
     } catch {

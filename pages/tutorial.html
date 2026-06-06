@@ -203,6 +203,10 @@ export MA_LLM_MODEL=anthropic/claude-3-5-sonnet-latest   # provider/model shorth
 export MA_LLM_BASE_URL=http://localhost:4000  MA_LLM_MODEL=my-model   # custom endpoint
 export MA_LLM_FALLBACK=openai,groq            # try primary, then fall back</code></pre>
           </div>
+          <p>Prefer a UI? Click <b>⚙ Model settings</b> in the sidebar to see what's active and switch provider/model live — no env edits:</p>
+          <div class="shot-frame">
+            <img src="./assets/app-settings.png" loading="lazy" alt="Model settings panel: current LLM, detected keys, and a provider/model switcher" />
+          </div>
           <p class="note">Check what's active any time: <code>curl localhost:8787/config</code>. See <code>.env.example</code> for embeddings, the Docker sandbox, and persistence.</p>
         </div>
       </section>

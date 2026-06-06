@@ -8,11 +8,14 @@
     "pretest": "pnpm --filter @ma/core --filter @ma/verifier build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "biome check .",
+    "format": "biome check --write .",
     "graph": "pnpm --filter @ma/core graph",
     "server": "pnpm --filter @ma/server dev",
     "web": "pnpm --filter @ma/web dev"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@ma/core": "workspace:*",
     "@ma/verifier": "workspace:*",
     "tsx": "^4.19.2",

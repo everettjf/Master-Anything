@@ -4,29 +4,29 @@
  */
 import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname, join } from "node:path";
 import {
+  bandName,
+  buildDocsGraph,
+  buildGraph,
+  buildPdfGraph,
+  buildUnits,
+  computeLayers,
+  describeAvailableProviders,
   EmbeddingIndex,
+  embeddingProviderFromEnv,
+  enrichUnits,
   type KnowledgeGraph,
   type LearningPath,
   type LearningUnit,
   type LlmProvider,
-  type RepoArtifact,
-  buildDocsGraph,
-  buildGraph,
-  buildPdfGraph,
-  bandName,
-  buildUnits,
-  computeLayers,
-  describeAvailableProviders,
-  embeddingProviderFromEnv,
-  enrichUnits,
   linkCrossDomain,
   mergeGraphs,
   moduleOf,
   orderUnits,
   parseArtifact,
+  type RepoArtifact,
   resolveProvider,
   serializeArtifact,
 } from "@ma/core";
@@ -102,7 +102,10 @@ function annotateLayers(graph: KnowledgeGraph, units: LearningUnit[]): void {
   }
 }
 
-async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: KnowledgeGraph; kind: RepoKind }> {
+async function buildGraphFor(
+  root: string,
+  hint?: RepoKind,
+): Promise<{ graph: KnowledgeGraph; kind: RepoKind }> {
   const present =
     hint && hint !== "mixed"
       ? { code: hint === "code", docs: hint === "docs", pdf: hint === "pdf" }
@@ -148,6 +151,7 @@ export function setLlm(overrides: Record<string, string | undefined>): string {
 }
 // Optional embedding backend for semantic retrieval (MA_EMBED_*); absent -> lexical.
 const { provider: embedder, describe: embedDescribe } = embeddingProviderFromEnv();
+
 export { embedDescribe };
 
 export interface RepoRecord {
@@ -189,7 +193,7 @@ export async function addRepo(root: string, opts: AddRepoOptions = {}): Promise<
   const prev = opts.fresh ? undefined : readArtifact(root);
 
   // 1) Repo unchanged since the artifact (same commit) -> load, skip the pipeline.
-  if (prev && prev.commit && prev.commit === gitCommit(root)) {
+  if (prev?.commit && prev.commit === gitCommit(root)) {
     const record: RepoRecord = {
       id: randomUUID(),
       root,

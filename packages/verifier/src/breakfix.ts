@@ -35,11 +35,7 @@ export interface BlankResult {
  * Blank a Python function/method body, keeping its signature (possibly multi-line)
  * and replacing the body with `raise NotImplementedError`.
  */
-export function blankPythonFunction(
-  source: string,
-  startLine: number,
-  endLine: number,
-): BlankResult {
+export function blankPythonFunction(source: string, startLine: number, endLine: number): BlankResult {
   const lines = source.split(NL);
   const fnLines = lines.slice(startLine - 1, endLine);
   const originalFunction = fnLines.join(NL);
@@ -55,10 +51,8 @@ export function blankPythonFunction(
     }
   }
   const header = fnLines.slice(0, headerEnd + 1);
-  const bodyIndent = leadingWhitespace(fnLines[0]!) + "    ";
-  const brokenFunction = [...header, `${bodyIndent}raise NotImplementedError("implement me")`].join(
-    NL,
-  );
+  const bodyIndent = `${leadingWhitespace(fnLines[0]!)}    `;
+  const brokenFunction = [...header, `${bodyIndent}raise NotImplementedError("implement me")`].join(NL);
 
   return {
     brokenFunction,

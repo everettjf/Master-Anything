@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { type WikiPage, exportWiki, fetchWiki } from "./api.js";
+import { exportWiki, fetchWiki, type WikiPage } from "./api.js";
 
 /** Inline markdown: **bold**, `code`, [text](url). Links to ./*.md navigate in-app. */
 function inline(text: string, go: (slug: string) => void): ReactNode[] {
@@ -71,7 +71,8 @@ function renderMarkdown(md: string, go: (slug: string) => void): ReactNode[] {
       flushList();
       blocks.push(<h2 key={key++}>{inline(line.slice(3), go)}</h2>);
     } else if (line.startsWith("- ")) {
-      (list ??= []).push(<li key={key++}>{inline(line.slice(2), go)}</li>);
+      if (!list) list = [];
+      list.push(<li key={key++}>{inline(line.slice(2), go)}</li>);
     } else if (line.trim() === "") {
       flushList();
     } else {
@@ -115,8 +116,18 @@ export function Wiki({ repoId }: { repoId: string }) {
     }
   };
 
-  if (loading) return <div className="wiki"><div className="hint">Generating wiki…</div></div>;
-  if (error) return <div className="wiki"><div className="error">{error}</div></div>;
+  if (loading)
+    return (
+      <div className="wiki">
+        <div className="hint">Generating wiki…</div>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="wiki">
+        <div className="error">{error}</div>
+      </div>
+    );
 
   return (
     <div className="wiki">

@@ -1,0 +1,42 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. pnpm --filter @ma/server dev
+        2. connect examples/py-calc
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - core (graph / adapters / mastery / tutor)
+        - verifier (test runners)
+        - server (API)
+        - web (UI)
+        - docs / pages
+        - other
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version (`node -v`), and any `MA_*` env / LLM provider in use.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      render: shell

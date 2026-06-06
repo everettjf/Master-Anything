@@ -8,12 +8,7 @@
  */
 import type { SupportedLanguage } from "./breakfix.js";
 import { DockerPytestRunner, dockerAvailable } from "./docker.js";
-import {
-  LocalNodeTestRunner,
-  LocalPytestRunner,
-  LocalTsTestRunner,
-  type TestRunner,
-} from "./runner.js";
+import { LocalNodeTestRunner, LocalPytestRunner, LocalTsTestRunner, type TestRunner } from "./runner.js";
 
 export interface RunnerInfo {
   runner: TestRunner;

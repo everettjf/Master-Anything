@@ -7,10 +7,6 @@ import { readFileSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import {
   BloomLevel,
-  OPEN_CREATE_PROMPT,
-  type ImpactQuestion,
-  type LearnerUnitState,
-  type LearningUnit,
   buildImpactQuestion,
   emptyState,
   generateCreateSpec,
@@ -18,20 +14,24 @@ import {
   gradeExplain,
   gradeImpact,
   gradeOpenCreate,
+  type ImpactQuestion,
   isDue,
+  type LearnerUnitState,
+  type LearningUnit,
+  OPEN_CREATE_PROMPT,
   recordAttempt,
 } from "@ma/core";
 import {
-  type RunnerInfo,
-  type SupportedLanguage,
   makeRunner,
   parseTestCounts,
+  type RunnerInfo,
   replaceLineRange,
+  type SupportedLanguage,
   verifierForExtension,
 } from "@ma/verifier";
 import { getAllMastery, putMastery } from "./db.js";
-import { getLlm } from "./store.js";
 import type { RepoRecord } from "./store.js";
+import { getLlm } from "./store.js";
 
 // One runner per language, resolved lazily/once. Python honors MA_SANDBOX.
 const runnerByLang = new Map<SupportedLanguage, Promise<RunnerInfo>>();
@@ -111,10 +111,7 @@ function targetFunction(repo: RepoRecord, unit: LearningUnit) {
   return candidates.find((n) => n.id === unit.primary) ?? candidates[0];
 }
 
-export async function createApplyAssessment(
-  repo: RepoRecord,
-  unit: LearningUnit,
-): Promise<ApplyAssessment> {
+export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit): Promise<ApplyAssessment> {
   const fn = targetFunction(repo, unit);
   if (!fn) throw new Error("unit has no implementable function to practice");
   const verifier = verifierForExtension(extname(fn.provenance.path));
@@ -244,7 +241,13 @@ export function submitImpactAttempt(
   });
   setState(userId, repo.root, next);
 
-  return { passed: grade.passed, correctIds: grade.correctIds, missedIds: grade.missedIds, wrongIds: grade.wrongIds, state: next };
+  return {
+    passed: grade.passed,
+    correctIds: grade.correctIds,
+    missedIds: grade.missedIds,
+    wrongIds: grade.wrongIds,
+    state: next,
+  };
 }
 
 // --- Understand level: LLM question + source-grounded grading ---
@@ -439,7 +442,13 @@ export async function submitCreateAttempt(
   });
   setState(userId, repo.root, next);
 
-  return { passed: grade.passed, reason: grade.reason, summary: result.summary, raw: result.raw, state: next };
+  return {
+    passed: grade.passed,
+    reason: grade.reason,
+    summary: result.summary,
+    raw: result.raw,
+    state: next,
+  };
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {

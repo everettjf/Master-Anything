@@ -24,9 +24,9 @@ export interface LanguageDef {
   query: SymbolQuery;
 }
 
+import JavaScript from "tree-sitter-javascript";
 // Grammars are CommonJS native modules; default-import works under Node ESM interop.
 import Python from "tree-sitter-python";
-import JavaScript from "tree-sitter-javascript";
 import TypeScriptModule from "tree-sitter-typescript";
 
 const { typescript: TypeScript, tsx: TSX } = TypeScriptModule as unknown as {

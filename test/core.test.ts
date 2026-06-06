@@ -100,8 +100,16 @@ describe("mastery engine", () => {
   });
 
   it("flags due reviews by schedule", () => {
-    const past = { ...emptyState("u", "x"), level: 3, nextReviewAt: new Date(Date.now() - 1000).toISOString() };
-    const future = { ...emptyState("u", "x"), level: 3, nextReviewAt: new Date(Date.now() + 1e6).toISOString() };
+    const past = {
+      ...emptyState("u", "x"),
+      level: 3,
+      nextReviewAt: new Date(Date.now() - 1000).toISOString(),
+    };
+    const future = {
+      ...emptyState("u", "x"),
+      level: 3,
+      nextReviewAt: new Date(Date.now() + 1e6).toISOString(),
+    };
     expect(isDue(past)).toBe(true);
     expect(isDue(future)).toBe(false);
     expect(isDue(emptyState("u", "x"))).toBe(false);

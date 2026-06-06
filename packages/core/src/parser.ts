@@ -30,7 +30,7 @@ function nodeName(node: Parser.SyntaxNode): string | undefined {
 /** First line of a node's text, trimmed, used as a lightweight signature. */
 function signatureOf(node: Parser.SyntaxNode): string {
   const firstLine = node.text.split("\n", 1)[0]!.trim();
-  return firstLine.length > 200 ? firstLine.slice(0, 197) + "..." : firstLine;
+  return firstLine.length > 200 ? `${firstLine.slice(0, 197)}...` : firstLine;
 }
 
 /** Best-effort callee name for a call node (handles `foo()` and `a.b()`). */
@@ -39,8 +39,7 @@ function calleeName(node: Parser.SyntaxNode): string | undefined {
   if (!fn) return undefined;
   if (fn.type === "identifier") return fn.text;
   // member access: take the property/attribute identifier
-  const prop =
-    fn.childForFieldName("property") ?? fn.childForFieldName("attribute");
+  const prop = fn.childForFieldName("property") ?? fn.childForFieldName("attribute");
   if (prop) return prop.text;
   const last = fn.text.split(".").pop();
   return last?.trim() || undefined;

@@ -14,7 +14,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { type LanguageModel, generateText } from "ai";
+import { generateText, type LanguageModel } from "ai";
 import type { CompleteOptions, LlmProvider } from "../enrich.js";
 
 export interface VercelAiConfig {

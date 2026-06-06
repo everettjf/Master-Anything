@@ -7,8 +7,8 @@
  */
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { type EmbeddingModel, cosineSimilarity, embedMany } from "ai";
-import { type RetrievedNode, nodeText } from "./retrieval.js";
+import { cosineSimilarity, type EmbeddingModel, embedMany } from "ai";
+import { nodeText, type RetrievedNode } from "./retrieval.js";
 import type { KnowledgeGraph, KnowledgeNode } from "./types.js";
 
 export interface EmbeddingProvider {
@@ -49,9 +49,10 @@ export class VercelEmbeddingProvider implements EmbeddingProvider {
   }
 }
 
-export function embeddingProviderFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): { provider?: EmbeddingProvider; describe: string } {
+export function embeddingProviderFromEnv(env: NodeJS.ProcessEnv = process.env): {
+  provider?: EmbeddingProvider;
+  describe: string;
+} {
   let provider = env.MA_EMBED_PROVIDER;
   let model = env.MA_EMBED_MODEL;
   const baseURL = env.MA_EMBED_BASE_URL;

@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and what's missing or hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Sketch the UX / API if you can.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - mastery (Understand / Apply / Analyze / Create / spaced repetition)
+        - adapters / new domain (language or doc format)
+        - LLM providers / models
+        - tutor / GraphRAG
+        - web UI
+        - other
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

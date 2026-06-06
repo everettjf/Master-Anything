@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { type TutorAnswer, ask } from "./api.js";
+import { ask, type TutorAnswer } from "./api.js";
 
 interface Turn {
   q: string;
@@ -40,9 +40,8 @@ export function Tutor({ repoId }: { repoId: string }) {
           <div className="learn-hello" style={{ marginTop: "8vh" }}>
             <h2>Ask the tutor about this codebase.</h2>
             <p>
-              Answers are grounded in the knowledge graph and cite{" "}
-              <code>path:line</code>. Without an LLM configured you'll still get the most relevant
-              code locations.
+              Answers are grounded in the knowledge graph and cite <code>path:line</code>. Without an LLM
+              configured you'll still get the most relevant code locations.
             </p>
           </div>
         )}

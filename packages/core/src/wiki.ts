@@ -34,11 +34,13 @@ const LANG: Record<string, string> = {
 };
 
 function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48) || "unit";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "unit"
+  );
 }
 
 function shortHash(s: string): string {
@@ -93,7 +95,7 @@ export async function generateWiki(opts: {
       ``,
       isCode ? "## Source" : "## Content",
       ``,
-      isCode ? "```" + lang : "",
+      isCode ? `\`\`\`${lang}` : "",
       src.trimEnd(),
       isCode ? "```" : "",
       ``,

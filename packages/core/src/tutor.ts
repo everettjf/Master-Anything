@@ -6,7 +6,7 @@
  */
 import type { EmbeddingIndex } from "./embeddings.js";
 import type { LlmProvider } from "./enrich.js";
-import { type ContextItem, buildContext, expandHits } from "./retrieval.js";
+import { buildContext, type ContextItem, expandHits } from "./retrieval.js";
 import type { KnowledgeGraph } from "./types.js";
 
 export interface ChatTurn {

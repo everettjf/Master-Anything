@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import test from "node:test";
-import { Calculator, average } from "./calc.ts";
+import { average, Calculator } from "./calc.ts";
 
 test("add", () => assert.equal(new Calculator().add(2, 3), 5));
 test("sub", () => assert.equal(new Calculator().sub(5, 2), 3));

@@ -8,8 +8,8 @@
  */
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import Database from "better-sqlite3";
 import type { ChatTurn, LearnerUnitState } from "@ma/core";
+import Database from "better-sqlite3";
 
 function dbPath(): string {
   if (process.env.MA_DB) return process.env.MA_DB;
@@ -58,8 +58,19 @@ const upsertRepo = db.prepare(
 );
 const selectRepo = db.prepare(`SELECT artifact FROM repos WHERE root = ?`);
 
-export function putRepoArtifact(root: string, kind: string, commit: string | undefined, artifactJson: string): void {
-  upsertRepo.run({ root, kind, commit_sha: commit ?? null, artifact: artifactJson, updated_at: new Date().toISOString() });
+export function putRepoArtifact(
+  root: string,
+  kind: string,
+  commit: string | undefined,
+  artifactJson: string,
+): void {
+  upsertRepo.run({
+    root,
+    kind,
+    commit_sha: commit ?? null,
+    artifact: artifactJson,
+    updated_at: new Date().toISOString(),
+  });
 }
 
 export function getRepoArtifact(root: string): string | undefined {

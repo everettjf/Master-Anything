@@ -6,19 +6,18 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
 import {
-  type ChatTurn,
-  type Wiki,
   answerQuestion,
+  type ChatTurn,
   generateWiki,
   narrateStep,
   tourSteps,
+  type Wiki,
   wikiFiles,
 } from "@ma/core";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { getConversation, putConversation } from "./db.js";
-import { addRepo, embedDescribe, getLlm, getRepo, listRepos, llmDescribe, providersAvailable, setLlm } from "./store.js";
 import {
   createApplyAssessment,
   createCreateAssessment,
@@ -33,6 +32,16 @@ import {
   submitImpactAttempt,
   unitSource,
 } from "./mastery-store.js";
+import {
+  addRepo,
+  embedDescribe,
+  getLlm,
+  getRepo,
+  listRepos,
+  llmDescribe,
+  providersAvailable,
+  setLlm,
+} from "./store.js";
 
 const app = new Hono();
 app.use("/*", cors());
@@ -84,9 +93,7 @@ app.post("/repos", async (c) => {
 });
 
 app.get("/repos", (c) =>
-  c.json(
-    listRepos().map((r) => ({ id: r.id, root: r.root, stats: r.graph.stats, createdAt: r.createdAt })),
-  ),
+  c.json(listRepos().map((r) => ({ id: r.id, root: r.root, stats: r.graph.stats, createdAt: r.createdAt }))),
 );
 
 app.get("/repos/:id/graph", (c) => {
@@ -124,7 +131,9 @@ app.get("/repos/:id/layers", (c) => {
   for (const u of repo.path.units) {
     const key = u.band ?? "Core";
     if (!byBand.has(key)) byBand.set(key, { band: key, layer: u.layer ?? 0, units: [] });
-    byBand.get(key)!.units.push({ id: u.id, title: u.title, kind: u.kind, module: u.module, layer: u.layer ?? 0 });
+    byBand
+      .get(key)!
+      .units.push({ id: u.id, title: u.title, kind: u.kind, module: u.module, layer: u.layer ?? 0 });
   }
   const bands = [...byBand.values()].sort((a, b) => a.layer - b.layer);
   return c.json({ bands });

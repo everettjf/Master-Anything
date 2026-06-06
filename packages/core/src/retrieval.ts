@@ -14,19 +14,22 @@ export interface RetrievedNode {
 
 /** Split identifiers into lowercase tokens: camelCase, snake_case, dotted, paths. */
 export function tokenize(text: string): string[] {
-  return (
-    text
-      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((t) => t.length > 1)
-  );
+  return text
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1);
 }
 
 export function nodeText(n: KnowledgeNode): string {
-  return [n.name, n.summary ?? "", n.signature ?? "", n.role ?? "", n.domain ?? "", (n.text ?? "").slice(0, 600)].join(
-    " ",
-  );
+  return [
+    n.name,
+    n.summary ?? "",
+    n.signature ?? "",
+    n.role ?? "",
+    n.domain ?? "",
+    (n.text ?? "").slice(0, 600),
+  ].join(" ");
 }
 
 export function retrieve(graph: KnowledgeGraph, query: string, k = 8): RetrievedNode[] {
@@ -74,11 +77,7 @@ export function buildContext(graph: KnowledgeGraph, query: string, k = 6): Conte
 }
 
 /** Expand ranked hits with direct neighbors and project to context items. */
-export function expandHits(
-  graph: KnowledgeGraph,
-  hits: RetrievedNode[],
-  k = 6,
-): ContextItem[] {
+export function expandHits(graph: KnowledgeGraph, hits: RetrievedNode[], k = 6): ContextItem[] {
   const picked = new Map<string, KnowledgeNode>();
   for (const { node } of hits) {
     picked.set(node.id, node);

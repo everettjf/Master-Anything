@@ -249,11 +249,7 @@ export interface TutorAnswer {
   conversationId: string;
 }
 
-export async function ask(
-  id: string,
-  query: string,
-  conversationId?: string,
-): Promise<TutorAnswer> {
+export async function ask(id: string, query: string, conversationId?: string): Promise<TutorAnswer> {
   return jsonOrThrow(
     await fetch(`${BASE}/repos/${id}/ask`, {
       method: "POST",

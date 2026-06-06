@@ -11,13 +11,7 @@
 import { execFile, spawn } from "node:child_process";
 import { rm } from "node:fs/promises";
 import { promisify } from "node:util";
-import {
-  type RunOptions,
-  type TestResult,
-  type TestRunner,
-  materializeRepo,
-  summarize,
-} from "./runner.js";
+import { materializeRepo, type RunOptions, summarize, type TestResult, type TestRunner } from "./runner.js";
 
 const execFileP = promisify(execFile);
 

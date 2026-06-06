@@ -14,7 +14,7 @@
  */
 import type { LlmProvider } from "../enrich.js";
 import { FailoverProvider } from "./failover.js";
-import { PROVIDER_PRESETS, autodetectProvider, availableProviders } from "./presets.js";
+import { autodetectProvider, availableProviders, PROVIDER_PRESETS } from "./presets.js";
 import { VercelAiProvider } from "./vercel.js";
 
 export interface ProviderInfo {
@@ -41,7 +41,13 @@ function buildPreset(
     if (!baseURL || !model) return undefined;
     // A custom endpoint has no standard key var, so MA_LLM_API_KEY supplies it.
     return {
-      provider: new VercelAiProvider({ provider: "openai-compatible", model, apiKey: env.MA_LLM_API_KEY, baseURL, timeoutMs }),
+      provider: new VercelAiProvider({
+        provider: "openai-compatible",
+        model,
+        apiKey: env.MA_LLM_API_KEY,
+        baseURL,
+        timeoutMs,
+      }),
       label: `openai-compatible · ${baseURL}`,
       model,
     };
@@ -106,7 +112,10 @@ export function resolveProvider(env: NodeJS.ProcessEnv = process.env): ProviderI
 
   const detSuffix = autoDetected ? ", auto-detected" : "";
   if (fallbacks.length === 0) {
-    return { provider: primary.provider, describe: `vercel-ai (${primary.label}${detSuffix} · ${primary.model})` };
+    return {
+      provider: primary.provider,
+      describe: `vercel-ai (${primary.label}${detSuffix} · ${primary.model})`,
+    };
   }
   return {
     provider: new FailoverProvider([primary.provider, ...fallbacks.map((f) => f.provider)]),

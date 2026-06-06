@@ -1,10 +1,10 @@
 import { fileURLToPath } from "node:url";
 import { buildGraph } from "@ma/core";
 import {
-  LocalNodeTestRunner,
-  LocalPytestRunner,
   blankJsFunction,
   blankPythonFunction,
+  LocalNodeTestRunner,
+  LocalPytestRunner,
   parseTestCounts,
   replaceLineRange,
   verifierForExtension,
@@ -65,7 +65,12 @@ describe("real test execution (integration)", () => {
     const broken = await runner.run(root, { edits: [{ path: "calc.py", content: blank.fileWithBlank }] });
     expect(broken.passed).toBe(false); // blanked covered fn -> tests fail
 
-    const fixed = replaceLineRange(content, fn.provenance.startLine, fn.provenance.endLine, "    def add_many(self, nums):\n        return sum(nums)");
+    const fixed = replaceLineRange(
+      content,
+      fn.provenance.startLine,
+      fn.provenance.endLine,
+      "    def add_many(self, nums):\n        return sum(nums)",
+    );
     const ok = await runner.run(root, { edits: [{ path: "calc.py", content: fixed }] });
     expect(ok.passed).toBe(true);
   });

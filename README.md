@@ -210,6 +210,7 @@ Contributions are welcome. The whole codebase is TypeScript in a pnpm workspace.
 
 ```bash
 pnpm install
+pnpm lint            # Biome lint + format check
 pnpm -r build        # build all packages (typecheck)
 pnpm test            # Vitest: pure logic + real pytest/node-test integration
 ```

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import {
+  connectRepo,
+  fetchGraph,
+  fetchMastery,
+  fetchPath,
+  fetchReviews,
+  fetchSource,
   type GraphNode,
   type KnowledgeGraph,
   type MasteryUnit,
@@ -8,12 +14,6 @@ import {
   type RepoSummary,
   type ReviewItem,
   type SourceSlice,
-  connectRepo,
-  fetchGraph,
-  fetchMastery,
-  fetchPath,
-  fetchReviews,
-  fetchSource,
 } from "./api.js";
 import { ModelSettings } from "./ModelSettings.js";
 import { Practice } from "./Practice.js";
@@ -122,9 +122,7 @@ export function App() {
       kind: n.kind,
       val: n.kind === "file" ? 6 : n.kind === "class" ? 4 : 2,
       color:
-        colorMode === "layer" && n.layer !== undefined
-          ? layerColor(n.layer)
-          : KIND_COLOR[n.kind] ?? "#888",
+        colorMode === "layer" && n.layer !== undefined ? layerColor(n.layer) : (KIND_COLOR[n.kind] ?? "#888"),
       node: n,
     }));
     const links = graph.edges
@@ -171,8 +169,8 @@ export function App() {
         {error && <div className="error">{error}</div>}
         {!repo && !error && (
           <div className="hint">
-            Enter a local repo path to build its graph. Try the bundled{" "}
-            <code>examples/py-calc</code> to see the verifiable-mastery loop.
+            Enter a local repo path to build its graph. Try the bundled <code>examples/py-calc</code> to see
+            the verifiable-mastery loop.
           </div>
         )}
 
@@ -260,7 +258,10 @@ export function App() {
                             <span className="unit-title">{u.title}</span>
                             <span className="unit-sub">{u.module ?? u.kind}</span>
                           </span>
-                          <span className="lvl" style={{ background: BLOOM_COLOR[lvl], color: lvl ? "#0d1117" : "#8b949e" }}>
+                          <span
+                            className="lvl"
+                            style={{ background: BLOOM_COLOR[lvl], color: lvl ? "#0d1117" : "#8b949e" }}
+                          >
                             {BLOOM[lvl]}
                           </span>
                         </button>
@@ -310,7 +311,10 @@ export function App() {
                         <span className="unit-title">{u.title}</span>
                         <span className="unit-sub">{u.summary}</span>
                       </span>
-                      <span className="lvl" style={{ background: BLOOM_COLOR[lvl], color: lvl ? "#0d1117" : "#8b949e" }}>
+                      <span
+                        className="lvl"
+                        style={{ background: BLOOM_COLOR[lvl], color: lvl ? "#0d1117" : "#8b949e" }}
+                      >
                         {BLOOM[lvl]}
                       </span>
                     </button>
@@ -351,8 +355,8 @@ export function App() {
           <div className="learn-hello">
             <h2>Pick a unit on the left to practice.</h2>
             <p>
-              We'll blank a real function, you reimplement it, and the project's actual test suite
-              decides whether you've mastered it.
+              We'll blank a real function, you reimplement it, and the project's actual test suite decides
+              whether you've mastered it.
             </p>
           </div>
         )}
@@ -361,8 +365,8 @@ export function App() {
           <div className="learn-hello">
             <h2>Architectural layers</h2>
             <p>
-              Units ranked by dependency depth — <b>Foundation</b> at the bottom, <b>Interface</b> at
-              the top. Switch the Graph to <b>color by layer</b> to see the same structure visually.
+              Units ranked by dependency depth — <b>Foundation</b> at the bottom, <b>Interface</b> at the top.
+              Switch the Graph to <b>color by layer</b> to see the same structure visually.
             </p>
           </div>
         )}
@@ -390,7 +394,6 @@ export function App() {
             repoId={repo.id}
             unit={practiceUnit}
             userId={USER}
-            repoKind={repo.kind}
             onClose={() => setPracticeUnit(null)}
             onMastered={() => refreshMastery(repo.id)}
           />

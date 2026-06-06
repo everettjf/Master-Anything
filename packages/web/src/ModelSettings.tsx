@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { type MaConfig, fetchConfig, setConfig } from "./api.js";
+import { fetchConfig, type MaConfig, setConfig } from "./api.js";
 
 const PRESETS = [
   "anthropic",
@@ -26,7 +26,9 @@ export function ModelSettings({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchConfig().then(setCfg).catch((e) => setError(String(e)));
+    fetchConfig()
+      .then(setCfg)
+      .catch((e) => setError(String(e)));
   }, []);
 
   const apply = async () => {
@@ -56,9 +58,15 @@ export function ModelSettings({ onClose }: { onClose: () => void }) {
         <h3>Model settings</h3>
 
         <div className="cfg-now">
-          <div><span className="k">LLM</span> {cfg?.llm ?? "…"}</div>
-          <div><span className="k">Embeddings</span> {cfg?.embeddings ?? "…"}</div>
-          <div><span className="k">Keys detected</span> {cfg?.providers ?? "…"}</div>
+          <div>
+            <span className="k">LLM</span> {cfg?.llm ?? "…"}
+          </div>
+          <div>
+            <span className="k">Embeddings</span> {cfg?.embeddings ?? "…"}
+          </div>
+          <div>
+            <span className="k">Keys detected</span> {cfg?.providers ?? "…"}
+          </div>
         </div>
 
         <div className="cfg-form">
@@ -72,18 +80,37 @@ export function ModelSettings({ onClose }: { onClose: () => void }) {
             ))}
           </select>
 
-          <label>Model <span className="opt">(optional — preset default if blank)</span></label>
-          <input type="text" placeholder="e.g. gpt-4o-mini" value={model} onChange={(e) => setModel(e.target.value)} />
+          <label>
+            Model <span className="opt">(optional — preset default if blank)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. gpt-4o-mini"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
 
           {provider === "openai-compatible" && (
             <>
               <label>Base URL</label>
-              <input type="text" placeholder="http://localhost:4000" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+              <input
+                type="text"
+                placeholder="http://localhost:4000"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+              />
             </>
           )}
 
-          <label>Failover <span className="opt">(optional, comma-separated)</span></label>
-          <input type="text" placeholder="openai,groq" value={fallback} onChange={(e) => setFallback(e.target.value)} />
+          <label>
+            Failover <span className="opt">(optional, comma-separated)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="openai,groq"
+            value={fallback}
+            onChange={(e) => setFallback(e.target.value)}
+          />
 
           <button onClick={apply} disabled={busy}>
             {busy ? "Applying…" : "Apply"}
@@ -92,8 +119,8 @@ export function ModelSettings({ onClose }: { onClose: () => void }) {
 
         {error && <div className="error">{error}</div>}
         <div className="hint">
-          API keys come from the server's environment (e.g. <code>ANTHROPIC_API_KEY</code>). Without one, it falls back
-          to heuristics.
+          API keys come from the server's environment (e.g. <code>ANTHROPIC_API_KEY</code>). Without one, it
+          falls back to heuristics.
         </div>
       </div>
     </div>

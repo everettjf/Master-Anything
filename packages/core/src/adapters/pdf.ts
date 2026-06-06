@@ -6,7 +6,7 @@
  * Analyze flows then apply. Async because PDF parsing is async (unpdf/pdf.js).
  */
 import { execSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { extractText, getDocumentProxy } from "unpdf";
 import { BloomLevel, type KnowledgeEdge, type KnowledgeGraph, type KnowledgeNode } from "../types.js";
@@ -30,7 +30,7 @@ function listPdfs(root: string): string[] {
     for (const entry of entries) {
       if (entry.startsWith(".")) continue;
       const full = join(dir, entry);
-      let st;
+      let st: import("node:fs").Stats;
       try {
         st = statSync(full);
       } catch {
@@ -110,7 +110,12 @@ export async function buildPdfGraph(root: string): Promise<KnowledgeGraph> {
   return {
     version: 1,
     repo: { root, commit, builtAt: new Date().toISOString() },
-    stats: { files: files.length, nodes: nodes.length, edges: edges.length, languages: { pdf: files.length } },
+    stats: {
+      files: files.length,
+      nodes: nodes.length,
+      edges: edges.length,
+      languages: { pdf: files.length },
+    },
     nodes,
     edges,
   };
