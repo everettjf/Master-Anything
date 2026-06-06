@@ -34,6 +34,12 @@ const REVIEW_HOURS: Record<number, number> = { 1: 12, 2: 24, 3: 72, 4: 168, 5: 3
  * Passing an assessment targeting level L promotes the learner to at least L;
  * failing nudges confidence down without demoting a previously reached level.
  */
+/**
+ * Apply an attempt to a learner's unit state.
+ * Passing promotes to at least the target level; failing a *review* (re-testing
+ * a level already reached) demotes by one — modelling forgetting — while
+ * failing a fresh, higher-level attempt only dents confidence.
+ */
 export function recordAttempt(
   state: LearnerUnitState,
   attempt: AttemptRecord,
@@ -47,6 +53,8 @@ export function recordAttempt(
     confidence = Math.min(1, confidence + 0.34);
   } else {
     confidence = Math.max(0, confidence - 0.2);
+    // Failing a review of something you'd already mastered = forgetting -> demote.
+    if (attempt.targetLevel <= state.level) level = Math.max(0, state.level - 1);
   }
 
   const now = attempt.at;
@@ -55,6 +63,12 @@ export function recordAttempt(
     hours > 0 ? new Date(new Date(now).getTime() + hours * 3600_000).toISOString() : undefined;
 
   return { ...state, attempts, level, confidence, lastReviewedAt: now, nextReviewAt };
+}
+
+/** Is this unit due for a spaced-repetition review at time `now` (ms)? */
+export function isDue(state: LearnerUnitState, now: number = Date.now()): boolean {
+  if (state.level <= 0 || !state.nextReviewAt) return false;
+  return new Date(state.nextReviewAt).getTime() <= now;
 }
 
 export function bloomName(level: BloomLevel): string {

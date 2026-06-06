@@ -62,6 +62,8 @@ same engine.** That's why Master-Anything supports code *and* documents with one
   - **Analyze** — "if you change `X`, what's affected?" graded against the **call/dependency graph** (objective truth).
   - **Create** — extend the codebase with a **new capability**; verified by real tests (no regression + a new passing
     test, or a hidden LLM-generated acceptance test).
+- ↻ **Spaced repetition** — mastered units resurface for review on a decaying schedule; failing a review demotes a level
+  (modelling forgetting), so mastery means *retained* mastery.
 - 🗺️ **Knowledge graph** — deterministic structure via [Tree-sitter](https://tree-sitter.github.io/), semantics via an LLM.
 - 🧩 **Anything, via adapters** — code (Python/JS/TS), Markdown, HTML, PDF; **mixed repos merge into one graph** with
   **cross-domain edges** linking docs to the code they describe.
@@ -180,7 +182,7 @@ pages/        # GitHub Pages landing site
 ## Roadmap
 
 **Done:** verifiable Apply (Py/JS/TS) · graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
-GraphRAG tutor with persistent multi-turn memory ·
+spaced-repetition reviews (with forgetting) · GraphRAG tutor with persistent multi-turn memory ·
 Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · architectural layers · guided tours ·
 auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
 Docker sandbox runner (with local fallback).

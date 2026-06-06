@@ -174,3 +174,10 @@ code { background: #0d1117; border: 1px solid var(--border); border-radius: 4px;
 .wiki-page pre code { background: none; border: none; padding: 0; }
 .wlink { color: var(--accent); cursor: pointer; }
 .wlink:hover { text-decoration: underline; }
+
+/* spaced-repetition reviews */
+.tab-badge { display: inline-block; margin-left: 5px; min-width: 16px; padding: 0 4px; border-radius: 999px; background: #f0883e; color: #0d1117; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+.reviews { border: 1px solid #f0883e55; background: #241a0e; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+.reviews-head { color: #f0883e; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.review-row { margin-bottom: 6px; }
+.lvl.due { background: #f0883e; color: #0d1117; }

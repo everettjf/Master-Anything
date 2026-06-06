@@ -18,6 +18,7 @@ import {
   gradeExplain,
   gradeImpact,
   gradeOpenCreate,
+  isDue,
   recordAttempt,
 } from "@ma/core";
 import {
@@ -449,6 +450,26 @@ export function masteryFor(userId: string, repo: RepoRecord) {
       level: s?.level ?? BloomLevel.None,
       confidence: s?.confidence ?? 0,
       attempts: s?.attempts.length ?? 0,
+      nextReviewAt: s?.nextReviewAt,
     };
   });
+}
+
+/** Spaced-repetition queue: mastered units whose review is due at time `at` (ms). */
+export function reviewsFor(userId: string, repo: RepoRecord, at: number = Date.now()) {
+  const due = [];
+  for (const u of repo.path.units) {
+    const s = states.get(stateKey(userId, repo.root, u.id));
+    if (s && isDue(s, at)) {
+      due.push({
+        unitId: u.id,
+        title: u.title,
+        level: s.level,
+        nextReviewAt: s.nextReviewAt,
+        overdueMs: at - new Date(s.nextReviewAt!).getTime(),
+      });
+    }
+  }
+  due.sort((a, b) => b.overdueMs - a.overdueMs);
+  return due;
 }

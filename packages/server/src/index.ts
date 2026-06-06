@@ -25,6 +25,7 @@ import {
   createExplainAssessment,
   createImpactAssessment,
   masteryFor,
+  reviewsFor,
   runnerDescribe,
   submitAttempt,
   submitCreateAttempt,
@@ -372,6 +373,16 @@ app.get("/repos/:id/mastery", (c) => {
   if (!repo) return c.json({ error: "repo not found" }, 404);
   const userId = c.req.query("user") || "anon";
   return c.json({ userId, units: masteryFor(userId, repo) });
+});
+
+// Spaced-repetition review queue. Optional ?at=<ISO> previews the schedule.
+app.get("/repos/:id/reviews", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const userId = c.req.query("user") || "anon";
+  const atParam = c.req.query("at");
+  const at = atParam ? Date.parse(atParam) : Date.now();
+  return c.json({ at: new Date(at).toISOString(), due: reviewsFor(userId, repo, at) });
 });
 
 const port = Number(process.env.PORT ?? 8787);

@@ -149,6 +149,18 @@ export async function fetchMastery(id: string, user: string): Promise<{ units: M
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/mastery?user=${encodeURIComponent(user)}`));
 }
 
+export interface ReviewItem {
+  unitId: string;
+  title: string;
+  level: number;
+  nextReviewAt?: string;
+  overdueMs: number;
+}
+
+export async function fetchReviews(id: string, user: string): Promise<{ at: string; due: ReviewItem[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/reviews?user=${encodeURIComponent(user)}`));
+}
+
 export interface Assessment {
   id: string;
   unitId: string;

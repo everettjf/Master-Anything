@@ -6,11 +6,13 @@ import {
   type MasteryUnit,
   type PathUnit,
   type RepoSummary,
+  type ReviewItem,
   type SourceSlice,
   connectRepo,
   fetchGraph,
   fetchMastery,
   fetchPath,
+  fetchReviews,
   fetchSource,
 } from "./api.js";
 import { Practice } from "./Practice.js";
@@ -54,6 +56,7 @@ export function App() {
   const [source, setSource] = useState<SourceSlice | null>(null);
   const [practiceUnit, setPracticeUnit] = useState<PathUnit | null>(null);
   const [touring, setTouring] = useState(false);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
 
   const graphRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -67,8 +70,9 @@ export function App() {
   }, [graph, view]);
 
   const refreshMastery = useCallback(async (id: string) => {
-    const m = await fetchMastery(id, USER);
+    const [m, r] = await Promise.all([fetchMastery(id, USER), fetchReviews(id, USER)]);
     setMastery(new Map(m.units.map((u) => [u.unitId, u])));
+    setReviews(r.due);
   }, []);
 
   const onConnect = useCallback(async () => {
@@ -193,6 +197,7 @@ export function App() {
               </button>
               <button className={view === "learn" ? "tab on" : "tab"} onClick={() => setView("learn")}>
                 Learn
+                {reviews.length > 0 && <span className="tab-badge">{reviews.length}</span>}
               </button>
               <button className={view === "layers" ? "tab on" : "tab"} onClick={() => setView("layers")}>
                 Layers
@@ -263,6 +268,27 @@ export function App() {
 
             {view === "learn" && (
               <div className="path-list">
+                {reviews.length > 0 && (
+                  <div className="reviews">
+                    <div className="reviews-head">↻ Due for review · {reviews.length}</div>
+                    {reviews.map((rv) => {
+                      const u = units.find((x) => x.id === rv.unitId);
+                      return (
+                        <button
+                          key={rv.unitId}
+                          className="unit-row review-row"
+                          onClick={() => u && setPracticeUnit(u)}
+                        >
+                          <span className="unit-main">
+                            <span className="unit-title">{rv.title}</span>
+                            <span className="unit-sub">retain {BLOOM[rv.level]} — re-practice</span>
+                          </span>
+                          <span className="lvl due">due</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <button className="tourbtn" onClick={() => setTouring(true)}>
                   ▶ Start guided tour
                 </button>
