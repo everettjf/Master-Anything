@@ -386,6 +386,41 @@ def wiki_main() -> str:
     """
 
 
+# ---------- annotation overlay (arrows / rings / labels on a screenshot) ----------
+ANN = "#f0883e"
+
+
+def ann_ring(x, y, w, h):
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="none" stroke="{ANN}" stroke-width="3"/>'
+
+
+def ann_arrow(x1, y1, x2, y2):
+    return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{ANN}" stroke-width="3" marker-end="url(#ah)"/>'
+
+
+def ann_label(x, y, text, anchor="start"):
+    w = len(text) * 8.6 + 26
+    rx = x if anchor == "start" else x - w
+    tx = rx + 13
+    return (
+        f'<rect x="{rx}" y="{y}" width="{w}" height="32" rx="16" fill="#0d1117" stroke="{ANN}"/>'
+        f'<text x="{tx}" y="{y + 21}" font-size="15" font-weight="700" fill="{ANN}">{text}</text>'
+    )
+
+
+def annotate(base_png: str, inner: str, out_png: str):
+    import base64
+
+    raw = open(os.path.join(HERE, base_png), "rb").read()
+    uri = "data:image/png;base64," + base64.b64encode(raw).decode()
+    svg = f"""<svg width="1280" height="800" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" font-family="{FONT}">
+  <defs><marker id="ah" markerWidth="11" markerHeight="11" refX="8" refY="3.2" orient="auto"><path d="M0,0 L9,3.2 L0,6.4 Z" fill="{ANN}"/></marker></defs>
+  <image xlink:href="{uri}" x="0" y="0" width="1280" height="800"/>
+  {inner}
+</svg>"""
+    open(os.path.join(HERE, out_png), "wb").write(to_png(svg, 1280, 800))
+
+
 def main():    # static tab screenshots
     open(os.path.join(HERE, "app-graph.png"), "wb").write(to_png(window(sidebar("graph") + graph_main()), 1280, 800))
     open(os.path.join(HERE, "app-tutor.png"), "wb").write(to_png(window(sidebar("tutor") + tutor_main()), 1280, 800))
@@ -396,6 +431,34 @@ def main():    # static tab screenshots
         to_png(window(sidebar("wiki", "6 pages", wiki_sidebar_body()) + wiki_main()), 1280, 800)
     )
     print("wrote app-graph.png, app-tutor.png, app-layers.png, app-wiki.png")
+
+    # annotated tutorial screenshots (overlay on the rendered app shots)
+    annotate(
+        "app-mock.png",
+        ann_ring(366, 134, 860, 184)  # code editor area
+        + ann_label(366, 96, "1 · reimplement the function")
+        + ann_ring(368, 320, 128, 44)  # Run tests button
+        + ann_arrow(300, 300, 366, 338)
+        + ann_label(70, 286, "2 · run the real tests")
+        + ann_ring(366, 372, 856, 86)  # green result
+        + ann_label(700, 470, "3 · ✓ promoted to Apply (tests pass)"),
+        "tut-apply.png",
+    )
+    annotate(
+        "app-graph.png",
+        ann_ring(18, 262, 280, 42)  # tab row (5 tabs)
+        + ann_arrow(150, 360, 150, 306)
+        + ann_label(40, 360, "five views: Graph · Learn · Layers · Wiki · Tutor"),
+        "tut-tabs.png",
+    )
+    annotate(
+        "app-graph.png",
+        ann_ring(20, 128, 270, 42)  # repo input + Map
+        + ann_arrow(150, 230, 150, 172)
+        + ann_label(40, 230, "paste an absolute repo path, then Map"),
+        "tut-connect.png",
+    )
+    print("wrote tut-apply.png, tut-tabs.png, tut-connect.png")
 
     # Apply-loop GIF
     stages = [0, 1, 2, 3]
