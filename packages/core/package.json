@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "graph": "tsx src/cli.ts"
+    "graph": "tsx src/cli.ts",
+    "wiki": "tsx src/wiki-cli.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",

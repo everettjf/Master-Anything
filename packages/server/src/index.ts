@@ -2,13 +2,21 @@
  * Master-Anything API (P0.0).
  * Endpoints: connect a repo, fetch its knowledge graph, read node source.
  */
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { randomUUID } from "node:crypto";
-import { type ChatTurn, answerQuestion, narrateStep, tourSteps } from "@ma/core";
+import {
+  type ChatTurn,
+  type Wiki,
+  answerQuestion,
+  generateWiki,
+  narrateStep,
+  tourSteps,
+  wikiFiles,
+} from "@ma/core";
 import { getConversation, putConversation } from "./db.js";
 import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
 import {
@@ -98,6 +106,47 @@ app.get("/repos/:id/layers", (c) => {
   }
   const bands = [...byBand.values()].sort((a, b) => a.layer - b.layer);
   return c.json({ bands });
+});
+
+// Karpathy-style wiki: auto-generated cross-linked pages (cached per repo).
+const wikiCache = new Map<string, Wiki>();
+async function getWiki(repoId: string): Promise<Wiki | undefined> {
+  const repo = getRepo(repoId);
+  if (!repo) return undefined;
+  const cached = wikiCache.get(repoId);
+  if (cached) return cached;
+  const wiki = await generateWiki({
+    units: repo.path.units,
+    sourceOf: (u) => unitSource(repo, u).text,
+    provider: llm,
+  });
+  wikiCache.set(repoId, wiki);
+  return wiki;
+}
+
+app.get("/repos/:id/wiki", async (c) => {
+  const wiki = await getWiki(c.req.param("id"));
+  if (!wiki) return c.json({ error: "repo not found" }, 404);
+  return c.json({
+    index: wiki.index,
+    pages: wiki.pages.map((p) => ({ unitId: p.unitId, slug: p.slug, title: p.title, markdown: p.markdown })),
+  });
+});
+
+// Export the wiki as markdown files into <repo>/.master-anything/wiki/.
+app.post("/repos/:id/wiki/export", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const wiki = await getWiki(repo.id);
+  if (!wiki) return c.json({ error: "repo not found" }, 404);
+  const dir = join(repo.root, ".master-anything", "wiki");
+  try {
+    mkdirSync(dir, { recursive: true });
+    for (const f of wikiFiles(wiki)) writeFileSync(join(dir, f.path), f.content);
+    return c.json({ dir, files: wikiFiles(wiki).length });
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 500);
+  }
 });
 
 // Guided tour: ordered steps over the learning path.

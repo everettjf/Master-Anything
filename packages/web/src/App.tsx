@@ -16,6 +16,7 @@ import {
 import { Practice } from "./Practice.js";
 import { Tour } from "./Tour.js";
 import { Tutor } from "./Tutor.js";
+import { Wiki } from "./Wiki.js";
 
 const USER = "demo";
 const KIND_COLOR: Record<string, string> = {
@@ -41,7 +42,7 @@ interface FGNode {
 
 export function App() {
   const [path, setPath] = useState("");
-  const [view, setView] = useState<"graph" | "learn" | "layers" | "tutor">("graph");
+  const [view, setView] = useState<"graph" | "learn" | "layers" | "wiki" | "tutor">("graph");
   const [colorMode, setColorMode] = useState<"kind" | "layer">("kind");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -196,6 +197,9 @@ export function App() {
               <button className={view === "layers" ? "tab on" : "tab"} onClick={() => setView("layers")}>
                 Layers
               </button>
+              <button className={view === "wiki" ? "tab on" : "tab"} onClick={() => setView("wiki")}>
+                Wiki
+              </button>
               <button className={view === "tutor" ? "tab on" : "tab"} onClick={() => setView("tutor")}>
                 Tutor
               </button>
@@ -305,6 +309,8 @@ export function App() {
         )}
 
         {view === "tutor" && repo && <Tutor repoId={repo.id} />}
+
+        {view === "wiki" && repo && <Wiki repoId={repo.id} />}
 
         {touring && repo && <Tour repoId={repo.id} onClose={() => setTouring(false)} />}
 

@@ -91,6 +91,21 @@ export async function fetchPath(id: string): Promise<{ cycles: number; units: Pa
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/path`));
 }
 
+export interface WikiPage {
+  unitId: string;
+  slug: string;
+  title: string;
+  markdown: string;
+}
+
+export async function fetchWiki(id: string): Promise<{ index: string; pages: WikiPage[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/wiki`));
+}
+
+export async function exportWiki(id: string): Promise<{ dir: string; files: number }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/wiki/export`, { method: "POST" }));
+}
+
 export interface TourStep {
   unitId: string;
   title: string;

@@ -159,3 +159,18 @@ code { background: #0d1117; border: 1px solid var(--border); border-radius: 4px;
 .rel-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-right: 4px; }
 .tour-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ghostbtn { background: #0d1117; color: var(--text); border: 1px solid var(--border); }
+
+/* wiki */
+.wiki { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.wiki-toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel); }
+.wiki-page { flex: 1; overflow-y: auto; padding: 24px 32px; max-width: 860px; margin: 0 auto; width: 100%; }
+.wiki-page h1 { font-size: 26px; margin: 0 0 10px; }
+.wiki-page h2 { font-size: 18px; margin: 22px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.wiki-page p { margin: 10px 0; line-height: 1.65; }
+.wiki-page ul { margin: 8px 0; padding-left: 20px; }
+.wiki-page li { margin: 4px 0; }
+.wiki-page pre { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; line-height: 1.6; }
+.wiki-page code { background: #0d1117; border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; }
+.wiki-page pre code { background: none; border: none; padding: 0; }
+.wlink { color: var(--accent); cursor: pointer; }
+.wlink:hover { text-decoration: underline; }

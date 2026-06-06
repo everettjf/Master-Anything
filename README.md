@@ -137,12 +137,22 @@ test runner. Copy [`.env.example`](./.env.example) to `.env` or export in your s
 | Test sandbox  | `MA_SANDBOX=docker`, `MA_SANDBOX_IMAGE`                                | Isolated test runs; falls back to a local subprocess.                 |
 | Persistence   | `MA_DB`, `MA_DATA_DIR`                                                 | SQLite location (mastery, graph artifacts, conversations).            |
 
+## Understanding features
+
+Beyond the mastery loop, Master-Anything also helps you *navigate* a codebase:
+
+- **Architectural layers** — units ranked by dependency depth (Foundation → Interface); color the graph by layer or browse the Layers tab.
+- **Guided tours** — a narrated, dependency-ordered walkthrough ("what is this, why it matters, what it connects to").
+- **Auto-generated wiki** — a Karpathy-style, cross-linked markdown wiki (one page per unit, grouped by layer), viewable in-app and **exportable to commit into the repo**.
+
 ## CLI
 
-Build a knowledge-graph JSON for any directory without the server:
-
 ```bash
+# knowledge-graph JSON for any directory
 pnpm --filter @ma/core graph <absolute-path> --out artifacts/graph.json
+
+# generate a cross-linked markdown wiki (writes <repo>/.master-anything/wiki/)
+pnpm --filter @ma/core wiki <absolute-path>
 ```
 
 ## Project structure
@@ -162,8 +172,9 @@ pages/        # GitHub Pages landing site
 ## Roadmap
 
 **Done:** verifiable Apply (Py/JS/TS) · graph-verified Analyze · GraphRAG tutor with persistent multi-turn memory ·
-Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · embeddings retrieval · incremental
-re-enrichment · SQLite persistence · Docker sandbox runner (with local fallback).
+Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · architectural layers · guided tours ·
+auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
+Docker sandbox runner (with local fallback).
 
 **Planned:** Postgres backend for scale · real Docker-sandbox validation · spaced-repetition scheduling · more
 formats (slides, notebooks) · richer web UI for cross-domain navigation.
