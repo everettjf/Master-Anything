@@ -18,7 +18,7 @@ import {
   wikiFiles,
 } from "@ma/core";
 import { getConversation, putConversation } from "./db.js";
-import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe } from "./store.js";
+import { addRepo, embedDescribe, getRepo, listRepos, llm, llmDescribe, providersAvailable } from "./store.js";
 import {
   createApplyAssessment,
   createCreateAssessment,
@@ -38,6 +38,12 @@ const app = new Hono();
 app.use("/*", cors());
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+// Runtime config: which LLM / embeddings are active, and which provider
+// credentials are detected in the environment.
+app.get("/config", (c) =>
+  c.json({ llm: llmDescribe, embeddings: embedDescribe, providersAvailable }),
+);
 
 // Connect a repo by local path -> build graph.
 app.post("/repos", async (c) => {
@@ -390,5 +396,6 @@ serve({ fetch: app.fetch, port }, (info) => {
   console.log(`@ma/server listening on http://localhost:${info.port}`);
   console.log(`  LLM enrichment: ${llmDescribe}`);
   console.log(`  Embeddings:     ${embedDescribe}`);
+  console.log(`  Provider keys:  ${providersAvailable}`);
   runnerDescribe().then((d) => console.log(`  Test sandbox:   ${d}`));
 });

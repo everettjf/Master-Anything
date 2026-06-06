@@ -76,8 +76,10 @@ same engine.** That's why Master-Anything supports code *and* documents with one
 - 💬 **Graph-grounded tutor (GraphRAG)** — answers cite `path:line`, with **multi-turn memory** and optional
   embedding retrieval.
 - 🧭 **Adaptive learning path** — units ordered by dependency; mastery tracked per `(learner, unit)`.
-- 🔌 **Pluggable & degrades gracefully** — LLM via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI / Anthropic / Google /
-  any OpenAI-compatible endpoint); test sandbox local or Docker; **runs with no API key** (heuristic fallback).
+- 🔌 **Bring any model** — 11 vendor presets via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI · Anthropic · Google ·
+  OpenRouter · Groq · DeepSeek · Mistral · xAI · Together · Fireworks · Ollama) or any OpenAI-compatible endpoint.
+  **Auto-detects** your key (`export ANTHROPIC_API_KEY=…` just works), supports `provider/model` shorthand and
+  **failover** chains, and **runs with no key at all** (heuristic fallback). Test sandbox local or Docker.
 - 💾 **Persistent & incremental** — SQLite-backed; only changed files are re-enriched; a shareable graph artifact lets
   teammates skip the pipeline.
 

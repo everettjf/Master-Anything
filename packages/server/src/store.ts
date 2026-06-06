@@ -18,6 +18,7 @@ import {
   bandName,
   buildUnits,
   computeLayers,
+  describeAvailableProviders,
   embeddingProviderFromEnv,
   enrichUnits,
   linkCrossDomain,
@@ -123,6 +124,7 @@ async function buildGraphFor(root: string, hint?: RepoKind): Promise<{ graph: Kn
 
 // Optional LLM enrichment + tutor backend (MA_LLM_*); absent -> heuristic.
 const { provider: llm, describe: llmDescribe } = resolveProvider();
+export const providersAvailable = describeAvailableProviders();
 // Optional embedding backend for semantic retrieval (MA_EMBED_*); absent -> lexical.
 const { provider: embedder, describe: embedDescribe } = embeddingProviderFromEnv();
 export { llm, llmDescribe, embedDescribe };

@@ -52,17 +52,28 @@ export class VercelEmbeddingProvider implements EmbeddingProvider {
 export function embeddingProviderFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): { provider?: EmbeddingProvider; describe: string } {
-  const provider = env.MA_EMBED_PROVIDER;
-  const model = env.MA_EMBED_MODEL;
+  let provider = env.MA_EMBED_PROVIDER;
+  let model = env.MA_EMBED_MODEL;
+  const baseURL = env.MA_EMBED_BASE_URL;
+  let auto = false;
+
+  // Zero-config: with an OpenAI key present, default to OpenAI embeddings.
+  if (!provider && !baseURL && env.OPENAI_API_KEY) {
+    provider = "openai";
+    model = model ?? "text-embedding-3-small";
+    auto = true;
+  }
+  if (!provider && baseURL) provider = "openai-compatible";
   if (!provider || !model) return { describe: "off — lexical retrieval" };
+
   return {
     provider: new VercelEmbeddingProvider({
       provider,
       model,
-      apiKey: env.MA_EMBED_API_KEY ?? env.MA_LLM_API_KEY,
-      baseURL: env.MA_EMBED_BASE_URL,
+      apiKey: env.MA_EMBED_API_KEY ?? env.OPENAI_API_KEY ?? env.MA_LLM_API_KEY,
+      baseURL,
     }),
-    describe: `${provider} · ${model}`,
+    describe: `${provider}${auto ? ", auto-detected" : ""} · ${model}`,
   };
 }
 

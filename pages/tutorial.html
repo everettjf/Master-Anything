@@ -187,18 +187,23 @@ pnpm --filter @ma/core wiki /abs/path/to/project</code></pre>
         <div class="step-n">9</div>
         <div class="step-body">
           <h2>Optional: add an LLM</h2>
-          <p>Everything runs without a key (heuristics). Add one to enable the Tutor, Understand grading, and richer Create specs:</p>
+          <p>
+            Everything runs without a key (heuristics). The simplest way to enable the Tutor, Understand grading, and
+            richer Create specs is to just export a provider key — it's <b>auto-detected</b>:
+          </p>
           <div class="code">
             <button class="copy" data-copy>copy</button>
-            <pre><code>export MA_LLM_PROVIDER=anthropic
-export MA_LLM_MODEL=claude-3-5-sonnet-latest
-export ANTHROPIC_API_KEY=sk-ant-...
-# or any OpenAI-compatible endpoint:
-#   export MA_LLM_BASE_URL=https://openrouter.ai/api/v1
-#   export MA_LLM_MODEL=anthropic/claude-3.5-sonnet
-#   export MA_LLM_API_KEY=sk-or-...</code></pre>
+            <pre><code>export ANTHROPIC_API_KEY=sk-ant-...     # auto-detected → Anthropic, default model</code></pre>
           </div>
-          <p class="note">See <code>.env.example</code> for embeddings, the Docker sandbox, and persistence options.</p>
+          <p>11 vendors ship as presets (OpenAI · Anthropic · Google · OpenRouter · Groq · DeepSeek · Mistral · xAI · Together · Fireworks · Ollama). Pick one, use <code>provider/model</code> shorthand, point at any OpenAI-compatible endpoint, or set a failover chain:</p>
+          <div class="code">
+            <button class="copy" data-copy>copy</button>
+            <pre><code>export MA_LLM_PROVIDER=groq        GROQ_API_KEY=...     # preset default model
+export MA_LLM_MODEL=anthropic/claude-3-5-sonnet-latest   # provider/model shorthand
+export MA_LLM_BASE_URL=http://localhost:4000  MA_LLM_MODEL=my-model   # custom endpoint
+export MA_LLM_FALLBACK=openai,groq            # try primary, then fall back</code></pre>
+          </div>
+          <p class="note">Check what's active any time: <code>curl localhost:8787/config</code>. See <code>.env.example</code> for embeddings, the Docker sandbox, and persistence.</p>
         </div>
       </section>
 

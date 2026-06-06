@@ -20,4 +20,6 @@ export * from "./wiki.js";
 export * from "./tutor.js";
 export * from "./understand.js";
 export * from "./providers/vercel.js";
+export * from "./providers/presets.js";
+export * from "./providers/failover.js";
 export * from "./providers/factory.js";
