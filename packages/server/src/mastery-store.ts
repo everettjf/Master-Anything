@@ -22,6 +22,7 @@ import {
   recordAttempt,
 } from "@ma/core";
 import {
+  characterize,
   makeRunner,
   parseTestCounts,
   type RunnerInfo,
@@ -72,6 +73,10 @@ export interface ApplyAssessment {
   brokenFunction: string;
   /** Whether the suite actually covers this function (tests fail when blanked). */
   verifiable: boolean;
+  /** How verification is achieved: an existing test, or a synthesized oracle. */
+  verifiedBy: "suite" | "characterization" | "none";
+  /** When verifiedBy === "characterization", the synthesized test to run alongside submissions. */
+  oracleTest?: { path: string; content: string };
   note?: string;
 }
 
@@ -122,12 +127,49 @@ export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit
   const source = readFileSync(join(repo.root, fn.provenance.path), "utf8");
   const blank = verifier.blank(source, fn.provenance.startLine, fn.provenance.endLine);
 
-  // Coverage probe: blank the function and run tests. If they fail, it's verifiable.
+  // Coverage probe: blank the function and run tests. If they fail, the existing
+  // suite covers it and a fix is objectively verifiable.
   const { runner } = await getRunner(verifier.language);
   const probe = await runner.run(repo.root, {
     edits: [{ path: fn.provenance.path, content: blank.fileWithBlank }],
   });
-  const verifiable = !probe.passed;
+
+  let verifiable = !probe.passed;
+  let verifiedBy: ApplyAssessment["verifiedBy"] = verifiable ? "suite" : "none";
+  let oracleTest: { path: string; content: string } | undefined;
+  let note: string | undefined;
+
+  // Thrust A — universal verification: if no existing test covers the function,
+  // synthesize a characterization test (oracle = the original implementation),
+  // so the function becomes verifiable without a hand-written test.
+  if (!verifiable) {
+    const char = await characterize({
+      repoRoot: repo.root,
+      file: fn.provenance.path,
+      symbol: fn.name,
+      language: verifier.language,
+    });
+    if (char) {
+      // Confirm the synthesized test actually catches the blank (and isn't vacuous).
+      const broke = await runner.run(repo.root, {
+        edits: [
+          { path: fn.provenance.path, content: blank.fileWithBlank },
+          { path: char.testPath, content: char.testContent },
+        ],
+        targets: [char.testPath],
+      });
+      if (!broke.passed) {
+        verifiable = true;
+        verifiedBy = "characterization";
+        oracleTest = { path: char.testPath, content: char.testContent };
+        note = `Verified by a synthesized characterization test (${char.cases} cases captured from the original implementation as oracle).`;
+      }
+    }
+    if (!verifiable) {
+      note =
+        "No test covers this function and it couldn't be auto-characterized (non-deterministic or complex inputs) — a passing submission is self-check only.";
+    }
+  }
 
   const assessment: ApplyAssessment = {
     id: randomUUID(),
@@ -142,9 +184,9 @@ export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit
     prompt: `Reimplement \`${fn.name}\` so the project's tests pass.`,
     brokenFunction: blank.brokenFunction,
     verifiable,
-    note: verifiable
-      ? undefined
-      : "No test covers this function — a passing submission can't be test-verified (would be self-check only).",
+    verifiedBy,
+    oracleTest,
+    note,
   };
   assessments.set(assessment.id, assessment);
   return assessment;
@@ -170,8 +212,14 @@ export async function submitAttempt(
 
   const source = readFileSync(join(repo.root, a.path), "utf8");
   const edited = replaceLineRange(source, a.startLine, a.endLine, submission);
+  const edits = [{ path: a.path, content: edited }];
+  // Characterization-verified tasks run against the synthesized oracle test.
+  if (a.oracleTest) edits.push({ path: a.oracleTest.path, content: a.oracleTest.content });
   const { runner } = await getRunner(a.language);
-  const result = await runner.run(repo.root, { edits: [{ path: a.path, content: edited }] });
+  const result = await runner.run(repo.root, {
+    edits,
+    ...(a.oracleTest ? { targets: [a.oracleTest.path] } : {}),
+  });
 
   // Only a test-covered task counts as verified mastery; otherwise it's advisory.
   const passed = result.passed;

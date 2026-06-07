@@ -198,6 +198,7 @@ export interface Assessment {
   prompt: string;
   brokenFunction: string;
   verifiable: boolean;
+  verifiedBy: "suite" | "characterization" | "none";
   note?: string;
 }
 

@@ -237,7 +237,9 @@ app.post("/repos/:id/units/:unitId/assessment", async (c) => {
   const unit = repo.units.get(c.req.param("unitId"));
   if (!unit) return c.json({ error: "unit not found" }, 404);
   try {
-    return c.json(await createApplyAssessment(repo, unit));
+    // oracleTest embeds golden outputs (a solution hint) and is server-only.
+    const { oracleTest: _oracleTest, ...safe } = await createApplyAssessment(repo, unit);
+    return c.json(safe);
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }

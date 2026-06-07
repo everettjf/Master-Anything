@@ -92,10 +92,12 @@ export function Practice({
           <div className="prompt">{assessment.prompt}</div>
           <div className="path">
             {assessment.path}:{assessment.startLine}-{assessment.endLine} ·{" "}
-            {assessment.verifiable ? (
+            {assessment.verifiedBy === "suite" ? (
               <span className="ok">✓ test-verified</span>
+            ) : assessment.verifiedBy === "characterization" ? (
+              <span className="ok">✓ oracle-verified (auto-generated test)</span>
             ) : (
-              <span className="warn">⚠ not test-covered (advisory only)</span>
+              <span className="warn">⚠ not verifiable (advisory only)</span>
             )}
           </div>
           {assessment.note && <div className="hint">{assessment.note}</div>}
