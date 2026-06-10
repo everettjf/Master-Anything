@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Making "verifiable" reach any function — the original code is the oracle · Master-Anything</title>
+    <meta
+      name="description"
+      content="A Master-Anything progress note: when no test exists, use the original implementation as the oracle to synthesize a characterization test, so any deterministic function becomes verifiable instead of advisory-only."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Making &quot;verifiable&quot; reach any function — the original code is the oracle" />
+    <meta
+      property="og:description"
+      content="When no test exists, use the original implementation as the oracle to synthesize a characterization test — so any deterministic function becomes verifiable."
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-universal-verification.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Making &quot;verifiable&quot; reach any function — the original code is the oracle" />
+    <meta
+      name="twitter:description"
+      content="When no test exists, use the original implementation as the oracle to synthesize a characterization test — so any deterministic function becomes verifiable."
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      /* article-prose tweaks layered on top of the shared .tut container */
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.85; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.8; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.8;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      .article .lvl-tag {
+        display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px;
+        border-radius: 999px; margin-right: 6px; vertical-align: middle;
+      }
+      .lvl-tag.ok { background: #3fb950; color: #0d1117; }
+      .lvl-tag.warn { background: #d29922; color: #0d1117; }
+      /* language toggle */
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1>Making <span class="grad">verifiable</span> reach any function —<br />the original code is the oracle</h1>
+      <div class="lang-toggle">
+        <a class="on" href="./blog-universal-verification.html">EN</a><a href="./blog-universal-verification.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        A progress note on <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a>: an open-source tool
+        that turns any codebase (or docs, or a PDF) into a knowledge graph, then uses <b>real tests</b> and
+        <b>graph truth</b> to <b>prove</b> you've mastered it. This one closes an honest gap: making verifiable
+        <b>Apply</b> stop depending on "a test happens to exist."
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        The whole pitch of Master-Anything is one word: <b>verifiable</b>. You reimplement a blanked function, and the
+        project's <b>actual test suite</b> decides whether you passed — not a language model saying "nice answer," but
+        tests literally turning green.
+      </p>
+      <p>
+        Here's the honest catch that lived under that claim for a while: <b>"verifiable Apply" only worked when a
+        pre-existing test happened to cover that one function.</b> In real codebases, most functions aren't so lucky —
+        they have no dedicated test. For those, the old path degraded to "self-check": you wrote something, and we
+        couldn't objectively tell you whether it was right. For a tool that calls itself <i>verifiable</i>, that's too
+        big a hole.
+      </p>
+      <p>This release closes it.</p>
+
+      <h2>The idea: don't <i>require</i> a test — <i>make</i> the oracle</h2>
+      <p>
+        The turn is simple: <b>as long as a function hasn't been touched, it is itself the source of truth (the oracle)
+        for what it should do.</b>
+      </p>
+      <p>So instead of <i>finding</i> a test, we <i>generate</i> one:</p>
+      <ul>
+        <li>Take the <b>original implementation</b>, feed it a battery of inputs, and record its outputs as golden values.</li>
+        <li>Use those input → golden pairs to synthesize a <b>characterization test</b>.</li>
+        <li>Now blank the function — and that freshly generated test immediately fails.</li>
+      </ul>
+      <p>
+        Just like that, a previously-unverifiable function becomes verifiable: you reimplement it, the characterization
+        test passes, and you've <b>objectively</b> passed. <b>Any deterministic, literal-returning function no longer
+        needs a hand-written test.</b>
+      </p>
+      <p>
+        The code lives in
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/packages/verifier/src/characterize.ts"><code>packages/verifier/src/characterize.ts</code></a>.
+      </p>
+
+      <h2>How we make it <i>trustworthy</i>, not just "it runs"</h2>
+      <p>
+        "Use the original code as the oracle" sounds easy, but it only holds up if you sweat the details. We added several
+        gates, preferring to <i>skip</i> a function rather than emit a test that lies:
+      </p>
+      <ul>
+        <li>
+          <b>Two-run de-noising.</b> Each input battery runs twice; we keep only cases whose outputs match <b>exactly</b>
+          across both runs. This automatically filters out functions that read the clock, use randomness, or have side
+          effects — their outputs won't agree, so they're dropped, and we never emit a flaky test.
+        </li>
+        <li>
+          <b><code>repr</code> round-trip filter.</b> We keep only cases whose return value round-trips through
+          <code>repr</code> (i.e. can be asserted as a literal). That narrows scope to functions returning simple data —
+          numbers, strings, lists, dicts — exactly the class where "assert it equals this concrete value" is rock-solid.
+        </li>
+        <li>
+          <b>Prove the blank breaks it.</b> Before declaring a function "verifiable," we blank it, run the generated
+          test, and confirm the test <b>actually</b> catches the blank. A test that still passes when the body is gone is
+          meaningless, so we don't accept it.
+        </li>
+        <li>
+          <b>The generated test is server-only.</b> A characterization test embeds the golden answers — that's the answer
+          key written on the exam. So it's never sent to the client; it's stripped from the API response. You only ever
+          see the blanked function.
+        </li>
+      </ul>
+
+      <h2>What it looks like in the product</h2>
+      <p>Open <b>Learn → a unit → Apply</b>, and the task now tells you exactly how it's verified, in one of three states:</p>
+      <ul>
+        <li><span class="lvl-tag ok">✓ test-verified</span> the project already had a test covering this function (always supported).</li>
+        <li>
+          <span class="lvl-tag ok">✓ oracle-verified</span> no existing test, so we used the original implementation as the
+          oracle and <b>synthesized</b> a characterization test on the spot. <b>This is the new capability.</b>
+        </li>
+        <li>
+          <span class="lvl-tag warn">⚠ advisory only</span> the function genuinely can't be characterized safely
+          (nondeterministic, or needs complex inputs), so it's honestly labeled: passing is yours to judge.
+        </li>
+      </ul>
+      <p>In other words: a large class of functions that used to land in bucket three now land in bucket two — truly verifiable.</p>
+
+      <h2>Scope, and the honest edges</h2>
+      <p>Credibility beats hype, so let me be precise. This first version (v1) covers:</p>
+      <ul>
+        <li><b>Python</b>; module-level functions and methods on <b>zero-arg classes</b> (the kind you can just <code>Calculator()</code> into being).</li>
+        <li>Inputs drawn from a primitive/collection battery; only <b>deterministic</b>, <b>literal-returning</b> cases are kept.</li>
+      </ul>
+      <p>What's next (we're going <b>A → B → C</b>, and this is step <b>A</b>):</p>
+      <ul>
+        <li><b>A JS/TS oracle</b> (Node reflection + a generated <code>node --test</code> spec).</li>
+        <li>
+          <b>LLM-proposed inputs</b> — when a model is configured, let it propose semantically representative inputs; with
+          no model, keep falling back to the deterministic battery so it <b>still works offline</b>.
+        </li>
+        <li>
+          <b>Captured-run inputs</b> — run the repo's own examples/entrypoints and harvest <i>real</i> I/O at function
+          boundaries, not just fuzzed values.
+        </li>
+      </ul>
+      <p>
+        <b>B</b> then replaces today's flat per-unit state machine with a <b>knowledge-tracing</b> model that propagates
+        evidence along the graph and drives "what to practice next"; <b>C</b> is <b>goal-anchored Quests</b>: state the
+        change you want to ship (fix a bug, add a feature), and the system computes the sub-graph you must master and uses
+        that real change as the ultimate verification. The full plan lives in
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/MASTERY-ROADMAP.md"><code>docs/MASTERY-ROADMAP.md</code></a>.
+      </p>
+
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Repo:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>Getting started:</b> <a href="./blog.html">Don't just <i>read</i> your codebase — <i>master</i> it</a></li>
+        <li><b>Site &amp; tutorial:</b> <a href="./tutorial.html">the step-by-step tutorial</a></li>
+      </ul>
+      <p>
+        Pick a function with <b>no</b> test covering it, blank it, and write it again. The moment a test you've never
+        seen — one nobody ever wrote — turns green because of the implementation <i>you</i> just typed: that's verifiable
+        mastery, finally done being a picky eater.
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>让「可验证」覆盖任何一个函数 —— 把原始实现当成 oracle · Master-Anything</title>
+    <meta
+      name="description"
+      content="Master-Anything 进展介绍：当没有现成测试时，用原始实现当 oracle，现场合成一条特征化测试，让任意确定性函数都变得可验证 —— 而不是退化成自查。"
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.zh.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-universal-verification.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="让「可验证」覆盖任何一个函数 —— 把原始实现当成 oracle" />
+    <meta
+      property="og:description"
+      content="没有现成测试时，用原始实现当 oracle 合成特征化测试，让任意确定性函数都变得可验证。"
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-universal-verification.zh.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="让「可验证」覆盖任何一个函数 —— 把原始实现当成 oracle" />
+    <meta
+      name="twitter:description"
+      content="没有现成测试时，用原始实现当 oracle 合成特征化测试，让任意确定性函数都变得可验证。"
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      /* article-prose tweaks layered on top of the shared .tut container */
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.85; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.8; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.8;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      .article .lvl-tag {
+        display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px;
+        border-radius: 999px; margin-right: 6px; vertical-align: middle;
+      }
+      .lvl-tag.ok { background: #3fb950; color: #0d1117; }
+      .lvl-tag.warn { background: #d29922; color: #0d1117; }
+      /* language toggle */
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">首页</a>
+        <a href="./tutorial.html">教程</a>
+        <a href="./blog.zh.html">博客</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">博客</p>
+      <h1>让<span class="grad">可验证</span>覆盖任何一个函数 ——<br />把原始实现当成 oracle</h1>
+      <div class="lang-toggle">
+        <a href="./blog-universal-verification.html">EN</a><a class="on" href="./blog-universal-verification.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        这是 <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a> 的一篇进展介绍：一个把任意代码库
+        （或文档、PDF）变成知识图谱、再用<b>真实测试</b>和<b>图谱事实</b><b>证明</b>你已掌握的开源工具。这一篇讲我们怎么补上
+        一个老实的短板：让「可验证的应用（Apply）」不再依赖「恰好有人写过测试」。
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        Master-Anything 的整个卖点是一个词：<b>可验证</b>。你重新实现一个被挖空的函数，由项目<b>真实存在的测试套件</b>判定
+        你是否通过 —— 不是一个大模型说「答得不错」，而是测试真的变绿。
+      </p>
+      <p>
+        但说句老实话，这里一直藏着一个短板：<b>「Apply 可验证」只在恰好有一条测试覆盖那个函数时才成立。</b>而现实世界的代码里，
+        绝大多数函数并没有这种运气 —— 它们没有专属测试。碰到这种函数，旧版本只能退化成「自查」：你写完了，我们也没法客观地
+        告诉你对不对。对一个号称「可验证」的工具来说，这个洞太大了。
+      </p>
+      <p>这一版，我们把它补上了。</p>
+
+      <h2>核心思路：别要求有测试 —— 自己造一个 oracle</h2>
+      <p>
+        关键的转念很简单：<b>当一个函数还没被改动时，它自己就是正确性的事实来源（oracle）。</b>
+      </p>
+      <p>于是我们不再去<i>寻找</i>一条测试，而是去<i>生成</i>一条：</p>
+      <ul>
+        <li>拿<b>原始实现</b>，喂给它一批输入，把它的输出当成「黄金答案」记录下来。</li>
+        <li>用这些「输入 → 黄金答案」生成一条<b>特征化测试（characterization test）</b>。</li>
+        <li>现在把这个函数挖空 —— 那条刚生成的测试立刻就会失败。</li>
+      </ul>
+      <p>
+        就这样，一个原本无法验证的函数，变成了可验证的：你重新实现它，特征化测试通过，你就<b>客观地</b>通过了。
+        <b>任何确定性的、返回值是「字面量」的函数，都不再需要一条手写测试。</b>
+      </p>
+      <p>
+        代码在这里：<a href="https://github.com/everettjf/Master-Anything/blob/main/packages/verifier/src/characterize.ts"><code>packages/verifier/src/characterize.ts</code></a>。
+      </p>
+
+      <h2>怎么让它「可信」而不是「看起来能跑」</h2>
+      <p>
+        「用原始代码当 oracle」这句话听起来简单，但要让它站得住脚，魔鬼全在细节里。我们加了几道闸门，宁可放弃一个函数，也不
+        生成一条会骗人的测试：
+      </p>
+      <ul>
+        <li>
+          <b>两次运行去抖。</b>同一批输入跑两遍，只保留两遍输出<b>完全一致</b>的用例。这一步会自动过滤掉读时间、随机数、有副作用的
+          函数 —— 它们的输出对不上，就被丢掉，于是绝不会生成一条「时灵时不灵」的测试。
+        </li>
+        <li>
+          <b><code>repr</code> 往返过滤。</b>只保留那些返回值能往返通过 <code>repr</code>（即能作为一个字面量被断言）的用例。
+          这把范围收敛到返回简单数据（数字、字符串、列表、字典……）的函数 —— 也正是「断言它等于某个具体值」最稳的那一类。
+        </li>
+        <li>
+          <b>先证明「挖空会让它失败」。</b>在认定一个函数「可验证」之前，我们先把它挖空、把生成的测试跑一遍，确认这条测试
+          <b>确实</b>抓得住这个空。一条挖了空还能通过的测试是没有意义的，我们直接不采纳。
+        </li>
+        <li>
+          <b>生成的测试是服务端私有的。</b>那条特征化测试里嵌着「黄金答案」—— 等于把答案写在了卷子上。所以它绝不下发给前端，
+          API 返回时被剥掉。你看到的只有挖空后的函数。
+        </li>
+      </ul>
+
+      <h2>在产品里长什么样</h2>
+      <p>打开 <b>Learn → 某个单元 → Apply</b>，现在这个任务会明确告诉你它是怎么被验证的，一共三种状态：</p>
+      <ul>
+        <li><span class="lvl-tag ok">✓ 测试验证</span> 项目里本来就有一条测试覆盖这个函数（一直就支持）。</li>
+        <li>
+          <span class="lvl-tag ok">✓ Oracle 验证</span> 没有现成测试，于是我们用原始实现当 oracle，<b>现场合成</b>了一条
+          特征化测试。<b>这是这次新增的能力。</b>
+        </li>
+        <li>
+          <span class="lvl-tag warn">⚠ 仅自查</span> 这个函数实在没法被安全地特征化（不确定、或者需要复杂入参），于是诚实地
+          标注：通过与否只能你自己判断。
+        </li>
+      </ul>
+      <p>换句话说：以前会落到第三档的一大批函数，现在落到了第二档 —— 真正可验证。</p>
+
+      <h2>范围，以及诚实的边界</h2>
+      <p>可信比吹牛重要，所以把话说清楚。这一版（v1）覆盖的是：</p>
+      <ul>
+        <li><b>Python</b>；模块级函数，以及<b>零参构造类</b>上的方法（比如 <code>Calculator()</code> 能直接 new 出来的那种）。</li>
+        <li>输入来自一组「基本类型 / 集合」的输入电池（battery）；只有<b>确定性</b>且<b>返回字面量</b>的用例会被保留。</li>
+      </ul>
+      <p>接下来要补的（正按 <b>A → B → C</b> 三步走，这是第一步 <b>A</b>）：</p>
+      <ul>
+        <li><b>JS / TS 的 oracle</b>（用 Node 的反射 + <code>node --test</code> 生成 spec）。</li>
+        <li>
+          <b>大模型提议输入</b> —— 接了模型时，让它针对函数的具体语义提一批更有代表性的输入；没接模型时，继续用确定性的输入
+          电池兜底，<b>离线照样能跑</b>。
+        </li>
+        <li><b>真实运行轨迹采样</b> —— 跑仓库自带的示例/入口，在函数边界上采集<b>真实</b>的输入输出，而不只是靠模糊测试。</li>
+      </ul>
+      <p>
+        而 <b>B</b> 是把现在扁平的「每单元状态机」换成一个会沿着图谱传播证据的<b>知识追踪</b>模型，由它来决定「下一题练什么」；
+        <b>C</b> 是<b>目标驱动的 Quest</b>：你说出想做的改动（修个 bug、加个功能），系统算出需要掌握的子图，最后用那个真实改动
+        作为终极验证。完整规划见
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/MASTERY-ROADMAP.md"><code>docs/MASTERY-ROADMAP.md</code></a>。
+      </p>
+
+      <h2>试一下</h2>
+      <ul>
+        <li><b>仓库：</b><a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>上手指南：</b><a href="./blog.zh.html">别只是「读懂」你的代码库 —— 去「掌握」它</a></li>
+        <li><b>官网 &amp; 教程：</b><a href="./tutorial.html">分步教程</a></li>
+      </ul>
+      <p>
+        挑一个<b>没有</b>测试覆盖的函数，把它挖空，重新写一遍。当一条你从没见过、而且根本没人写过的测试，因为<i>你</i>刚敲下的
+        实现而第一次变绿的那一刻 —— 那就是「可验证的掌握」终于不再挑食的样子。
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">开始教程</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">在 GitHub 点个 Star</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">首页</a>
+        <a href="./tutorial.html">教程</a>
+        <a href="./blog.zh.html">博客</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
