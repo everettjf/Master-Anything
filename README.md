@@ -65,7 +65,8 @@ same engine.** That's why Master-Anything supports code *and* documents with one
   - **Understand** — the tutor asks a question; an LLM grades your answer **against the source**.
   - **Apply** — we blank a real function; you reimplement it; the project's **actual test suite** decides if you passed
     (Python · JavaScript · TypeScript). No test covers it? Master-Anything **synthesizes a characterization test**
-    (the original implementation is the oracle), so functions become verifiable even without a hand-written test (Python).
+    (the original implementation is the oracle), so functions become verifiable even without a hand-written test
+    (Python · JavaScript · TypeScript).
   - **Analyze** — "if you change `X`, what's affected?" graded against the **call/dependency graph** (objective truth).
   - **Create** — extend the codebase with a **new capability**; verified by real tests (no regression + a new passing
     test, or a hidden LLM-generated acceptance test).
@@ -191,15 +192,15 @@ pages/        # GitHub Pages landing site
 ## Roadmap
 
 **Done:** verifiable Apply (Py/JS/TS) · **universal verification** via synthesized characterization tests (oracle =
-the original code; Python) · graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
+the original code; Py/JS/TS) · graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
 spaced-repetition reviews (with forgetting) · GraphRAG tutor with persistent multi-turn memory ·
 Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · architectural layers · guided tours ·
 auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
 Docker sandbox runner (with local fallback).
 
-**In progress (A→B→C):** **A** universal verification — extend characterization to JS/TS + LLM-proposed inputs ·
-**B** a graph-propagating knowledge-tracing model driving adaptive next-exercise selection ·
-**C** goal-anchored "Quests" (state a change you want to ship; master exactly the required sub-graph).
+**In progress (A→B→C):** **A** universal verification — characterization now spans Py/JS/TS; next: LLM-proposed
+inputs + captured-run I/O · **B** a graph-propagating knowledge-tracing model driving adaptive next-exercise
+selection · **C** goal-anchored "Quests" (state a change you want to ship; master exactly the required sub-graph).
 
 **Planned:** Postgres backend for scale · real Docker-sandbox validation · more formats (slides, notebooks).
 

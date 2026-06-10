@@ -18,25 +18,30 @@ a battery of inputs, capture its outputs as golden values, emit a generated
 Blanking the function breaks the generated test, so any deterministic,
 literal-returning function becomes verifiable without a hand-written test.
 
-**Shipped (v1, Python):** [`packages/verifier/src/characterize.ts`](../packages/verifier/src/characterize.ts)
-- Resolves module-level functions and methods on zero-arg classes (Python `inspect`).
+**Shipped (Python · JavaScript · TypeScript):** [`packages/verifier/src/characterize.ts`](../packages/verifier/src/characterize.ts)
+- Resolves module-level functions and methods on zero-arg classes — Python via
+  `inspect`; JS (CommonJS `require`) and TS (ESM dynamic `import` under node
+  type-stripping) via reflection (`fn.length`, fresh instance per call).
 - Fuzzes a primitive/collection input battery; keeps only cases whose return
-  value round-trips through `repr` (assertable as a literal) **and** is stable
-  across two runs (filters nondeterminism / side effects).
+  value round-trips to a literal (Python `repr`; JS/TS `JSON` +
+  `util.isDeepStrictEqual`) **and** is stable across two runs (filters
+  nondeterminism / side effects).
+- Emits a runner-native test: pytest (`assert ==`) or `node:test`
+  (`assert.deepStrictEqual`), invoking a fresh instance exactly as captured.
 - Wired into the Apply loop: when the existing suite doesn't cover a function,
   `createApplyAssessment` synthesizes the oracle, confirms it catches the blank,
   and marks the task `verifiedBy: "characterization"`. The synthesized test is
   server-only (it embeds golden outputs) — stripped from the API response.
-- Tests: [`test/characterize.test.ts`](../test/characterize.test.ts) + fixture
-  `test/fixtures/py-uncovered/`.
+- Tests: [`test/characterize.test.ts`](../test/characterize.test.ts) + fixtures
+  `test/fixtures/{py,js,ts}-uncovered/`.
 
 **Next in A:**
-- JS/TS oracle (Node introspection + `node --test` generated spec).
 - LLM-proposed inputs (when a model is configured) for domain-specific coverage,
   still falling back to the deterministic battery offline.
 - Captured-run characterization: trace the repo's own examples/entrypoint to
   harvest *real* I/O at function boundaries (grounded, not just fuzzed).
-- `pytest.approx` for float returns; opt-in keeping of error-raising cases.
+- `pytest.approx` / float tolerance for numeric returns; opt-in keeping of
+  error-raising cases; ESM-`.js` and constructor-args support.
 
 ## B — Knowledge tracing over the graph (next)
 

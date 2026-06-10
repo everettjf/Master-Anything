@@ -181,14 +181,18 @@
       <p>In other words: a large class of functions that used to land in bucket three now land in bucket two — truly verifiable.</p>
 
       <h2>Scope, and the honest edges</h2>
-      <p>Credibility beats hype, so let me be precise. This first version (v1) covers:</p>
+      <p>Credibility beats hype, so let me be precise. What this covers today:</p>
       <ul>
-        <li><b>Python</b>; module-level functions and methods on <b>zero-arg classes</b> (the kind you can just <code>Calculator()</code> into being).</li>
+        <li>
+          <b>Python, JavaScript, and TypeScript</b> — module-level functions and methods on <b>zero-arg classes</b> (the
+          kind you can just <code>Calculator()</code> into being). Python uses <code>inspect</code> + <code>repr</code>;
+          JS/TS use reflection + <code>JSON</code> round-tripping, run via <code>node:test</code> (TS through node's
+          built-in type-stripping).
+        </li>
         <li>Inputs drawn from a primitive/collection battery; only <b>deterministic</b>, <b>literal-returning</b> cases are kept.</li>
       </ul>
       <p>What's next (we're going <b>A → B → C</b>, and this is step <b>A</b>):</p>
       <ul>
-        <li><b>A JS/TS oracle</b> (Node reflection + a generated <code>node --test</code> spec).</li>
         <li>
           <b>LLM-proposed inputs</b> — when a model is configured, let it propose semantically representative inputs; with
           no model, keep falling back to the deterministic battery so it <b>still works offline</b>.

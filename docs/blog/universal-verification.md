@@ -68,14 +68,15 @@ In other words: a large class of functions that used to land in bucket three now
 
 ## Scope, and the honest edges
 
-Credibility beats hype, so let me be precise. This first version (v1) covers:
+Credibility beats hype, so let me be precise. What this covers today:
 
-- **Python**; module-level functions and methods on **zero-arg classes** (the kind you can just `Calculator()` into being).
+- **Python, JavaScript, and TypeScript** — module-level functions and methods on **zero-arg classes** (the kind you can
+  just `Calculator()` into being). Python uses `inspect` + `repr`; JS/TS use reflection + `JSON` round-tripping, run via
+  `node:test` (TS through node's built-in type-stripping).
 - Inputs drawn from a primitive/collection battery; only **deterministic**, **literal-returning** cases are kept.
 
 What's next (we're going **A → B → C**, and this is step **A**):
 
-- **A JS/TS oracle** (Node reflection + a generated `node --test` spec).
 - **LLM-proposed inputs** — when a model is configured, let it propose semantically representative inputs; with no model,
   keep falling back to the deterministic battery so it **still works offline**.
 - **Captured-run inputs** — run the repo's own examples/entrypoints and harvest *real* I/O at function boundaries, not
