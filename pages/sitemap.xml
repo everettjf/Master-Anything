@@ -11,6 +11,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://everettjf.github.io/Master-Anything/blog-index.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://everettjf.github.io/Master-Anything/blog-index.zh.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://everettjf.github.io/Master-Anything/blog.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

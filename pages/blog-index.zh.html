@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>博客 · Master-Anything</title>
+    <meta
+      name="description"
+      content="Master-Anything 项目的文章：把任意代码库、文档或 PDF 变成知识图谱，再用真实测试和图谱事实证明你的掌握。"
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-index.zh.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-index.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-index.zh.html" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="博客 · Master-Anything" />
+    <meta property="og:description" content="Master-Anything 项目的文章 —— 让任意代码库、文档或 PDF 的掌握都可被验证。" />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-index.zh.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .article { max-width: 760px; }
+      .article h1 { margin-bottom: 6px; }
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 14px 0 30px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+      .post-list { display: flex; flex-direction: column; gap: 16px; margin: 8px 0 0; padding: 0; list-style: none; }
+      .post-card { display: block; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; background: var(--panel); transition: transform 0.15s, border-color 0.2s; }
+      .post-card:hover { transform: translateY(-2px); border-color: rgba(88, 166, 255, 0.5); text-decoration: none; }
+      .post-card .date { color: var(--muted); font-size: 13px; letter-spacing: 0.3px; }
+      .post-card h2 { margin: 6px 0 8px; font-size: 21px; letter-spacing: -0.3px; color: var(--text); }
+      .post-card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.8; }
+      .post-card .more { display: inline-block; margin-top: 12px; color: var(--accent); font-size: 14px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">首页</a>
+        <a href="./tutorial.html">教程</a>
+        <a href="./blog-index.zh.html">博客</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">博客</p>
+      <h1>来自项目的文章</h1>
+      <div class="lang-toggle">
+        <a href="./blog-index.html">EN</a><a class="on" href="./blog-index.zh.html">中文</a>
+      </div>
+
+      <ul class="post-list">
+        <li>
+          <a class="post-card" href="./blog-universal-verification.zh.html">
+            <span class="date">2026-06-10</span>
+            <h2>让「可验证」覆盖任何一个函数 —— 把原始实现当成 oracle</h2>
+            <p>
+              「可验证的 Apply」过去需要一条现成测试。现在没有也行：我们把原始实现当成 oracle 跑一遍，现场合成一条特征化测试，
+              让任意确定性、返回字面量的函数都变得可验证。文章还讲了让它「可信」的那几道闸门。
+            </p>
+            <span class="more">阅读 →</span>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="./blog.zh.html">
+            <span class="date">2026-06-06</span>
+            <h2>别只是「读懂」你的代码库 —— 去「掌握」它，而且可被验证</h2>
+            <p>
+              Master-Anything 上手走读：把任意代码库、文档或 PDF 变成知识图谱，再沿着布鲁姆认知层级往上爬 ——
+              理解 → 应用 → 分析 → 创造 —— 每一级都有客观检查（真实测试、图谱事实），并用间隔重复保持住。
+            </p>
+            <span class="more">阅读 →</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">开始教程</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">在 GitHub 点个 Star</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">首页</a>
+        <a href="./tutorial.html">教程</a>
+        <a href="./blog-index.zh.html">博客</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

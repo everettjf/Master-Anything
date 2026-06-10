@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blog · Master-Anything</title>
+    <meta
+      name="description"
+      content="Writing from the Master-Anything project: turning any codebase, doc, or PDF into a knowledge graph and proving mastery with real tests and graph ground-truth."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-index.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-index.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-index.zh.html" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Blog · Master-Anything" />
+    <meta property="og:description" content="Writing from the Master-Anything project — verifiable mastery for any codebase, doc, or PDF." />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-index.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .article { max-width: 760px; }
+      .article h1 { margin-bottom: 6px; }
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 14px 0 30px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+      .post-list { display: flex; flex-direction: column; gap: 16px; margin: 8px 0 0; padding: 0; list-style: none; }
+      .post-card { display: block; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; background: var(--panel); transition: transform 0.15s, border-color 0.2s; }
+      .post-card:hover { transform: translateY(-2px); border-color: rgba(88, 166, 255, 0.5); text-decoration: none; }
+      .post-card .date { color: var(--muted); font-size: 13px; letter-spacing: 0.3px; }
+      .post-card h2 { margin: 6px 0 8px; font-size: 21px; letter-spacing: -0.3px; color: var(--text); }
+      .post-card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+      .post-card .more { display: inline-block; margin-top: 12px; color: var(--accent); font-size: 14px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1>Writing from the project</h1>
+      <div class="lang-toggle">
+        <a class="on" href="./blog-index.html">EN</a><a href="./blog-index.zh.html">中文</a>
+      </div>
+
+      <ul class="post-list">
+        <li>
+          <a class="post-card" href="./blog-universal-verification.html">
+            <span class="date">2026-06-10</span>
+            <h2>Making "verifiable" reach any function — the original code is the oracle</h2>
+            <p>
+              Verifiable Apply used to need a pre-existing test. Now, when none exists, we run the original
+              implementation as the oracle and synthesize a characterization test — so any deterministic,
+              literal-returning function becomes verifiable. Plus the trust gates that keep it honest.
+            </p>
+            <span class="more">Read →</span>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="./blog.html">
+            <span class="date">2026-06-06</span>
+            <h2>Don't just understand your codebase — master it, verifiably</h2>
+            <p>
+              A walkthrough of Master-Anything: turn any codebase, doc, or PDF into a knowledge graph, then climb
+              Bloom's ladder — Understand → Apply → Analyze → Create — with an objective check at every rung
+              (real tests, graph truth), kept sharp with spaced repetition.
+            </p>
+            <span class="more">Read →</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
