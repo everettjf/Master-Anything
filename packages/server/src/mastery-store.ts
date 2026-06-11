@@ -21,9 +21,14 @@ import {
   type LearningUnit,
   type Observation,
   OPEN_CREATE_PROMPT,
+  type Quest,
+  questProgress,
   recordAttempt,
+  requiredSubgraph,
+  retrieve,
   recommendNext as traceRecommendNext,
   type UnitBelief,
+  unitsForNodes,
 } from "@ma/core";
 import {
   characterize,
@@ -585,4 +590,54 @@ function dueSet(userId: string, repo: RepoRecord, at: number): Set<string> {
 export function recommendFor(userId: string, repo: RepoRecord, limit = 5, at: number = Date.now()) {
   const beliefs = beliefsFor(userId, repo);
   return traceRecommendNext(repo.path.units, beliefs, { due: dueSet(userId, repo, at), limit });
+}
+
+// --- Goal-anchored Quests (thrust C): a mission over a required sub-graph ------
+
+const quests = new Map<string, { repoId: string; quest: Quest }>();
+
+/**
+ * Create a quest from a free-text goal (anchored to the best-matching unit via
+ * retrieval) or an explicit target unit, then compute the required sub-graph.
+ */
+export function createQuest(repo: RepoRecord, opts: { goal?: string; targetUnitId?: string }): Quest {
+  const units = repo.path.units;
+  let targets: string[] = [];
+
+  if (opts.targetUnitId && repo.units.has(opts.targetUnitId)) {
+    targets = [opts.targetUnitId];
+  } else if (opts.goal?.trim()) {
+    const nodeIds = retrieve(repo.graph, opts.goal, 8).map((r) => r.node.id);
+    targets = unitsForNodes(units, nodeIds).slice(0, 1);
+  }
+  if (targets.length === 0) {
+    throw new Error("Couldn't anchor a goal to a unit — try a more specific goal or pick a unit.");
+  }
+
+  const titleOf = (id: string) => units.find((u) => u.id === id)?.title ?? id;
+  const goal = opts.goal?.trim() || `Master “${titleOf(targets[0]!)}”`;
+  const quest: Quest = {
+    id: randomUUID(),
+    goal,
+    targetUnitIds: targets,
+    requiredUnitIds: requiredSubgraph(units, targets),
+  };
+  quests.set(quest.id, { repoId: repo.id, quest });
+  return quest;
+}
+
+export function getQuestProgress(repo: RepoRecord, userId: string, questId: string, at = Date.now()) {
+  const stored = quests.get(questId);
+  if (!stored || stored.repoId !== repo.id) throw new Error("quest not found");
+  const beliefs = beliefsFor(userId, repo);
+  return questProgress(stored.quest, repo.path.units, beliefs, { due: dueSet(userId, repo, at) });
+}
+
+/** All quests for a repo with live progress for the given learner. */
+export function listQuests(repo: RepoRecord, userId: string) {
+  const out = [];
+  for (const { repoId, quest } of quests.values()) {
+    if (repoId === repo.id) out.push(getQuestProgress(repo, userId, quest.id));
+  }
+  return out;
 }

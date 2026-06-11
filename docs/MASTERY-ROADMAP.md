@@ -1,16 +1,16 @@
 # Mastery roadmap: from "verifiable on the lucky slice" to "verifiably master anything"
 
-This is the plan for the next fundamental leaps. The honest gap today: three
-load-bearing claims are thinner than they sound, and closing them — in order —
-is what turns the tagline into reality.
+The plan was three fundamental leaps — closing the three load-bearing claims that
+were thinner than they sounded. **All three have shipped (A→B→C).** This doc
+records what each does and what's next within it.
 
-| Gap (today)                                                                 | Thrust |
-| --------------------------------------------------------------------------- | ------ |
-| "Verifiable Apply" only fires where a pre-existing test covers one function | **A** Universal verification |
-| The "mastery graph" is a flat per-unit FSM; it doesn't model or adapt       | **B** Knowledge tracing |
-| No reason-to-open: mastery isn't tied to a real outcome the user wants      | **C** Goal-anchored Quests |
+| Gap (was)                                                                   | Thrust | Status |
+| --------------------------------------------------------------------------- | ------ | ------ |
+| "Verifiable Apply" only fires where a pre-existing test covers one function | **A** Universal verification | ✅ shipped (Py/JS/TS) |
+| The "mastery graph" is a flat per-unit FSM; it doesn't model or adapt       | **B** Knowledge tracing | ✅ shipped |
+| No reason-to-open: mastery isn't tied to a real outcome the user wants      | **C** Goal-anchored Quests | ✅ shipped |
 
-## A — Universal verification (in progress)
+## A — Universal verification (shipped)
 
 **Idea:** don't *require* a test — *make the oracle*. Run the original function on
 a battery of inputs, capture its outputs as golden values, emit a generated
@@ -70,9 +70,33 @@ into an actual asset rather than a list of levels.
 selection (not just learning value); decay of belief over time alongside the
 spaced-repetition schedule; per-Bloom-level beliefs rather than a single P(mastered).
 
-## C — Goal-anchored Quests (after B)
+## C — Goal-anchored Quests (shipped)
 
-"I want to fix bug Y / add feature X / understand auth." Compute the required
-sub-graph, sequence mastery of exactly those units, and culminate in a real
-Create/Apply task on the target — the passing change is the ultimate
-verification, and the reason to open the tool at all.
+"I want to fix bug Y / add feature X / understand auth." A quest anchors that goal
+to a target unit, masters *exactly* the required sub-graph, and ends in a real
+Apply on the target — the passing change is the ultimate verification, and the
+reason to open the tool at all. This closes the A→B→C arc: a quest is pure
+orchestration over A (verification), B (beliefs), and the graph.
+
+**Shipped:** [`packages/core/src/quest.ts`](../packages/core/src/quest.ts)
+- **`requiredSubgraph()`** — backward closure from the target over prerequisite
+  edges, dependency-ordered; unrelated units are excluded (you master *only* what
+  the goal needs).
+- **Goal → target** via existing retrieval (`unitsForNodes` maps the best-matching
+  symbol to its unit); or pick a target unit explicitly. Offline (lexical) by
+  default; embeddings/LLM slot in behind the same shape.
+- **`questProgress()`** — live percent, the unlocked-or-not **capstone**, and the
+  next best step *within the quest* (reusing the B recommender scoped to the
+  sub-graph), with `complete`/`capstoneReady` flags.
+- **Server:** `createQuest` / `getQuestProgress` / `listQuests`; `POST/GET
+  /repos/:id/quests[/:qid]`.
+- **Web:** a 🎯 Quest panel in Learn — type a goal, get an ordered checklist with
+  belief bars, a highlighted capstone, a live progress bar, and a "next step"
+  that opens the right practice. Validated end-to-end on py-calc: 0% → capstone
+  unlocked → 100%.
+- Tests: [`test/quest.test.ts`](../test/quest.test.ts) (sub-graph closure,
+  node→unit mapping, capstone gating, completion).
+
+**Next in C:** Create-level capstones (ship a new capability, not just reimplement);
+multi-target quests from a real issue/PR; LLM-decomposed goals into sub-quests;
+persisting quests in SQLite.

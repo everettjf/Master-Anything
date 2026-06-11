@@ -2,16 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import {
   connectRepo,
+  createQuest,
   fetchGraph,
   fetchMastery,
   fetchNext,
   fetchPath,
+  fetchQuest,
   fetchReviews,
   fetchSource,
   type GraphNode,
   type KnowledgeGraph,
   type MasteryUnit,
   type PathUnit,
+  type QuestProgress,
   type Recommendation,
   type RepoSummary,
   type ReviewItem,
@@ -61,6 +64,10 @@ export function App() {
   const [touring, setTouring] = useState(false);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [next, setNext] = useState<Recommendation[]>([]);
+  const [quest, setQuest] = useState<QuestProgress | null>(null);
+  const [goal, setGoal] = useState("");
+  const [questBusy, setQuestBusy] = useState(false);
+  const questIdRef = useRef<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
   const graphRef = useRef<HTMLDivElement>(null);
@@ -83,7 +90,26 @@ export function App() {
     setMastery(new Map(m.units.map((u) => [u.unitId, u])));
     setReviews(r.due);
     setNext(n.recommendations);
+    if (questIdRef.current) {
+      fetchQuest(id, questIdRef.current, USER)
+        .then(setQuest)
+        .catch(() => {});
+    }
   }, []);
+
+  const startQuest = useCallback(async () => {
+    if (!repo || !goal.trim()) return;
+    setQuestBusy(true);
+    try {
+      const q = await createQuest(repo.id, goal.trim());
+      questIdRef.current = q.id;
+      setQuest(await fetchQuest(repo.id, q.id, USER));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setQuestBusy(false);
+    }
+  }, [repo, goal]);
 
   const onConnect = useCallback(async () => {
     if (!path.trim()) return;
@@ -282,6 +308,78 @@ export function App() {
 
             {view === "learn" && (
               <div className="path-list">
+                <div className="quest">
+                  {!quest ? (
+                    <>
+                      <div className="quest-head">🎯 Quest — master exactly what a goal needs</div>
+                      <div className="quest-new">
+                        <input
+                          value={goal}
+                          placeholder="e.g. fix the averaging bug"
+                          onChange={(e) => setGoal(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && startQuest()}
+                        />
+                        <button onClick={startQuest} disabled={questBusy || !goal.trim()}>
+                          {questBusy ? "…" : "Start"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="quest-head">
+                        🎯 {quest.goal}
+                        <button
+                          className="quest-clear"
+                          onClick={() => {
+                            questIdRef.current = null;
+                            setQuest(null);
+                            setGoal("");
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="quest-bar" title={`${quest.percent}% mastered`}>
+                        <span className="quest-fill" style={{ width: `${quest.percent}%` }} />
+                      </div>
+                      <div className="quest-meta">
+                        {quest.complete
+                          ? "✓ Quest complete — you can confidently ship this."
+                          : `${quest.mastered}/${quest.total} mastered · ${quest.percent}%`}
+                      </div>
+                      <div className="quest-steps">
+                        {quest.steps.map((s, i) => {
+                          const u = units.find((x) => x.id === s.unitId);
+                          const isNext = quest.next?.unitId === s.unitId && !quest.complete;
+                          return (
+                            <button
+                              key={s.unitId}
+                              className={`quest-step${isNext ? " on" : ""}`}
+                              onClick={() => u && setPracticeUnit(u)}
+                            >
+                              <span className="qs-mark">{s.mastered ? "✓" : s.isTarget ? "★" : i + 1}</span>
+                              <span className="qs-title">
+                                {s.title}
+                                {s.isTarget && <span className="qs-target"> capstone</span>}
+                              </span>
+                              <span className="belief-bar qs-belief">
+                                <span
+                                  className="belief-fill"
+                                  style={{ width: `${Math.round(s.belief * 100)}%` }}
+                                />
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {quest.next && !quest.complete && (
+                        <div className="quest-next">
+                          Next: <b>{quest.next.title}</b> — {quest.next.reason}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
                 {next.filter((r) => r.kind === "learn").length > 0 && (
                   <div className="nextup">
                     <div className="nextup-head">◎ Next up · adaptive</div>

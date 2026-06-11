@@ -16,6 +16,7 @@ export * from "./providers/factory.js";
 export * from "./providers/failover.js";
 export * from "./providers/presets.js";
 export * from "./providers/vercel.js";
+export * from "./quest.js";
 export * from "./retrieval.js";
 export * from "./tours.js";
 export * from "./tracing.js";

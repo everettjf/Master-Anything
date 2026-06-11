@@ -677,6 +677,147 @@ code {
   color: #0d1117;
 }
 
+/* goal-anchored quests */
+.quest {
+  border: 1px solid #a371f755;
+  background: #170e26;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.quest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #c8a3ff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.quest-clear {
+  background: none;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+}
+.quest-clear:hover {
+  color: #fff;
+}
+.quest-new {
+  display: flex;
+  gap: 6px;
+}
+.quest-new input {
+  flex: 1;
+  min-width: 0;
+  background: #0d1117;
+  border: 1px solid #2a313c;
+  border-radius: 7px;
+  padding: 7px 9px;
+  color: #e6edf3;
+  font-size: 13px;
+}
+.quest-new button {
+  background: #a371f7;
+  color: #0d1117;
+  border: none;
+  border-radius: 7px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quest-new button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.quest-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #2a313c;
+  overflow: hidden;
+}
+.quest-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a371f7, #58a6ff);
+  transition: width 0.3s;
+}
+.quest-meta {
+  color: #c8a3ff;
+  font-size: 12px;
+  margin: 6px 0 8px;
+}
+.quest-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.quest-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  color: #e6edf3;
+}
+.quest-step:hover {
+  border-color: #a371f7aa;
+}
+.quest-step.on {
+  border-color: #a371f7;
+  box-shadow: 0 0 0 1px #a371f755;
+}
+.qs-mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #21262d;
+  color: #8b949e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+.quest-step.on .qs-mark {
+  background: #a371f7;
+  color: #0d1117;
+}
+.qs-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qs-target {
+  color: #c8a3ff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.qs-belief {
+  flex: none;
+  width: 48px;
+}
+.quest-next {
+  color: #8b949e;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.quest-next b {
+  color: #e6edf3;
+}
+
 /* adaptive "next up" panel (knowledge tracing) */
 .nextup {
   border: 1px solid #58a6ff55;

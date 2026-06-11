@@ -23,6 +23,9 @@ import {
   createCreateAssessment,
   createExplainAssessment,
   createImpactAssessment,
+  createQuest,
+  getQuestProgress,
+  listQuests,
   masteryFor,
   recommendFor,
   reviewsFor,
@@ -413,6 +416,37 @@ app.get("/repos/:id/next", (c) => {
   const userId = c.req.query("user") || "anon";
   const limit = Number(c.req.query("limit") ?? 5);
   return c.json({ userId, recommendations: recommendFor(userId, repo, limit) });
+});
+
+// Goal-anchored Quests: a mission over the required sub-graph for a target.
+app.post("/repos/:id/quests", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as { goal?: string; targetUnitId?: string };
+  try {
+    const quest = createQuest(repo, body);
+    return c.json(quest);
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+app.get("/repos/:id/quests", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const userId = c.req.query("user") || "anon";
+  return c.json({ userId, quests: listQuests(repo, userId) });
+});
+
+app.get("/repos/:id/quests/:qid", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const userId = c.req.query("user") || "anon";
+  try {
+    return c.json(getQuestProgress(repo, userId, c.req.param("qid")));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 404);
+  }
 });
 
 // Spaced-repetition review queue. Optional ?at=<ISO> previews the schedule.

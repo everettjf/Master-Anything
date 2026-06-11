@@ -193,6 +193,43 @@ export async function fetchNext(id: string, user: string): Promise<{ recommendat
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/next?user=${encodeURIComponent(user)}`));
 }
 
+// --- Goal-anchored Quests (thrust C) ---
+
+export interface QuestStep {
+  unitId: string;
+  title: string;
+  belief: number;
+  mastered: boolean;
+  isTarget: boolean;
+}
+
+export interface QuestProgress {
+  id: string;
+  goal: string;
+  targetUnitIds: string[];
+  total: number;
+  mastered: number;
+  percent: number;
+  complete: boolean;
+  capstoneReady: boolean;
+  next?: Recommendation;
+  steps: QuestStep[];
+}
+
+export async function createQuest(id: string, goal: string): Promise<{ id: string }> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/quests`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ goal }),
+    }),
+  );
+}
+
+export async function fetchQuest(id: string, qid: string, user: string): Promise<QuestProgress> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/quests/${qid}?user=${encodeURIComponent(user)}`));
+}
+
 export interface ReviewItem {
   unitId: string;
   title: string;
