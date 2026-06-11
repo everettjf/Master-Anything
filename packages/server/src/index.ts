@@ -18,6 +18,7 @@ import {
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { getConversation, putConversation } from "./db.js";
+import { snapshotForRepo, verifyForRepo } from "./firewall.js";
 import {
   createApplyAssessment,
   createCreateAssessment,
@@ -416,6 +417,37 @@ app.get("/repos/:id/next", (c) => {
   const userId = c.req.query("user") || "anon";
   const limit = Number(c.req.query("limit") ?? 5);
   return c.json({ userId, recommendations: recommendFor(userId, repo, limit) });
+});
+
+// Behavioral Firewall: snapshot a file's behavior; verify a candidate preserved it.
+app.post("/repos/:id/firewall/snapshot", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const { path } = (await c.req.json().catch(() => ({}))) as { path?: string };
+  if (!path) return c.json({ error: "missing 'path'" }, 400);
+  try {
+    return c.json(await snapshotForRepo(repo, path));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+app.post("/repos/:id/firewall/verify", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as {
+    path?: string;
+    candidate?: string;
+    snapshotId?: string;
+  };
+  if (!body.path) return c.json({ error: "missing 'path'" }, 400);
+  try {
+    return c.json(
+      await verifyForRepo(repo, body as { path: string; candidate?: string; snapshotId?: string }),
+    );
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
 });
 
 // Goal-anchored Quests: a mission over the required sub-graph for a target.

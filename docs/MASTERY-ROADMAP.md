@@ -117,11 +117,15 @@ makes an untested function verifiable can guard **AI edits to untested code**.
 - **CLI** [`firewall-cli.ts`](../packages/verifier/src/firewall-cli.ts):
   `ma-firewall snapshot <file> [-o snap.json]` / `verify <file> <snap.json>` —
   non-zero exit on change, so it drops into CI or an agent loop. Python · JS · TS.
+- **Server + web:** `POST /repos/:id/firewall/snapshot|verify`
+  ([`firewall.ts`](../packages/server/src/firewall.ts)) and a 🛡 Firewall tab in
+  the app ([`Firewall.tsx`](../packages/web/src/Firewall.tsx)) — pick a file,
+  snapshot, edit/paste a rewrite, verify, and see the `(function, input)` diffs.
 - Tests: [`test/snapshot.test.ts`](../test/snapshot.test.ts) (snapshot,
   behavior-preserving refactor passes, real change caught with exact diff,
   removed function flagged missing — Python + JS).
 
 **The pitch:** "Let an AI rewrite your untested legacy code — and prove it didn't
-change behavior." **Next:** a server endpoint + web panel; richer/LLM-proposed
-inputs and captured-run I/O for deeper coverage; per-property invariants; an
-"AI-certification" twin (run the mastery loop with the learner = an agent).
+change behavior." **Next:** richer/LLM-proposed inputs and captured-run I/O for
+deeper coverage; per-property invariants; an "AI-certification" twin (run the
+mastery loop with the learner = an agent).

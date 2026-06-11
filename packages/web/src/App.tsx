@@ -20,6 +20,7 @@ import {
   type ReviewItem,
   type SourceSlice,
 } from "./api.js";
+import { Firewall } from "./Firewall.js";
 import { ModelSettings } from "./ModelSettings.js";
 import { Practice } from "./Practice.js";
 import { Tour } from "./Tour.js";
@@ -50,7 +51,7 @@ interface FGNode {
 
 export function App() {
   const [path, setPath] = useState("");
-  const [view, setView] = useState<"graph" | "learn" | "layers" | "wiki" | "tutor">("graph");
+  const [view, setView] = useState<"graph" | "learn" | "layers" | "wiki" | "tutor" | "firewall">("graph");
   const [colorMode, setColorMode] = useState<"kind" | "layer">("kind");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,6 +245,9 @@ export function App() {
               </button>
               <button className={view === "tutor" ? "tab on" : "tab"} onClick={() => setView("tutor")}>
                 Tutor
+              </button>
+              <button className={view === "firewall" ? "tab on" : "tab"} onClick={() => setView("firewall")}>
+                🛡 Firewall
               </button>
             </div>
 
@@ -484,6 +488,10 @@ export function App() {
         )}
 
         {view === "tutor" && repo && <Tutor repoId={repo.id} />}
+
+        {view === "firewall" && repo && (
+          <Firewall repoId={repo.id} files={units.map((u) => u.provenance.path)} />
+        )}
 
         {view === "wiki" && repo && <Wiki repoId={repo.id} />}
 

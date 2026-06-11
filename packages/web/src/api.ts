@@ -230,6 +230,54 @@ export async function fetchQuest(id: string, qid: string, user: string): Promise
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/quests/${qid}?user=${encodeURIComponent(user)}`));
 }
 
+// --- Behavioral Firewall (verify AI edits to untested code) ---
+
+export interface FirewallSnapshot {
+  id: string;
+  file: string;
+  language: string;
+  source: string;
+  totalCases: number;
+  symbols: { symbol: string; cases: number }[];
+}
+
+export interface CaseResult {
+  symbol: string;
+  args: string;
+  expected: string;
+  actual: string | null;
+  status: string;
+}
+
+export interface BehaviorDiff {
+  ok: boolean;
+  totalCases: number;
+  preserved: number;
+  changed: CaseResult[];
+  errored: CaseResult[];
+  missing: string[];
+}
+
+export async function firewallSnapshot(id: string, path: string): Promise<FirewallSnapshot> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/firewall/snapshot`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path }),
+    }),
+  );
+}
+
+export async function firewallVerify(id: string, path: string, candidate: string): Promise<BehaviorDiff> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/firewall/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path, candidate }),
+    }),
+  );
+}
+
 export interface ReviewItem {
   unitId: string;
   title: string;
