@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Let an AI rewrite your untested code — and prove it didn't change behavior · Master-Anything</title>
+    <meta
+      name="description"
+      content="The Behavioral Firewall: snapshot a file's behavior, let an AI rewrite it, then verify — proves behavior is preserved, or reports the exact (function, input) that changed and old→new. A regression net for untested code."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-behavioral-firewall.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-behavioral-firewall.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-behavioral-firewall.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Let an AI rewrite your untested code — and prove it didn't change behavior" />
+    <meta
+      property="og:description"
+      content="Snapshot a file's behavior, let an AI rewrite it, then verify — exact (function, input) diffs on code with zero hand-written tests."
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-behavioral-firewall.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Let an AI rewrite your untested code — and prove it didn't change behavior" />
+    <meta
+      name="twitter:description"
+      content="Snapshot a file's behavior, let an AI rewrite it, then verify — exact (function, input) diffs on code with zero hand-written tests."
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .article { max-width: 760px; }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article p { color: var(--text); line-height: 1.85; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.8; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.8;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1>Let an AI rewrite your <span class="grad">untested code</span> —<br />and prove it didn't change behavior</h1>
+      <div class="lang-toggle">
+        <a class="on" href="./blog-behavioral-firewall.html">EN</a><a href="./blog-behavioral-firewall.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        A spin-off from <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a>. The same oracle that
+        makes an untested function <i>learnable</i> turns out to make AI edits to untested code <i>trustworthy</i>. Meet
+        the <b>Behavioral Firewall</b>.
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        Here's the thing nobody quite says out loud about AI coding agents: they're at their most dangerous on exactly
+        the code you can least afford them to touch — the <b>untested</b> stuff. A test suite is a safety net. Delete the
+        net, and an agent's "harmless refactor" of some crusty <code>utils.py</code> is an act of faith. The diff looks
+        fine. The PR is green (there are no tests to be red). And you have <i>no idea</i> whether
+        <code>clamp(12, -1, 7)</code> still returns what it used to.
+      </p>
+      <p>
+        Master-Anything already builds the missing piece for the <i>learning</i> loop: a <b>characterization oracle</b>
+        that captures a function's behavior by running it. Point that same machinery at AI edits and you get a regression
+        net for code that never had one.
+      </p>
+
+      <h2>The idea: snapshot behavior, then verify it survived</h2>
+      <p>Two commands.</p>
+      <p>
+        <b><code>snapshot</code></b> discovers every function (and zero-arg-class method) in a file — by <i>reflection</i>,
+        no parser — runs each over a battery of inputs, and pins the deterministic results as golden
+        <code>input → output</code> pairs:
+      </p>
+      <div class="code">
+        <pre><code>$ ma-firewall snapshot utils.py -o utils.behavior.json
+✓ snapshot: 3 functions, 19 behaviors pinned → utils.behavior.json
+    clamp  (11)
+    running_sum  (4)
+    Stats.total  (4)</code></pre>
+      </div>
+      <p>
+        Now let an agent (or a teammate, or yourself at 2am) rewrite the file. <b><code>verify</code></b> replays the
+        snapshot against the new version. If behavior held, you get a clean bill — and an exit code of 0:
+      </p>
+      <div class="code">
+        <pre><code>$ ma-firewall verify utils.py utils.behavior.json
+✅ behavior preserved — 19/19 behaviors unchanged in utils.py</code></pre>
+      </div>
+      <p>
+        And when it <i>didn't</i> hold, you don't get a vague "something broke" — you get the exact function, the exact
+        input, and the exact old→new value, with a non-zero exit:
+      </p>
+      <div class="code">
+        <pre><code>$ ma-firewall verify utils.py utils.behavior.json
+❌ behavior CHANGED in utils.py
+
+  3 behavior(s) differ:
+    clamp(12, -1, 7)
+        was  7
+        now  8
+    running_sum([1, 2, 3])
+        was  [1, 3, 6]
+        now  [2, 4, 7]
+    running_sum([2, 4, 6])
+        was  [2, 6, 12]
+        now  [3, 7, 13]</code></pre>
+      </div>
+      <p>
+        That's an off-by-one in a clamp bound and an accumulator that started at the wrong value — caught precisely, on
+        code with zero hand-written tests.
+      </p>
+
+      <h2>Why it doesn't cry wolf</h2>
+      <p>
+        A behavioral guard is worthless if it flags noise. So the firewall is deliberately conservative about what it
+        pins — it would rather stay silent than raise a false alarm:
+      </p>
+      <ul>
+        <li>
+          <b>Only deterministic behavior.</b> Every input runs twice; anything whose output disagrees across runs
+          (clocks, RNG, I/O, global state) is dropped. The firewall never fails because of nondeterminism.
+        </li>
+        <li>
+          <b>Only literal-comparable results.</b> A value is pinned only if it round-trips to a literal (numbers, strings,
+          lists, dicts). Opaque objects aren't asserted, so you don't get spurious "changed" on a reordered repr.
+        </li>
+        <li><b>Honest about gaps.</b> A removed or no-longer-callable function is reported as <b>missing</b>, not silently passed.</li>
+      </ul>
+      <p>
+        The flip side is the honest limit: the firewall pins the behavior it can <i>observe</i> through a battery of
+        inputs. It's a strong net for pure, data-shaped functions — not a proof of total equivalence. (More on widening
+        that below.)
+      </p>
+
+      <h2>Where it fits</h2>
+      <ul>
+        <li>
+          <b>In CI:</b> snapshot on <code>main</code>, verify on the PR branch. Behavior changed unexpectedly? Non-zero
+          exit fails the build — even with no test suite.
+        </li>
+        <li>
+          <b>In an agent loop:</b> let the agent refactor, run <code>verify</code>, and feed the diff back as a hard
+          signal. "You changed <code>running_sum([1,2,3])</code> from <code>[1,3,6]</code> to <code>[2,4,7]</code> — fix
+          it" is a far better correction than "tests didn't run."
+        </li>
+        <li>
+          <b>As a human pre-flight:</b> about to touch scary untested code? Snapshot first, refactor freely, verify
+          before you push.
+        </li>
+      </ul>
+      <p>
+        Python, JavaScript (CommonJS), and TypeScript (run via Node's built-in type-stripping) today. It's pure,
+        deterministic, and offline — no model required.
+      </p>
+
+      <h2>Honest edges, and what's next</h2>
+      <ul>
+        <li>
+          Inputs come from a type-agnostic battery; next is <b>LLM-proposed inputs</b> (when a model is available) and
+          <b>captured-run I/O</b> — harvesting <i>real</i> arguments from the repo's own examples/entrypoints for deeper
+          coverage.
+        </li>
+        <li>Today it pins module-level functions and methods on zero-arg classes; constructor-args and stateful objects are next.</li>
+        <li>
+          A server endpoint + a one-click web panel are coming, so you can snapshot/verify from the Master-Anything UI,
+          not just the CLI.
+        </li>
+      </ul>
+      <p>
+        The code is small and readable:
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/packages/verifier/src/snapshot.ts"><code>snapshot.ts</code></a>
+        ·
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/packages/verifier/src/firewall-cli.ts"><code>firewall-cli.ts</code></a>.
+      </p>
+
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Repo:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>The oracle it's built on:</b> <a href="./blog-universal-verification.html">Making "verifiable" reach any function</a></li>
+        <li><b>The learning side:</b> <a href="./blog-mastery-graph-quests.html">Your mastery graph just became an asset</a></li>
+      </ul>
+      <p>
+        Find the most untested, most load-bearing file in your repo. Snapshot it. Let your favorite agent loose on it.
+        Then run <code>verify</code> — and watch it tell you, to the input, whether you can trust the result.
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
