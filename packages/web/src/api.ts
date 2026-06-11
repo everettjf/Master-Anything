@@ -278,6 +278,36 @@ export async function firewallVerify(id: string, path: string, candidate: string
   );
 }
 
+// --- AI certification (the mastery loop with the learner = an agent) ---
+
+export interface CertUnitResult {
+  unitId: string;
+  title: string;
+  verifiedBy: "suite" | "characterization" | "none";
+  gradable: boolean;
+  passed: boolean;
+}
+
+export interface CertificationReport {
+  agent: string;
+  totalUnits: number;
+  gradable: number;
+  passed: number;
+  passRate: number;
+  weakest: { unitId: string; title: string; belief: number }[];
+  results: CertUnitResult[];
+}
+
+export async function certify(id: string, agent: "llm" | "oracle" | "lazy"): Promise<CertificationReport> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/certify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ agent }),
+    }),
+  );
+}
+
 export interface ReviewItem {
   unitId: string;
   title: string;

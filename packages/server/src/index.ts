@@ -17,6 +17,7 @@ import {
 } from "@ma/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { certifyAgent, lazySolver, llmSolver, oracleSolver } from "./certify.js";
 import { getConversation, putConversation } from "./db.js";
 import { snapshotForRepo, verifyForRepo } from "./firewall.js";
 import {
@@ -417,6 +418,33 @@ app.get("/repos/:id/next", (c) => {
   const userId = c.req.query("user") || "anon";
   const limit = Number(c.req.query("limit") ?? 5);
   return c.json({ userId, recommendations: recommendFor(userId, repo, limit) });
+});
+
+// AI certification: run the Apply loop with an agent as solver, grade objectively.
+// body: { agent?: "llm" | "oracle", limit?: number }
+app.post("/repos/:id/certify", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as { agent?: string; limit?: number };
+  const builtin: Record<string, typeof oracleSolver> = { oracle: oracleSolver, lazy: lazySolver };
+  const solve = body.agent && builtin[body.agent] ? builtin[body.agent] : llmSolver();
+  if (!solve) {
+    return c.json(
+      { error: "Certifying a model requires an LLM (set MA_LLM_*), or use agent:'oracle'." },
+      400,
+    );
+  }
+  const name =
+    body.agent === "oracle"
+      ? "oracle (reference impl)"
+      : body.agent === "lazy"
+        ? "lazy (no-op baseline)"
+        : llmDescribe();
+  try {
+    return c.json(await certifyAgent(repo, solve, { agent: name, limit: body.limit }));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
 });
 
 // Behavioral Firewall: snapshot a file's behavior; verify a candidate preserved it.

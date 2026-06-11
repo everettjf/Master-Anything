@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { type BehaviorDiff, type FirewallSnapshot, firewallSnapshot, firewallVerify } from "./api.js";
+import {
+  type BehaviorDiff,
+  type CertificationReport,
+  certify,
+  type FirewallSnapshot,
+  firewallSnapshot,
+  firewallVerify,
+} from "./api.js";
 
 const CODE_EXT = /\.(py|js|cjs|mjs|ts|tsx)$/;
 
@@ -19,6 +26,20 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
   const [diff, setDiff] = useState<BehaviorDiff | null>(null);
   const [busy, setBusy] = useState<"snap" | "verify" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cert, setCert] = useState<CertificationReport | null>(null);
+  const [certBusy, setCertBusy] = useState<string | null>(null);
+
+  async function runCertify(agent: "llm" | "oracle" | "lazy") {
+    setCertBusy(agent);
+    setError(null);
+    try {
+      setCert(await certify(repoId, agent));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCertBusy(null);
+    }
+  }
 
   async function doSnapshot() {
     if (!path) return;
@@ -157,6 +178,53 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
           )}
         </div>
       )}
+
+      <div className="cert">
+        <h2>🤖 Certify an agent</h2>
+        <p className="fw-lead">
+          Run the Apply exam over this repo with an agent as solver and grade it objectively — a competence
+          profile of where it's solid and where it's weak on <i>your</i> code.
+        </p>
+        <div className="cert-actions">
+          <button onClick={() => runCertify("llm")} disabled={certBusy !== null}>
+            {certBusy === "llm" ? "Running…" : "Certify the configured model"}
+          </button>
+          <button className="ghost" onClick={() => runCertify("oracle")} disabled={certBusy !== null}>
+            {certBusy === "oracle" ? "…" : "oracle baseline"}
+          </button>
+          <button className="ghost" onClick={() => runCertify("lazy")} disabled={certBusy !== null}>
+            {certBusy === "lazy" ? "…" : "lazy baseline"}
+          </button>
+        </div>
+
+        {cert && (
+          <div className="cert-report">
+            <div className="cert-score">
+              <span className="cert-pct">{Math.round(cert.passRate * 100)}%</span>
+              <span className="cert-sub">
+                <b>{cert.agent}</b> — passed {cert.passed}/{cert.gradable} gradable units (of{" "}
+                {cert.totalUnits})
+              </span>
+            </div>
+            <div className="cert-rows">
+              {cert.results.map((r) => (
+                <div key={r.unitId} className="cert-row">
+                  <span className={`cert-mark ${r.gradable ? (r.passed ? "ok" : "bad") : "na"}`}>
+                    {r.gradable ? (r.passed ? "✓" : "✗") : "–"}
+                  </span>
+                  <span className="cert-title">{r.title}</span>
+                  <span className="cert-tag">{r.gradable ? r.verifiedBy : "not gradable"}</span>
+                </div>
+              ))}
+            </div>
+            {cert.weakest.length > 0 && (
+              <div className="cert-weak">
+                Weakest on this repo: {cert.weakest.map((w) => w.title).join(" · ")}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

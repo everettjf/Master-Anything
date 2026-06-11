@@ -87,6 +87,9 @@ same engine.** That's why Master-Anything supports code *and* documents with one
   input→output for every deterministic function), let an agent rewrite it, then **verify** — proves behavior is
   preserved, or reports the exact `(function, input)` that changed and **old→new**. A regression net for *untested*
   code; CI/agent-ready CLI (`ma-firewall snapshot|verify`, non-zero exit on change). Python · JS · TS.
+- 🤖 **AI certification** — the mastery loop with the learner = an **agent**. Run the Apply exam over your repo with a
+  model as solver, grade it objectively (real tests / the oracle), and get a **competence profile**: pass rate + the
+  units where it's weak. `POST /repos/:id/certify` with the configured model, or built-in `oracle`/`lazy` baselines.
 - 🔌 **Bring any model** — 11 vendor presets via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI · Anthropic · Google ·
   OpenRouter · Groq · DeepSeek · Mistral · xAI · Together · Fireworks · Ollama) or any OpenAI-compatible endpoint.
   **Auto-detects** your key (`export ANTHROPIC_API_KEY=…` just works), supports `provider/model` shorthand and

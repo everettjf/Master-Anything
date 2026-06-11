@@ -127,5 +127,25 @@ makes an untested function verifiable can guard **AI edits to untested code**.
 
 **The pitch:** "Let an AI rewrite your untested legacy code — and prove it didn't
 change behavior." **Next:** richer/LLM-proposed inputs and captured-run I/O for
-deeper coverage; per-property invariants; an "AI-certification" twin (run the
-mastery loop with the learner = an agent).
+deeper coverage; per-property invariants.
+
+## AI-certification twin (shipped)
+
+The mastery loop, with the learner = an **agent**. For every implementable unit we
+blank the function, ask an agent to reimplement it, verify objectively (real tests
+/ the characterization oracle), and feed pass/fail into knowledge tracing — a
+per-unit **competence profile** of that agent on *this* repo.
+
+**Shipped:** [`packages/server/src/certify.ts`](../packages/server/src/certify.ts)
+- `certifyAgent(repo, solve, opts)` — pure orchestration over A + B; the agent is
+  an injected `solve(task)` function, so it's testable and pluggable to any model.
+- Built-in solvers: the configured **LLM** (the model under test), plus `oracle`
+  (submits the reference impl — a perfect baseline that self-tests the exam, and
+  works offline) and `lazy` (no-op — a zero baseline / negative control).
+- Report: pass rate over gradable units + the **weakest** units (lowest belief),
+  i.e. where the agent is shaky on this codebase.
+- Endpoint `POST /repos/:id/certify` (`{ agent?: "llm"|"oracle"|"lazy", limit? }`).
+- Validated on py-calc: oracle → 100% (6/6), lazy → 0% with a populated weak list.
+
+**Next:** Understand/Analyze/Create rungs (not just Apply); leaderboards across
+models; a web panel; certify a PR's agent before merge.

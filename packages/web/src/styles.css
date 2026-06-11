@@ -1068,3 +1068,91 @@ code {
 .fw-diff .now code {
   color: inherit;
 }
+
+/* ai certification (lives in the firewall tab) */
+.cert {
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1px dashed var(--border);
+}
+.cert h2 {
+  margin: 0 0 6px;
+}
+.cert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 14px;
+}
+.cert-actions button.ghost {
+  background: #0d1117;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.cert-report {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.cert-score {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.cert-pct {
+  font-size: 34px;
+  font-weight: 800;
+  color: #3fb950;
+}
+.cert-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+.cert-sub b {
+  color: var(--text);
+}
+.cert-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cert-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.cert-mark {
+  width: 16px;
+  text-align: center;
+  font-weight: 700;
+}
+.cert-mark.ok {
+  color: #3fb950;
+}
+.cert-mark.bad {
+  color: #f85149;
+}
+.cert-mark.na {
+  color: #6e7681;
+}
+.cert-title {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+}
+.cert-tag {
+  color: #6e7681;
+  font-size: 11px;
+}
+.cert-weak {
+  margin-top: 12px;
+  color: #d29922;
+  font-size: 13px;
+}
