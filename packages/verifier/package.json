@@ -5,8 +5,12 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "ma-firewall": "./dist/firewall-cli.js"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "firewall": "node ./dist/firewall-cli.js"
   },
   "dependencies": {
     "@ma/core": "workspace:*"

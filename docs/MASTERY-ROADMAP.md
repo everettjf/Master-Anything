@@ -100,3 +100,28 @@ orchestration over A (verification), B (beliefs), and the graph.
 **Next in C:** Create-level capstones (ship a new capability, not just reimplement);
 multi-target quests from a real issue/PR; LLM-decomposed goals into sub-quests;
 persisting quests in SQLite.
+
+## Beyond A→B→C — the Behavioral Firewall (shipped)
+
+A's characterization oracle generalizes past *learning*: the same machinery that
+makes an untested function verifiable can guard **AI edits to untested code**.
+
+**Shipped:** [`packages/verifier/src/snapshot.ts`](../packages/verifier/src/snapshot.ts)
+- **`snapshotFile()`** discovers every function/zero-arg-class method in a file
+  (language-native reflection — no external parser), fuzzes each, and pins its
+  deterministic, literal-returning behavior (stable across two runs). Output is a
+  portable `BehaviorSnapshot` JSON.
+- **`verifyAgainstSnapshot()`** replays the snapshot against a candidate edit and
+  returns a precise `BehaviorDiff`: which `(symbol, input)` changed and old→new,
+  what now errors, and which functions went missing.
+- **CLI** [`firewall-cli.ts`](../packages/verifier/src/firewall-cli.ts):
+  `ma-firewall snapshot <file> [-o snap.json]` / `verify <file> <snap.json>` —
+  non-zero exit on change, so it drops into CI or an agent loop. Python · JS · TS.
+- Tests: [`test/snapshot.test.ts`](../test/snapshot.test.ts) (snapshot,
+  behavior-preserving refactor passes, real change caught with exact diff,
+  removed function flagged missing — Python + JS).
+
+**The pitch:** "Let an AI rewrite your untested legacy code — and prove it didn't
+change behavior." **Next:** a server endpoint + web panel; richer/LLM-proposed
+inputs and captured-run I/O for deeper coverage; per-property invariants; an
+"AI-certification" twin (run the mastery loop with the learner = an agent).

@@ -83,6 +83,10 @@ same engine.** That's why Master-Anything supports code *and* documents with one
 - 🎯 **Goal-anchored Quests** — state a goal ("fix the averaging bug"); Master-Anything anchors it to a target unit,
   has you master **exactly** the required sub-graph (target + transitive prerequisites, nothing else), and ends in a
   real Apply on the target — the passing change is the final, objective verification.
+- 🛡️ **Behavioral Firewall** — the same oracle, pointed at AI edits. **Snapshot** a file's behavior (golden
+  input→output for every deterministic function), let an agent rewrite it, then **verify** — proves behavior is
+  preserved, or reports the exact `(function, input)` that changed and **old→new**. A regression net for *untested*
+  code; CI/agent-ready CLI (`ma-firewall snapshot|verify`, non-zero exit on change). Python · JS · TS.
 - 🔌 **Bring any model** — 11 vendor presets via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI · Anthropic · Google ·
   OpenRouter · Groq · DeepSeek · Mistral · xAI · Together · Fireworks · Ollama) or any OpenAI-compatible endpoint.
   **Auto-detects** your key (`export ANTHROPIC_API_KEY=…` just works), supports `provider/model` shorthand and
