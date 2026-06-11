@@ -43,13 +43,32 @@ literal-returning function becomes verifiable without a hand-written test.
 - `pytest.approx` / float tolerance for numeric returns; opt-in keeping of
   error-raising cases; ESM-`.js` and constructor-args support.
 
-## B — Knowledge tracing over the graph (next)
+## B — Knowledge tracing over the graph (shipped)
 
-Replace the per-unit state machine with a probabilistic model where evidence at
-one unit **propagates along edges** (mastering a dependent is weak evidence for
-its prerequisites), models misconceptions, and exposes `nextBestExercise()` that
-maximizes expected information at the learner's knowledge frontier. This is what
-makes the "mastery graph" an actual asset rather than a list of levels.
+The per-unit state machine is now backed by a probabilistic belief where evidence
+at one unit **propagates along prerequisite edges** — turning the "mastery graph"
+into an actual asset rather than a list of levels.
+
+**Shipped:** [`packages/core/src/tracing.ts`](../packages/core/src/tracing.ts)
+- **Per-unit BKT posterior** from each unit's own attempts, with slip/guess tuned
+  by verifier objectivity (real tests & graph truth are trusted; LLM grading is
+  noisier) plus a learning-transition per attempt.
+- **Graph propagation:** an iterative noisy-OR diffusion where mastering a unit is
+  discounted evidence its prerequisites are mastered too. Only belief *above the
+  prior* propagates, so an un-attempted graph stays at the prior (no spurious
+  belief). A sparse set of attempts yields a dense belief over the whole graph.
+- **`recommendNext()`** ranks the frontier by learning value = readiness × mastery
+  gap × downstream unlocks, floating due reviews to the top, with human reasons
+  ("Foundational — a good place to start · unlocks 4 units").
+- **Wired in:** `beliefsFor` / `recommendFor` in the server; `GET /repos/:id/next`;
+  belief attached to `/mastery`; an adaptive **"Next up"** panel + per-unit belief
+  bars in the web Learn view.
+- Tests: [`test/tracing.test.ts`](../test/tracing.test.ts) (BKT, propagation,
+  readiness, frontier advance, review surfacing).
+
+**Next in B:** misconception/cognitive-state modelling; expected-information-gain
+selection (not just learning value); decay of belief over time alongside the
+spaced-repetition schedule; per-Bloom-level beliefs rather than a single P(mastered).
 
 ## C — Goal-anchored Quests (after B)
 

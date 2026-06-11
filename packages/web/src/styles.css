@@ -677,6 +677,42 @@ code {
   color: #0d1117;
 }
 
+/* adaptive "next up" panel (knowledge tracing) */
+.nextup {
+  border: 1px solid #58a6ff55;
+  background: #0d1b2e;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.nextup-head {
+  color: #58a6ff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.next-row {
+  margin-bottom: 6px;
+}
+.lvl.next {
+  background: #58a6ff;
+  color: #0d1117;
+}
+.belief-bar {
+  display: block;
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: #2a313c;
+  overflow: hidden;
+}
+.belief-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3fb950, #58a6ff);
+}
+
 /* model settings */
 .modelbtn {
   width: 100%;

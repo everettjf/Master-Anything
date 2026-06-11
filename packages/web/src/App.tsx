@@ -4,6 +4,7 @@ import {
   connectRepo,
   fetchGraph,
   fetchMastery,
+  fetchNext,
   fetchPath,
   fetchReviews,
   fetchSource,
@@ -11,6 +12,7 @@ import {
   type KnowledgeGraph,
   type MasteryUnit,
   type PathUnit,
+  type Recommendation,
   type RepoSummary,
   type ReviewItem,
   type SourceSlice,
@@ -58,6 +60,7 @@ export function App() {
   const [practiceUnit, setPracticeUnit] = useState<PathUnit | null>(null);
   const [touring, setTouring] = useState(false);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [next, setNext] = useState<Recommendation[]>([]);
   const [showSettings, setShowSettings] = useState(false);
 
   const graphRef = useRef<HTMLDivElement>(null);
@@ -72,9 +75,14 @@ export function App() {
   }, [graph, view]);
 
   const refreshMastery = useCallback(async (id: string) => {
-    const [m, r] = await Promise.all([fetchMastery(id, USER), fetchReviews(id, USER)]);
+    const [m, r, n] = await Promise.all([
+      fetchMastery(id, USER),
+      fetchReviews(id, USER),
+      fetchNext(id, USER),
+    ]);
     setMastery(new Map(m.units.map((u) => [u.unitId, u])));
     setReviews(r.due);
+    setNext(n.recommendations);
   }, []);
 
   const onConnect = useCallback(async () => {
@@ -274,6 +282,36 @@ export function App() {
 
             {view === "learn" && (
               <div className="path-list">
+                {next.filter((r) => r.kind === "learn").length > 0 && (
+                  <div className="nextup">
+                    <div className="nextup-head">◎ Next up · adaptive</div>
+                    {next
+                      .filter((r) => r.kind === "learn")
+                      .slice(0, 3)
+                      .map((r) => {
+                        const u = units.find((x) => x.id === r.unitId);
+                        return (
+                          <button
+                            key={r.unitId}
+                            className="unit-row next-row"
+                            onClick={() => u && setPracticeUnit(u)}
+                          >
+                            <span className="unit-main">
+                              <span className="unit-title">{r.title}</span>
+                              <span className="unit-sub">{r.reason}</span>
+                              <span className="belief-bar" title={`belief ${Math.round(r.belief * 100)}%`}>
+                                <span
+                                  className="belief-fill"
+                                  style={{ width: `${Math.round(r.belief * 100)}%` }}
+                                />
+                              </span>
+                            </span>
+                            <span className="lvl next">go</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                )}
                 {reviews.length > 0 && (
                   <div className="reviews">
                     <div className="reviews-head">↻ Due for review · {reviews.length}</div>
@@ -304,12 +342,16 @@ export function App() {
                 {units.map((u, i) => {
                   const m = mastery.get(u.id);
                   const lvl = m?.level ?? 0;
+                  const belief = m?.belief ?? 0;
                   return (
                     <button key={u.id} className="unit-row" onClick={() => setPracticeUnit(u)}>
                       <span className="idx">{i + 1}</span>
                       <span className="unit-main">
                         <span className="unit-title">{u.title}</span>
                         <span className="unit-sub">{u.summary}</span>
+                        <span className="belief-bar" title={`belief ${Math.round(belief * 100)}%`}>
+                          <span className="belief-fill" style={{ width: `${Math.round(belief * 100)}%` }} />
+                        </span>
                       </span>
                       <span
                         className="lvl"

@@ -24,6 +24,7 @@ import {
   createExplainAssessment,
   createImpactAssessment,
   masteryFor,
+  recommendFor,
   reviewsFor,
   runnerDescribe,
   submitAttempt,
@@ -403,6 +404,15 @@ app.get("/repos/:id/mastery", (c) => {
   if (!repo) return c.json({ error: "repo not found" }, 404);
   const userId = c.req.query("user") || "anon";
   return c.json({ userId, units: masteryFor(userId, repo) });
+});
+
+// Adaptive next-best exercises from graph-propagated knowledge tracing.
+app.get("/repos/:id/next", (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const userId = c.req.query("user") || "anon";
+  const limit = Number(c.req.query("limit") ?? 5);
+  return c.json({ userId, recommendations: recommendFor(userId, repo, limit) });
 });
 
 // Spaced-repetition review queue. Optional ?at=<ISO> previews the schedule.

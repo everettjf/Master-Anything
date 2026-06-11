@@ -15,11 +15,15 @@ import {
   gradeImpact,
   gradeOpenCreate,
   type ImpactQuestion,
+  inferBeliefs,
   isDue,
   type LearnerUnitState,
   type LearningUnit,
+  type Observation,
   OPEN_CREATE_PROMPT,
   recordAttempt,
+  recommendNext as traceRecommendNext,
+  type UnitBelief,
 } from "@ma/core";
 import {
   characterize,
@@ -500,8 +504,10 @@ export async function submitCreateAttempt(
 }
 
 export function masteryFor(userId: string, repo: RepoRecord) {
+  const beliefs = beliefsFor(userId, repo);
   return repo.path.units.map((u) => {
     const s = states.get(stateKey(userId, repo.root, u.id));
+    const b = beliefs.get(u.id);
     return {
       unitId: u.id,
       title: u.title,
@@ -511,6 +517,10 @@ export function masteryFor(userId: string, repo: RepoRecord) {
       confidence: s?.confidence ?? 0,
       attempts: s?.attempts.length ?? 0,
       nextReviewAt: s?.nextReviewAt,
+      // Thrust B — graph-propagated knowledge tracing.
+      belief: b?.belief ?? 0,
+      readiness: b?.readiness ?? 1,
+      mastered: b?.mastered ?? false,
     };
   });
 }
@@ -532,4 +542,47 @@ export function reviewsFor(userId: string, repo: RepoRecord, at: number = Date.n
   }
   due.sort((a, b) => b.overdueMs - a.overdueMs);
   return due;
+}
+
+// --- Knowledge tracing (thrust B): graph-propagated beliefs + adaptive next ---
+
+/** Each unit's attempt history as tracing observations. */
+function observationsFor(userId: string, repo: RepoRecord): Map<string, Observation[]> {
+  const obs = new Map<string, Observation[]>();
+  for (const u of repo.path.units) {
+    const s = states.get(stateKey(userId, repo.root, u.id));
+    obs.set(
+      u.id,
+      (s?.attempts ?? []).map((a) => ({
+        passed: a.passed,
+        verifier: a.verifier,
+        targetLevel: a.targetLevel,
+      })),
+    );
+  }
+  return obs;
+}
+
+/** Belief P(mastered) for every unit, with prerequisite evidence propagated. */
+export function beliefsFor(userId: string, repo: RepoRecord): Map<string, UnitBelief> {
+  return inferBeliefs(repo.path.units, observationsFor(userId, repo));
+}
+
+function dueSet(userId: string, repo: RepoRecord, at: number): Set<string> {
+  const due = new Set<string>();
+  for (const u of repo.path.units) {
+    const s = states.get(stateKey(userId, repo.root, u.id));
+    if (s && isDue(s, at)) due.add(u.id);
+  }
+  return due;
+}
+
+/**
+ * Adaptive recommendation: the next best units to practise, chosen from the
+ * graph-propagated belief state (ready, not-yet-mastered, high-unlock first),
+ * with due reviews floated to the top.
+ */
+export function recommendFor(userId: string, repo: RepoRecord, limit = 5, at: number = Date.now()) {
+  const beliefs = beliefsFor(userId, repo);
+  return traceRecommendNext(repo.path.units, beliefs, { due: dueSet(userId, repo, at), limit });
 }

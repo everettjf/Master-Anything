@@ -18,6 +18,7 @@ export * from "./providers/presets.js";
 export * from "./providers/vercel.js";
 export * from "./retrieval.js";
 export * from "./tours.js";
+export * from "./tracing.js";
 export * from "./tutor.js";
 export * from "./types.js";
 export * from "./understand.js";

@@ -77,7 +77,9 @@ same engine.** That's why Master-Anything supports code *and* documents with one
   **cross-domain edges** linking docs to the code they describe.
 - 💬 **Graph-grounded tutor (GraphRAG)** — answers cite `path:line`, with **multi-turn memory** and optional
   embedding retrieval.
-- 🧭 **Adaptive learning path** — units ordered by dependency; mastery tracked per `(learner, unit)`.
+- 🧭 **Adaptive learning path** — units ordered by dependency; mastery tracked per `(learner, unit)`. A
+  **knowledge-tracing** model propagates evidence along prerequisite edges (mastering a unit is evidence its
+  prerequisites are mastered too) and recommends the **next best exercise** — ready, not-yet-mastered, highest-unlock.
 - 🔌 **Bring any model** — 11 vendor presets via the [Vercel AI SDK](https://ai-sdk.dev) (OpenAI · Anthropic · Google ·
   OpenRouter · Groq · DeepSeek · Mistral · xAI · Together · Fireworks · Ollama) or any OpenAI-compatible endpoint.
   **Auto-detects** your key (`export ANTHROPIC_API_KEY=…` just works), supports `provider/model` shorthand and
@@ -192,15 +194,17 @@ pages/        # GitHub Pages landing site
 ## Roadmap
 
 **Done:** verifiable Apply (Py/JS/TS) · **universal verification** via synthesized characterization tests (oracle =
-the original code; Py/JS/TS) · graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
+the original code; Py/JS/TS) · **graph-propagating knowledge tracing** + adaptive next-exercise recommender ·
+graph-verified Analyze · **Create-level** (extend + verify with real tests) ·
 spaced-repetition reviews (with forgetting) · GraphRAG tutor with persistent multi-turn memory ·
 Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges · architectural layers · guided tours ·
 auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
 Docker sandbox runner (with local fallback).
 
-**In progress (A→B→C):** **A** universal verification — characterization now spans Py/JS/TS; next: LLM-proposed
-inputs + captured-run I/O · **B** a graph-propagating knowledge-tracing model driving adaptive next-exercise
-selection · **C** goal-anchored "Quests" (state a change you want to ship; master exactly the required sub-graph).
+**A→B→C arc:** **A** universal verification — characterization now spans Py/JS/TS (next: LLM-proposed inputs +
+captured-run I/O) · **B** ✅ graph-propagating **knowledge tracing** — beliefs propagate along prerequisite edges and
+drive an adaptive "Next up" recommender (`GET /repos/:id/next`) · **C** (next) goal-anchored "Quests": state a change
+you want to ship; master exactly the required sub-graph, culminating in the real change as the final verification.
 
 **Planned:** Postgres backend for scale · real Docker-sandbox validation · more formats (slides, notebooks).
 

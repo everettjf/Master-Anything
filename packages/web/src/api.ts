@@ -168,10 +168,29 @@ export interface MasteryUnit {
   level: number;
   confidence: number;
   attempts: number;
+  /** Graph-propagated knowledge tracing (thrust B). */
+  belief: number;
+  readiness: number;
+  mastered: boolean;
 }
 
 export async function fetchMastery(id: string, user: string): Promise<{ units: MasteryUnit[] }> {
   return jsonOrThrow(await fetch(`${BASE}/repos/${id}/mastery?user=${encodeURIComponent(user)}`));
+}
+
+export interface Recommendation {
+  unitId: string;
+  title: string;
+  score: number;
+  belief: number;
+  readiness: number;
+  unlocks: number;
+  kind: "learn" | "review";
+  reason: string;
+}
+
+export async function fetchNext(id: string, user: string): Promise<{ recommendations: Recommendation[] }> {
+  return jsonOrThrow(await fetch(`${BASE}/repos/${id}/next?user=${encodeURIComponent(user)}`));
 }
 
 export interface ReviewItem {
