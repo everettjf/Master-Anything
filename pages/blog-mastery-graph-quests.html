@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your mastery graph just became an asset — adaptive tracing + goal-anchored quests · Master-Anything</title>
+    <meta
+      name="description"
+      content="Master-Anything ships thrusts B and C: knowledge tracing that propagates evidence along the prerequisite graph, and goal-anchored quests that master exactly the sub-graph a goal needs, ending in a real verified change."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-mastery-graph-quests.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-mastery-graph-quests.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-mastery-graph-quests.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Your mastery graph just became an asset — adaptive tracing + goal-anchored quests" />
+    <meta
+      property="og:description"
+      content="Knowledge tracing that propagates along the prerequisite graph, and goal-anchored quests that master exactly the sub-graph a goal needs."
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-mastery-graph-quests.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Your mastery graph just became an asset — adaptive tracing + goal-anchored quests" />
+    <meta
+      name="twitter:description"
+      content="Knowledge tracing that propagates along the prerequisite graph, and goal-anchored quests that master exactly the sub-graph a goal needs."
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.85; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.8; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.8;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      /* language toggle */
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1>Your <span class="grad">mastery graph</span> just became an asset —<br />adaptive tracing + goal-anchored quests</h1>
+      <div class="lang-toggle">
+        <a class="on" href="./blog-mastery-graph-quests.html">EN</a><a href="./blog-mastery-graph-quests.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        A progress note on <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a>: the open-source
+        tool that turns any codebase (or docs, or a PDF) into a knowledge graph and uses <b>real tests</b> and
+        <b>graph truth</b> to <b>prove</b> you've mastered it. This one ships the last two of three foundational leaps —
+        so the <b>A→B→C</b> arc is now complete.
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        A while back I wrote down the three places where Master-Anything's biggest claims were thinner than they
+        sounded, and the plan to close them in order:
+      </p>
+      <ul>
+        <li>
+          <b>A — Universal verification.</b> "Verifiable Apply" only fired where a pre-existing test happened to cover a
+          function. (<a href="./blog-universal-verification.html">shipped — the characterization oracle</a>, now
+          Py/JS/TS.)
+        </li>
+        <li>
+          <b>B — Knowledge tracing.</b> The "mastery graph" was a flat per-unit state machine: evidence at one unit never
+          moved its neighbours. A graph that doesn't propagate isn't really a graph.
+        </li>
+        <li>
+          <b>C — Goal-anchored quests.</b> There was no <i>reason to open the tool</i> — mastery wasn't tied to anything
+          you actually wanted to ship.
+        </li>
+      </ul>
+      <p><b>B and C are now in.</b> Here's what changed.</p>
+
+      <h2>B — the graph finally propagates</h2>
+      <p>
+        Real understanding isn't independent. Units sit in a prerequisite graph, so evidence at one should inform its
+        neighbours. Master-Anything now derives a probabilistic belief <b>P(mastered)</b> for <i>every</i> unit from a
+        sparse set of attempts, in two steps:
+      </p>
+      <ul>
+        <li>
+          <b>A per-unit posterior</b> (Bayesian Knowledge Tracing) from each unit's own attempts — with slip/guess tuned
+          by how objective the verifier is. Real tests and graph truth are trusted; LLM grading is treated as noisier.
+          Each attempt also nudges belief up a little, because practising <i>teaches</i>.
+        </li>
+        <li>
+          <b>Propagation along prerequisite edges.</b> Mastering a unit is discounted evidence that the things it's built
+          on are mastered too — an iterative noisy-OR diffusion across the graph. So a handful of attempts produces a
+          <i>dense</i> belief over the whole graph, not five isolated numbers.
+        </li>
+      </ul>
+      <p>
+        One engineering detail I'm a little proud of: <b>only belief <i>above the prior</i> propagates.</b> Without that,
+        an un-attempted foundational unit would inherit spurious belief just because lots of things sit on top of it.
+        With it, an untouched graph stays honestly at the prior, and only <i>real</i> mastery flows downhill.
+      </p>
+      <p>
+        From those beliefs, the Learn view now shows an adaptive <b>"Next up"</b> panel. It ranks the frontier by
+        <b>learning value = readiness × mastery-gap × downstream-unlocks</b> (with due spaced-repetition reviews floated
+        to the top), each with a human reason: <i>"Foundational — a good place to start · unlocks 4 units."</i> It's all
+        pure, deterministic, offline math over the graph — no LLM in the loop. <code>GET /repos/:id/next</code>.
+      </p>
+
+      <h2>C — a reason to open the tool</h2>
+      <p>
+        This is the part that ties everything together. You state a goal — <i>"fix the averaging bug"</i>, <i>"work on
+        auth"</i> — and Master-Anything turns it into a <b>quest</b>:
+      </p>
+      <ul>
+        <li><b>Anchor</b> the goal to a target unit in the graph (via retrieval; offline-lexical by default).</li>
+        <li>
+          <b>Compute the required sub-graph</b> — the target plus its <i>transitive</i> prerequisites, and <i>nothing
+          else</i>. You master exactly what the goal needs, in dependency order.
+        </li>
+        <li>
+          <b>Drive it with the B beliefs</b> — a live progress bar, an ordered checklist, and the next best step
+          <i>scoped to the quest</i>.
+        </li>
+        <li>
+          <b>End on a capstone</b> — a real Apply on the target unit. The passing change is the ultimate, objective
+          verification.
+        </li>
+      </ul>
+      <p>
+        Here's the actual end-to-end run on the bundled <code>py-calc</code>, goal = <i>"fix the average calculation"</i>
+        (it anchors to the <code>average</code> unit, whose required sub-graph is <code>Calculator → average</code>):
+      </p>
+      <div class="code">
+        <pre><code>fresh   0%    next = Calculator   (Foundational — a good place to start · unlocks 1 unit)   capstone locked
++Calc   50%   next = average      (Prerequisites in place)                                  capstone unlocked
++avg    100%  ✓ complete</code></pre>
+      </div>
+      <p>
+        Master <code>Calculator</code>, and the capstone <code>average</code> unlocks; master it, and the quest
+        completes — every step gated by real verification, sequenced by the belief graph. That's the <b>A→B→C</b> loop
+        closed: <i>the thing you set out to do</i> becomes the exam, and you only learn the sub-graph it actually
+        requires.
+      </p>
+
+      <h2>Honest edges, and what's next</h2>
+      <ul>
+        <li>
+          <b>B</b> uses a single P(mastered) per unit; next is per-Bloom-level beliefs, belief decay over time alongside
+          the spaced-repetition schedule, and expected-information-gain selection (not just learning value).
+        </li>
+        <li>
+          <b>C</b> capstones are reimplement-the-target Apply tasks today; next is <i>Create</i>-level capstones (ship a
+          genuinely new capability), multi-target quests decomposed from a real issue/PR, and persisting quests across
+          sessions.
+        </li>
+        <li>It's all deterministic and offline by default; an LLM only ever <i>improves</i> anchoring/decomposition, never gates it.</li>
+      </ul>
+      <p>
+        The full design lives in
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/docs/MASTERY-ROADMAP.md"><code>docs/MASTERY-ROADMAP.md</code></a>,
+        and the code is small enough to read in a sitting:
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/packages/core/src/tracing.ts"><code>tracing.ts</code></a>
+        ·
+        <a href="https://github.com/everettjf/Master-Anything/blob/main/packages/core/src/quest.ts"><code>quest.ts</code></a>.
+      </p>
+
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Repo:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>Part one of the arc:</b> <a href="./blog-universal-verification.html">Making "verifiable" reach any function</a></li>
+        <li><b>Getting started:</b> <a href="./blog.html">Don't just <i>read</i> your codebase — <i>master</i> it</a></li>
+      </ul>
+      <p>
+        Point it at a repo, open <b>Learn</b>, and type a goal into the 🎯 Quest box. Watch it lay out the exact path,
+        then climb it — every green check earned against something real, ending on a change you actually wanted to make.
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
