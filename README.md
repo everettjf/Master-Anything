@@ -137,12 +137,14 @@ cross-domain edges).
 ### The mastery loop
 
 1. **Graph** — explore the knowledge graph; click a node to view its source (provenance-linked).
-2. **Learn** — follow the dependency-ordered path; open a unit to practice:
+2. **Learn** — an adaptive **Next up** panel recommends your best next exercise, and a 🎯 **Quest** box turns a goal
+   into a curriculum over exactly the sub-graph it needs. Open a unit to practice:
    - **Understand** — answer a question; the LLM grades it against the source.
-   - **Apply** — reimplement a blanked function; the **real test suite** verifies it.
+   - **Apply** — reimplement a blanked function; the **real test suite** (or a synthesized oracle) verifies it.
    - **Analyze** — pick which units a change would affect; graded against the **graph**.
    - **Create** — add a new capability (+ a test that proves it); real tests enforce no regression.
-3. **Tutor** — ask in natural language; answers are grounded in the graph and cite `path:line`, with multi-turn memory.
+3. **🛡 Firewall** — snapshot a file's behavior and verify an AI edit preserved it; certify a model on your repo.
+4. **Tutor** — ask in natural language; answers are grounded in the graph and cite `path:line`, with multi-turn memory.
 
 | Domain                | Adapter           | Unit        | Verifiable levels                                   |
 | --------------------- | ----------------- | ----------- | --------------------------------------------------- |
@@ -155,6 +157,19 @@ cross-domain edges).
 
 > In a **mixed repo**, all of the above merge into one graph and gain `documents` edges (a doc section → the code it
 > describes), so Analyze can answer *"change `Calculator` → which docs are affected?"* and the tutor cites code + docs together.
+
+### Behavioral Firewall (standalone)
+
+Pin a file's behavior, let an AI rewrite it, then prove it didn't change — no test suite required. Non-zero exit on a
+change, so it drops into CI or an agent loop:
+
+```bash
+pnpm --filter @ma/verifier build
+node packages/verifier/dist/firewall-cli.js snapshot src/utils.py -o utils.behavior.json
+# …an agent (or you) edits src/utils.py…
+node packages/verifier/dist/firewall-cli.js verify   src/utils.py utils.behavior.json
+# ✅ behavior preserved — 19/19   |   ❌ clamp(12, -1, 7)  was 7  now 8
+```
 
 ## Configuration
 

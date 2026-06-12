@@ -42,11 +42,12 @@
         <a href="#install">2. Install</a>
         <a href="#run">3. Run</a>
         <a href="#connect">4. Connect a repo</a>
-        <a href="#tabs">5. The five tabs</a>
+        <a href="#tabs">5. The six tabs</a>
         <a href="#ladder">6. Climb the ladder</a>
-        <a href="#review">7. Spaced repetition</a>
-        <a href="#cli">8. CLI</a>
-        <a href="#llm">9. Add an LLM</a>
+        <a href="#firewall">7. Verify the AI</a>
+        <a href="#review">8. Spaced repetition</a>
+        <a href="#cli">9. CLI</a>
+        <a href="#llm">10. Add an LLM</a>
         <a href="#trouble">Troubleshooting</a>
       </nav>
 
@@ -116,16 +117,17 @@ pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
       <section id="tabs" class="step">
         <div class="step-n">5</div>
         <div class="step-body">
-          <h2>The five tabs</h2>
+          <h2>The six tabs</h2>
           <div class="shot-frame">
-            <img src="./assets/tut-tabs.png" loading="lazy" alt="The five tabs: Graph, Learn, Layers, Wiki, Tutor" />
+            <img src="./assets/tut-tabs.png" loading="lazy" alt="The tabs: Graph, Learn, Layers, Wiki, Tutor, Firewall" />
           </div>
           <ul class="tabs-list">
             <li><b>Graph</b> — explore the knowledge graph; click a node for its source. Toggle <i>by kind / by layer</i> coloring.</li>
-            <li><b>Learn</b> — the dependency-ordered path; click a unit to practice the Bloom ladder.</li>
+            <li><b>Learn</b> — the dependency-ordered path with an adaptive <b>Next up</b> panel and a 🎯 <b>Quest</b> box; click a unit to practice the Bloom ladder.</li>
             <li><b>Layers</b> — units grouped by architectural depth (Foundation → Interface).</li>
             <li><b>Wiki</b> — an auto-generated, cross-linked wiki; <b>Export markdown</b> to commit it into the repo.</li>
             <li><b>Tutor</b> — ask in natural language; grounded answers cite <code>path:line</code>, with multi-turn memory.</li>
+            <li><b>🛡 Firewall</b> — snapshot a file's behavior and verify an AI edit preserved it; certify a model on your repo.</li>
           </ul>
           <div class="gallery two">
             <figure><img src="./assets/app-layers.png" loading="lazy" alt="Layers tab" /><figcaption><b>Layers</b></figcaption></figure>
@@ -138,7 +140,12 @@ pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
         <div class="step-n">6</div>
         <div class="step-body">
           <h2>Climb the ladder (the core loop)</h2>
-          <p>In <b>Learn</b>, click the <b>Calculator</b> unit. You'll get four challenges:</p>
+          <p>
+            At the top of <b>Learn</b>, the <b>◎ Next up</b> panel recommends your best next exercise (ready,
+            not-yet-mastered, highest-unlock), and the 🎯 <b>Quest</b> box lets you type a goal
+            (e.g. <i>"fix the averaging bug"</i>) to master exactly the sub-graph it needs. Either way, click the
+            <b>Calculator</b> unit and you'll get four challenges:
+          </p>
           <ol class="rungs">
             <li><span class="pill u">Understand</span> Answer a question in prose — an LLM grades it against the source (needs an LLM; see step 9).</li>
             <li><span class="pill a">Apply</span> The body of <code>add</code> is blanked. Type <code>return a + b</code> and hit <b>Run tests</b> — the project's <b>real pytest suite</b> turns you green and promotes you to <b>Apply</b>.</li>
@@ -156,8 +163,39 @@ pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
         </div>
       </section>
 
-      <section id="review" class="step">
+      <section id="firewall" class="step">
         <div class="step-n">7</div>
+        <div class="step-body">
+          <h2>Verify the AI (Firewall &amp; certification)</h2>
+          <p>
+            Open the <b>🛡 Firewall</b> tab. It points the same verification engine at <i>AI edits</i>, not just your
+            learning — handy for untested code an agent is about to touch.
+          </p>
+          <ol class="rungs">
+            <li>
+              <span class="pill a">Snapshot</span> Pick a file and hit <b>① Snapshot behavior</b>. Master-Anything runs
+              every function over a battery of inputs and pins the deterministic results as golden behaviors.
+            </li>
+            <li>
+              <span class="pill n">Verify</span> Edit the file in the box (or paste an AI's rewrite) and hit
+              <b>② Verify</b>. You get <b>✅ behavior preserved</b>, or the exact <code>(function, input)</code> that
+              changed with its <b>was → now</b> value.
+            </li>
+            <li>
+              <span class="pill cr">Certify</span> Under <b>🤖 Certify an agent</b>, run the Apply exam with a model (or
+              the <i>oracle</i> / <i>lazy</i> baselines) as the solver — an objective competence profile of that agent
+              on <i>your</i> repo.
+            </li>
+          </ol>
+          <p class="note">
+            All deterministic and offline; the CLI <code>ma-firewall snapshot|verify</code> exits non-zero on a change,
+            so it drops straight into CI or an agent loop.
+          </p>
+        </div>
+      </section>
+
+      <section id="review" class="step">
+        <div class="step-n">8</div>
         <div class="step-body">
           <h2>Retention: spaced repetition</h2>
           <p>
@@ -169,7 +207,7 @@ pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
       </section>
 
       <section id="cli" class="step">
-        <div class="step-n">8</div>
+        <div class="step-n">9</div>
         <div class="step-body">
           <h2>CLI (no server needed)</h2>
           <div class="code">
@@ -178,13 +216,17 @@ pnpm --filter @ma/web dev       # web → http://localhost:5173</code></pre>
 pnpm --filter @ma/core graph /abs/path/to/project --out artifacts/graph.json
 
 # generate a cross-linked markdown wiki (writes &lt;repo&gt;/.master-anything/wiki/)
-pnpm --filter @ma/core wiki /abs/path/to/project</code></pre>
+pnpm --filter @ma/core wiki /abs/path/to/project
+
+# behavioral firewall: pin a file's behavior, then verify an edit preserved it
+node packages/verifier/dist/firewall-cli.js snapshot src/utils.py -o utils.behavior.json
+node packages/verifier/dist/firewall-cli.js verify   src/utils.py utils.behavior.json</code></pre>
           </div>
         </div>
       </section>
 
       <section id="llm" class="step">
-        <div class="step-n">9</div>
+        <div class="step-n">10</div>
         <div class="step-body">
           <h2>Optional: add an LLM</h2>
           <p>

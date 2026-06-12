@@ -183,7 +183,7 @@ export function App() {
         <div className="brand">
           Master<span>-Anything</span>
         </div>
-        <div className="tagline">Master anything, verifiably. · P0 MVP</div>
+        <div className="tagline">Master anything, verifiably.</div>
         <button className="modelbtn" onClick={() => setShowSettings(true)}>
           ⚙ Model settings
         </button>
