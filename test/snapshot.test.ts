@@ -1,11 +1,24 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { snapshotFile, verifyAgainstSnapshot } from "@ma/verifier";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { hasPython3 } from "./helpers/env.js";
 
 const pyFixture = fileURLToPath(new URL("./fixtures/py-uncovered", import.meta.url));
 const jsFixture = fileURLToPath(new URL("./fixtures/js-uncovered", import.meta.url));
+
+const tmps: string[] = [];
+function tmpRepo(file: string, content: string): { repoRoot: string; file: string } {
+  const dir = mkdtempSync(join(tmpdir(), "ma-fw-"));
+  tmps.push(dir);
+  writeFileSync(join(dir, file), content);
+  return { repoRoot: dir, file };
+}
+afterAll(() => {
+  for (const d of tmps) rmSync(d, { recursive: true, force: true });
+});
 
 describe.skipIf(!hasPython3)("behavioral firewall — snapshot + verify (Python)", () => {
   it("snapshots every function in a file", async () => {
@@ -106,5 +119,80 @@ describe("behavioral firewall — snapshot + verify (JavaScript)", () => {
     });
     expect(bad.ok).toBe(false);
     expect(bad.changed.some((c) => c.symbol === "clamp")).toBe(true);
+  });
+});
+
+describe("behavioral firewall — float tolerance", () => {
+  it("tolerates float noise from an equivalent rewrite, but catches real changes (JS)", async () => {
+    // scale(3) = 3 * 0.1 = 0.30000000000000004
+    const { repoRoot, file } = tmpRepo(
+      "floaty.js",
+      "function scale(x) { return x * 0.1; }\nmodule.exports = { scale };\n",
+    );
+    const snap = await snapshotFile({ repoRoot, file, language: "javascript" });
+    expect(snap).not.toBeNull();
+
+    // x / 10 gives 0.3 (exactly) — a different bit pattern, same value → preserved.
+    const equivalent = "function scale(x) { return x / 10; }\nmodule.exports = { scale };\n";
+    const ok = await verifyAgainstSnapshot({
+      repoRoot,
+      file,
+      language: "javascript",
+      snapshot: snap!,
+      candidate: equivalent,
+    });
+    expect(ok.ok).toBe(true);
+
+    // x * 0.2 is a real behavior change → caught.
+    const changed = "function scale(x) { return x * 0.2; }\nmodule.exports = { scale };\n";
+    const bad = await verifyAgainstSnapshot({
+      repoRoot,
+      file,
+      language: "javascript",
+      snapshot: snap!,
+      candidate: changed,
+    });
+    expect(bad.ok).toBe(false);
+    expect(bad.changed.some((c) => c.symbol === "scale")).toBe(true);
+  });
+
+  it("still catches a +1 integer change (tolerance doesn't mask it) (JS)", async () => {
+    const { repoRoot, file } = tmpRepo(
+      "inc.js",
+      "function f(x) { return x + 1; }\nmodule.exports = { f };\n",
+    );
+    const snap = await snapshotFile({ repoRoot, file, language: "javascript" });
+    const bad = await verifyAgainstSnapshot({
+      repoRoot,
+      file,
+      language: "javascript",
+      snapshot: snap!,
+      candidate: "function f(x) { return x + 2; }\nmodule.exports = { f };\n",
+    });
+    expect(bad.ok).toBe(false);
+  });
+
+  it.skipIf(!hasPython3)("tolerates float noise but catches real changes (Python)", async () => {
+    const { repoRoot, file } = tmpRepo("floaty.py", "def scale(x):\n    return x * 0.1\n");
+    const snap = await snapshotFile({ repoRoot, file, language: "python" });
+    expect(snap).not.toBeNull();
+
+    const ok = await verifyAgainstSnapshot({
+      repoRoot,
+      file,
+      language: "python",
+      snapshot: snap!,
+      candidate: "def scale(x):\n    return x / 10\n",
+    });
+    expect(ok.ok).toBe(true);
+
+    const bad = await verifyAgainstSnapshot({
+      repoRoot,
+      file,
+      language: "python",
+      snapshot: snap!,
+      candidate: "def scale(x):\n    return x * 0.2\n",
+    });
+    expect(bad.ok).toBe(false);
   });
 });

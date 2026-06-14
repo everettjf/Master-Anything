@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   blankJsFunction,
@@ -9,12 +11,17 @@ import {
   LocalTsTestRunner,
   parseTestCounts,
 } from "@ma/verifier";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { hasPytest } from "./helpers/env.js";
 
 const fixture = fileURLToPath(new URL("./fixtures/py-uncovered", import.meta.url));
 const jsFixture = fileURLToPath(new URL("./fixtures/js-uncovered", import.meta.url));
 const tsFixture = fileURLToPath(new URL("./fixtures/ts-uncovered", import.meta.url));
+
+const tmps: string[] = [];
+afterAll(() => {
+  for (const d of tmps) rmSync(d, { recursive: true, force: true });
+});
 
 /** Find the 1-based [start,end] line span of a brace function/method named `name`. */
 function jsSpan(src: string, name: string): [number, number] {
@@ -88,6 +95,23 @@ describe("characterization oracle (universal verification)", () => {
       expect(broken.passed).toBe(false); // blanking the oracle target breaks the synthesized test
     },
   );
+
+  it.skipIf(!hasPytest)("uses pytest.approx for a float-returning function (tolerates noise)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ma-char-"));
+    tmps.push(dir);
+    writeFileSync(join(dir, "scale.py"), "def scale(x):\n    return x * 1.5\n");
+    const c = await characterize({ repoRoot: dir, file: "scale.py", symbol: "scale", language: "python" });
+    expect(c).not.toBeNull();
+    expect(c!.testContent).toContain("import pytest");
+    expect(c!.testContent).toContain("pytest.approx(");
+
+    // The generated approx test passes against the original (oracle) implementation.
+    const ok = await new LocalPytestRunner().run(dir, {
+      edits: [{ path: c!.testPath, content: c!.testContent }],
+      targets: [c!.testPath],
+    });
+    expect(ok.passed).toBe(true);
+  });
 
   it.skipIf(!hasPytest)("characterizes a method on a zero-arg class", async () => {
     const c = await characterize({

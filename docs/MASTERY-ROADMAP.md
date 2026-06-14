@@ -35,13 +35,21 @@ literal-returning function becomes verifiable without a hand-written test.
 - Tests: [`test/characterize.test.ts`](../test/characterize.test.ts) + fixtures
   `test/fixtures/{py,js,ts}-uncovered/`.
 
+**Shipped since:** **float tolerance** for numeric returns — the generated test
+uses `pytest.approx` (Python) / a relative-tolerance check (JS/TS), and the
+Behavioral Firewall's verify compares numbers within `1e-9` relative tolerance.
+A correct reimplementation/refactor that reorders float ops (e.g. `x*0.1` →
+`x/10`) no longer false-fails, while integer changes (≥1) and real numeric
+changes still differ well above tolerance. Tests:
+[`test/snapshot.test.ts`](../test/snapshot.test.ts) (firewall, Py + JS) and
+[`test/characterize.test.ts`](../test/characterize.test.ts) (approx emission).
+
 **Next in A:**
 - LLM-proposed inputs (when a model is configured) for domain-specific coverage,
   still falling back to the deterministic battery offline.
 - Captured-run characterization: trace the repo's own examples/entrypoint to
   harvest *real* I/O at function boundaries (grounded, not just fuzzed).
-- `pytest.approx` / float tolerance for numeric returns; opt-in keeping of
-  error-raising cases; ESM-`.js` and constructor-args support.
+- Opt-in keeping of error-raising cases; ESM-`.js` and constructor-args support.
 
 ## B — Knowledge tracing over the graph (shipped)
 

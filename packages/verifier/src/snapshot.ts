@@ -221,6 +221,16 @@ def resolve(symbol):
     if not callable(fn):
         raise TypeError("not callable")
     return lambda: fn
+def num_eq(raw, expected):
+    # Tolerate float noise from a rewrite (reordered ops); int changes (>=1) and
+    # real float changes still differ well above tolerance. bool stays exact.
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        return repr(raw) == expected
+    try:
+        e = float(expected)
+    except (ValueError, TypeError):
+        return repr(raw) == expected
+    return abs(raw - e) <= 1e-9 * max(1.0, abs(raw), abs(e))
 results = []
 for s in data:
     try:
@@ -230,8 +240,9 @@ for s in data:
         continue
     for c in s["cases"]:
         try:
-            actual = repr(factory()(*eval(c["args"])))
-            status = "preserved" if actual == c["val"] else "changed"
+            raw = factory()(*eval(c["args"]))
+            actual = repr(raw)
+            status = "preserved" if num_eq(raw, c["val"]) else "changed"
             results.append({"symbol": s["symbol"], "args": c["args"], "expected": c["val"], "actual": actual, "status": status})
         except Exception:
             results.append({"symbol": s["symbol"], "args": c["args"], "expected": c["val"], "actual": None, "status": "errored"})
@@ -289,6 +300,14 @@ console.log(SENT + JSON.stringify({ symbols }));
 function nodeVerifyBody(data: SymbolSnapshot[]): string {
   return `const SENT = ${JSON.stringify(SENTINEL)};
 const data = ${JSON.stringify(data)};
+function numEq(raw, expected) {
+  // Tolerate float noise from a rewrite; integer / real changes still differ.
+  if (typeof raw === "number" && Number.isFinite(raw) && expected.trim() !== "") {
+    const e = Number(expected);
+    if (Number.isFinite(e)) return Math.abs(raw - e) <= 1e-9 * Math.max(1, Math.abs(raw), Math.abs(e));
+  }
+  return JSON.stringify(raw) === expected;
+}
 function resolve(symbol) {
   const p = symbol.split(".");
   if (p.length === 2) {
@@ -308,8 +327,9 @@ for (const s of data) {
   catch { results.push({ symbol: s.symbol, args: "", expected: "", actual: null, status: "missing" }); continue; }
   for (const c of s.cases) {
     try {
-      const actual = JSON.stringify(factory()(...JSON.parse(c.args)));
-      const status = actual === c.val ? "preserved" : "changed";
+      const raw = factory()(...JSON.parse(c.args));
+      const actual = JSON.stringify(raw);
+      const status = numEq(raw, c.val) ? "preserved" : "changed";
       results.push({ symbol: s.symbol, args: c.args, expected: c.val, actual: actual ?? "undefined", status });
     } catch {
       results.push({ symbol: s.symbol, args: c.args, expected: c.val, actual: null, status: "errored" });
