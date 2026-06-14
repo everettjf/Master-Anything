@@ -10,6 +10,7 @@ import {
   verifierForExtension,
 } from "@ma/verifier";
 import { describe, expect, it } from "vitest";
+import { hasPytest } from "./helpers/env.js";
 
 const ex = (name: string) => fileURLToPath(new URL(`../examples/${name}`, import.meta.url));
 
@@ -46,13 +47,13 @@ describe("break-and-fix transforms", () => {
 });
 
 describe("real test execution (integration)", () => {
-  it("runs the Python example's pytest suite green", async () => {
+  it.skipIf(!hasPytest)("runs the Python example's pytest suite green", async () => {
     const res = await new LocalPytestRunner().run(ex("py-calc"));
     expect(res.passed).toBe(true);
     expect(parseTestCounts(res.raw).total).toBeGreaterThanOrEqual(4);
   });
 
-  it("verifies a break-and-fix loop against real tests", async () => {
+  it.skipIf(!hasPytest)("verifies a break-and-fix loop against real tests", async () => {
     const root = ex("py-calc");
     const g = buildGraph(root);
     const fn = g.nodes.find((n) => n.name === "Calculator.add_many")!;

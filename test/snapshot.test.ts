@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { snapshotFile, verifyAgainstSnapshot } from "@ma/verifier";
 import { describe, expect, it } from "vitest";
+import { hasPython3 } from "./helpers/env.js";
 
 const pyFixture = fileURLToPath(new URL("./fixtures/py-uncovered", import.meta.url));
 const jsFixture = fileURLToPath(new URL("./fixtures/js-uncovered", import.meta.url));
 
-describe("behavioral firewall — snapshot + verify (Python)", () => {
+describe.skipIf(!hasPython3)("behavioral firewall — snapshot + verify (Python)", () => {
   it("snapshots every function in a file", async () => {
     const snap = await snapshotFile({ repoRoot: pyFixture, file: "mathx.py", language: "python" });
     expect(snap).not.toBeNull();
