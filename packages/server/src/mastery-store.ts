@@ -39,7 +39,7 @@ import {
   type SupportedLanguage,
   verifierForExtension,
 } from "@ma/verifier";
-import { getAllMastery, putMastery } from "./db.js";
+import { getAllMastery, getAllQuests, putMastery, putQuest } from "./db.js";
 import type { RepoRecord } from "./store.js";
 import { getLlm } from "./store.js";
 
@@ -594,7 +594,14 @@ export function recommendFor(userId: string, repo: RepoRecord, limit = 5, at: nu
 
 // --- Goal-anchored Quests (thrust C): a mission over a required sub-graph ------
 
-const quests = new Map<string, { repoId: string; quest: Quest }>();
+// Quests are repo-scoped, keyed by their id; the stable repo key across restarts
+// is `repo.root` (the runtime `repo.id` is regenerated each process).
+const quests = new Map<string, { repoRoot: string; quest: Quest }>();
+
+// Hydrate persisted quests from the DB on boot.
+for (const { repoRoot, quest } of getAllQuests()) {
+  quests.set(quest.id, { repoRoot, quest });
+}
 
 /**
  * Create a quest from a free-text goal (anchored to the best-matching unit via
@@ -622,13 +629,14 @@ export function createQuest(repo: RepoRecord, opts: { goal?: string; targetUnitI
     targetUnitIds: targets,
     requiredUnitIds: requiredSubgraph(units, targets),
   };
-  quests.set(quest.id, { repoId: repo.id, quest });
+  quests.set(quest.id, { repoRoot: repo.root, quest });
+  putQuest(repo.root, quest);
   return quest;
 }
 
 export function getQuestProgress(repo: RepoRecord, userId: string, questId: string, at = Date.now()) {
   const stored = quests.get(questId);
-  if (!stored || stored.repoId !== repo.id) throw new Error("quest not found");
+  if (!stored || stored.repoRoot !== repo.root) throw new Error("quest not found");
   const beliefs = beliefsFor(userId, repo);
   return questProgress(stored.quest, repo.path.units, beliefs, { due: dueSet(userId, repo, at) });
 }
@@ -636,8 +644,8 @@ export function getQuestProgress(repo: RepoRecord, userId: string, questId: stri
 /** All quests for a repo with live progress for the given learner. */
 export function listQuests(repo: RepoRecord, userId: string) {
   const out = [];
-  for (const { repoId, quest } of quests.values()) {
-    if (repoId === repo.id) out.push(getQuestProgress(repo, userId, quest.id));
+  for (const { repoRoot, quest } of quests.values()) {
+    if (repoRoot === repo.root) out.push(getQuestProgress(repo, userId, quest.id));
   }
   return out;
 }

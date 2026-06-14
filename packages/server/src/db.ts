@@ -8,7 +8,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { ChatTurn, LearnerUnitState } from "@ma/core";
+import type { ChatTurn, LearnerUnitState, Quest } from "@ma/core";
 import Database from "better-sqlite3";
 
 function dbPath(): string {
@@ -45,6 +45,12 @@ db.exec(`
     repo_root       TEXT NOT NULL,
     turns           TEXT NOT NULL,
     updated_at      TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS quests (
+    quest_id   TEXT PRIMARY KEY,
+    repo_root  TEXT NOT NULL,
+    quest      TEXT NOT NULL,
+    created_at TEXT NOT NULL
   );
 `);
 
@@ -134,4 +140,29 @@ export function putConversation(id: string, repoRoot: string, turns: ChatTurn[])
     turns: JSON.stringify(turns),
     updated_at: new Date().toISOString(),
   });
+}
+
+// --- goal-anchored quests (survive restarts; repo-scoped by root) ---
+
+const upsertQuest = db.prepare(
+  `INSERT INTO quests (quest_id, repo_root, quest, created_at)
+   VALUES (@quest_id, @repo_root, @quest, @created_at)
+   ON CONFLICT(quest_id) DO UPDATE SET repo_root=@repo_root, quest=@quest`,
+);
+const selectAllQuests = db.prepare(`SELECT repo_root, quest FROM quests ORDER BY created_at`);
+
+export function putQuest(repoRoot: string, quest: Quest): void {
+  upsertQuest.run({
+    quest_id: quest.id,
+    repo_root: repoRoot,
+    quest: JSON.stringify(quest),
+    created_at: new Date().toISOString(),
+  });
+}
+
+export function getAllQuests(): { repoRoot: string; quest: Quest }[] {
+  return (selectAllQuests.all() as { repo_root: string; quest: string }[]).map((r) => ({
+    repoRoot: r.repo_root,
+    quest: JSON.parse(r.quest) as Quest,
+  }));
 }

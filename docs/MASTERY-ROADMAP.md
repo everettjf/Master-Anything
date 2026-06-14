@@ -97,9 +97,12 @@ orchestration over A (verification), B (beliefs), and the graph.
 - Tests: [`test/quest.test.ts`](../test/quest.test.ts) (sub-graph closure,
   node→unit mapping, capstone gating, completion).
 
+**Shipped since:** quests now **persist in SQLite** (`quests` table, repo-scoped by
+root) — `createQuest` writes through and the store hydrates on boot, so a quest and
+its progress survive a server restart (`test/persistence.test.ts`).
+
 **Next in C:** Create-level capstones (ship a new capability, not just reimplement);
-multi-target quests from a real issue/PR; LLM-decomposed goals into sub-quests;
-persisting quests in SQLite.
+multi-target quests from a real issue/PR; LLM-decomposed goals into sub-quests.
 
 ## Beyond A→B→C — the Behavioral Firewall (shipped)
 
