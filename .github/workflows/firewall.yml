@@ -1,0 +1,61 @@
+name: Behavioral Firewall (example)
+
+# Demonstrates the Behavioral Firewall in CI: pin a file's behavior, then prove
+# an edit preserved it (and that a behavior-changing edit is caught). Runs on
+# demand, and on changes to the firewall itself so it stays a working example.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "packages/firewall/**"
+      - "packages/verifier/**"
+      - ".github/workflows/firewall.yml"
+
+jobs:
+  firewall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the standalone ma-firewall CLI
+        run: pnpm --filter ma-firewall build
+
+      - name: Pin behavior of the example file
+        run: |
+          node packages/firewall/dist/ma-firewall.mjs snapshot \
+            examples/py-calc/calc.py -o calc.behavior.json
+
+      - name: A behavior-preserving change must pass (exit 0)
+        run: |
+          node packages/firewall/dist/ma-firewall.mjs verify \
+            examples/py-calc/calc.py calc.behavior.json
+
+      - name: A behavior-changing edit must be caught (exit non-zero)
+        run: |
+          # introduce a real change, then assert the firewall fails the build
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("examples/py-calc/calc.py")
+          src = p.read_text()
+          # perturb the first numeric "return <expr>" to change behavior
+          src = re.sub(r"return ", "return 1 + ", src, count=1)
+          p.write_text(src)
+          PY
+          if node packages/firewall/dist/ma-firewall.mjs verify \
+               examples/py-calc/calc.py calc.behavior.json; then
+            echo "::error::firewall did NOT catch a behavior change"
+            exit 1
+          else
+            echo "✓ firewall correctly caught the behavior change"
+          fi

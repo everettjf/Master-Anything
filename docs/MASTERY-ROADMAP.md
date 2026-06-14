@@ -129,8 +129,17 @@ makes an untested function verifiable can guard **AI edits to untested code**.
   removed function flagged missing — Python + JS).
 
 **The pitch:** "Let an AI rewrite your untested legacy code — and prove it didn't
-change behavior." **Next:** richer/LLM-proposed inputs and captured-run I/O for
-deeper coverage; per-property invariants.
+change behavior."
+
+**Shipped since:** the firewall is now a **standalone, zero-dependency npm CLI** —
+[`packages/firewall`](../packages/firewall) (`ma-firewall`), bundled into a single
+self-contained file via esbuild, so `npx ma-firewall snapshot|verify` works with
+nothing to install. A CI example ([`.github/workflows/firewall.yml`](../.github/workflows/firewall.yml))
+pins behavior and fails the build on drift. (The underlying `@ma/verifier` carries
+no third-party runtime deps, so the bundle is fully inlined.)
+
+**Next:** richer/LLM-proposed inputs and captured-run I/O for deeper coverage;
+per-property invariants.
 
 ## AI-certification twin (shipped)
 

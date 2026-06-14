@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Behavioral Firewall CLI — a regression safety net for edits to untested code.
  *

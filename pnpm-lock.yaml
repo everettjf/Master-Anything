@@ -64,6 +64,15 @@ importers:
         specifier: ^22.10.2
         version: 22.19.19
 
+  packages/firewall:
+    devDependencies:
+      '@ma/verifier':
+        specifier: workspace:*
+        version: link:../verifier
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+
   packages/server:
     dependencies:
       '@hono/node-server':
@@ -90,10 +99,6 @@ importers:
         version: 22.19.19
 
   packages/verifier:
-    dependencies:
-      '@ma/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@types/node':
         specifier: ^22.10.2

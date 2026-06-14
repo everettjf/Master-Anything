@@ -158,18 +158,27 @@ cross-domain edges).
 > In a **mixed repo**, all of the above merge into one graph and gain `documents` edges (a doc section → the code it
 > describes), so Analyze can answer *"change `Calculator` → which docs are affected?"* and the tutor cites code + docs together.
 
-### Behavioral Firewall (standalone)
+### Behavioral Firewall (standalone — `npx ma-firewall`)
 
-Pin a file's behavior, let an AI rewrite it, then prove it didn't change — no test suite required. Non-zero exit on a
-change, so it drops into CI or an agent loop:
+Pin a file's behavior, let an AI rewrite it, then prove it didn't change — no test suite required. Shipped as a
+**zero-dependency, single-file CLI** ([`ma-firewall`](./packages/firewall), `npx`-able), with non-zero exit on a
+change so it drops into CI or an agent loop:
 
 ```bash
-pnpm --filter @ma/verifier build
-node packages/verifier/dist/firewall-cli.js snapshot src/utils.py -o utils.behavior.json
+npx ma-firewall snapshot src/utils.py -o utils.behavior.json
 # …an agent (or you) edits src/utils.py…
-node packages/verifier/dist/firewall-cli.js verify   src/utils.py utils.behavior.json
+npx ma-firewall verify   src/utils.py utils.behavior.json
 # ✅ behavior preserved — 19/19   |   ❌ clamp(12, -1, 7)  was 7  now 8
 ```
+
+Within this repo (before publish), build the bundle and run it directly:
+
+```bash
+pnpm --filter ma-firewall build
+node packages/firewall/dist/ma-firewall.mjs snapshot src/utils.py -o utils.behavior.json
+```
+
+Drop it into CI to fail the build on behavior drift — see [`.github/workflows/firewall.yml`](./.github/workflows/firewall.yml).
 
 ## Configuration
 
@@ -208,7 +217,8 @@ pnpm --filter @ma/core wiki <absolute-path>
 packages/
   core/       # graph build (tree-sitter), adapters (docs/pdf), merge + cross-link,
               # units & path, mastery engine, tutor (GraphRAG), embeddings, LLM providers
-  verifier/   # break-and-fix + pluggable test runners (pytest / node / docker)
+  verifier/   # break-and-fix + characterization oracle + pluggable test runners (pytest / node / docker)
+  firewall/   # ma-firewall — the Behavioral Firewall as a standalone, zero-dep npx CLI
   server/     # Hono API + SQLite persistence
   web/        # React + Vite UI (graph, learn, tutor)
 examples/     # py-calc · js-calc · ts-calc · md-guide · html-guide · pdf-guide · mixed-app

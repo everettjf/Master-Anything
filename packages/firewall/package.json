@@ -1,0 +1,42 @@
+{
+  "name": "ma-firewall",
+  "version": "0.1.0",
+  "description": "Behavioral Firewall — snapshot a file's behavior, let an AI rewrite it, then prove behavior is preserved. No test suite required. Python · JS · TS.",
+  "type": "module",
+  "bin": {
+    "ma-firewall": "./dist/ma-firewall.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "behavioral-firewall",
+    "characterization-test",
+    "regression",
+    "ai",
+    "agent",
+    "refactor",
+    "legacy-code",
+    "cli",
+    "ci"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/everettjf/Master-Anything#behavioral-firewall-standalone",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/everettjf/Master-Anything.git",
+    "directory": "packages/firewall"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "node build.mjs"
+  },
+  "devDependencies": {
+    "@ma/verifier": "workspace:*",
+    "esbuild": "^0.25.0"
+  }
+}
