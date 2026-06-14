@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import {
   type BehaviorDiff,
   type CertificationReport,
+  type ComparisonReport,
   certify,
+  certifyCompare,
   type FirewallSnapshot,
   firewallSnapshot,
   firewallVerify,
@@ -28,12 +30,27 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
   const [error, setError] = useState<string | null>(null);
   const [cert, setCert] = useState<CertificationReport | null>(null);
   const [certBusy, setCertBusy] = useState<string | null>(null);
+  const [board, setBoard] = useState<ComparisonReport | null>(null);
 
   async function runCertify(agent: "llm" | "oracle" | "lazy") {
     setCertBusy(agent);
     setError(null);
+    setBoard(null);
     try {
       setCert(await certify(repoId, agent));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCertBusy(null);
+    }
+  }
+
+  async function runCompare() {
+    setCertBusy("compare");
+    setError(null);
+    setCert(null);
+    try {
+      setBoard(await certifyCompare(repoId, ["llm", "oracle", "lazy"]));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -195,7 +212,28 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
           <button className="ghost" onClick={() => runCertify("lazy")} disabled={certBusy !== null}>
             {certBusy === "lazy" ? "…" : "lazy baseline"}
           </button>
+          <button onClick={runCompare} disabled={certBusy !== null}>
+            {certBusy === "compare" ? "Comparing…" : "⚖ Compare (leaderboard)"}
+          </button>
         </div>
+
+        {board && (
+          <div className="cert-board">
+            <div className="cert-board-head">
+              Leaderboard — {board.gradable} gradable unit{board.gradable === 1 ? "" : "s"} on this repo
+            </div>
+            {board.leaderboard.map((r, i) => (
+              <div key={r.agent} className="cert-board-row">
+                <span className="cert-rank">#{i + 1}</span>
+                <span className="cert-pct sm">{Math.round(r.passRate * 100)}%</span>
+                <span className="cert-board-agent">{r.agent}</span>
+                <span className="cert-sub">
+                  {r.passed}/{r.gradable}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {cert && (
           <div className="cert-report">

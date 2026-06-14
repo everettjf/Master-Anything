@@ -178,3 +178,41 @@ export async function certifyAgent(
 function gradableResultPassed(results: CertUnitResult[], unitId: string): boolean {
   return results.find((r) => r.unitId === unitId)?.passed ?? false;
 }
+
+// --- cross-agent comparison (a leaderboard over the same exam) ---------------
+
+/**
+ * Rank certification reports into a leaderboard: highest pass rate first, then
+ * the agent that passed more absolute units, then by name for stability. Pure
+ * and deterministic — the same exam scored across agents.
+ */
+export function rankReports(reports: CertificationReport[]): CertificationReport[] {
+  return [...reports].sort(
+    (a, b) => b.passRate - a.passRate || b.passed - a.passed || a.agent.localeCompare(b.agent),
+  );
+}
+
+export interface ComparisonReport {
+  /** Gradable exam units (shared across agents — the same repo/exam). */
+  gradable: number;
+  /** Reports ranked best-first. */
+  leaderboard: CertificationReport[];
+}
+
+/**
+ * Run the Apply exam for several agents and rank them. Agents are injected as
+ * `(name, solve)` pairs so any mix of real models and baselines can compete on
+ * the same repo.
+ */
+export async function compareAgents(
+  repo: RepoRecord,
+  agents: { name: string; solve: AgentSolver }[],
+  opts: { limit?: number } = {},
+): Promise<ComparisonReport> {
+  const reports: CertificationReport[] = [];
+  for (const { name, solve } of agents) {
+    reports.push(await certifyAgent(repo, solve, { agent: name, limit: opts.limit }));
+  }
+  const leaderboard = rankReports(reports);
+  return { gradable: leaderboard[0]?.gradable ?? 0, leaderboard };
+}

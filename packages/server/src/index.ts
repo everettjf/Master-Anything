@@ -17,7 +17,14 @@ import {
 } from "@ma/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { certifyAgent, lazySolver, llmSolver, oracleSolver } from "./certify.js";
+import {
+  type AgentSolver,
+  certifyAgent,
+  compareAgents,
+  lazySolver,
+  llmSolver,
+  oracleSolver,
+} from "./certify.js";
 import { getConversation, putConversation } from "./db.js";
 import { snapshotForRepo, verifyForRepo } from "./firewall.js";
 import {
@@ -442,6 +449,33 @@ app.post("/repos/:id/certify", async (c) => {
         : llmDescribe();
   try {
     return c.json(await certifyAgent(repo, solve, { agent: name, limit: body.limit }));
+  } catch (err) {
+    return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
+  }
+});
+
+// AI certification — leaderboard: run several agents on the same exam and rank
+// them. body: { agents?: ("llm"|"oracle"|"lazy")[], limit?: number }
+app.post("/repos/:id/certify/compare", async (c) => {
+  const repo = getRepo(c.req.param("id"));
+  if (!repo) return c.json({ error: "repo not found" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as { agents?: string[]; limit?: number };
+  const requested = body.agents?.length ? body.agents : ["oracle", "lazy"];
+
+  const contenders: { name: string; solve: AgentSolver }[] = [];
+  for (const a of requested) {
+    if (a === "oracle") contenders.push({ name: "oracle (reference impl)", solve: oracleSolver });
+    else if (a === "lazy") contenders.push({ name: "lazy (no-op baseline)", solve: lazySolver });
+    else if (a === "llm") {
+      const solve = llmSolver();
+      if (solve) contenders.push({ name: llmDescribe(), solve });
+    }
+  }
+  if (contenders.length === 0) {
+    return c.json({ error: "no runnable agents (configure an LLM for 'llm', or use oracle/lazy)" }, 400);
+  }
+  try {
+    return c.json(await compareAgents(repo, contenders, { limit: body.limit }));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }

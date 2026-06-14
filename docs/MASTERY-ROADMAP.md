@@ -159,5 +159,11 @@ per-unit **competence profile** of that agent on *this* repo.
 - Endpoint `POST /repos/:id/certify` (`{ agent?: "llm"|"oracle"|"lazy", limit? }`).
 - Validated on py-calc: oracle → 100% (6/6), lazy → 0% with a populated weak list.
 
-**Next:** Understand/Analyze/Create rungs (not just Apply); leaderboards across
-models; a web panel; certify a PR's agent before merge.
+**Shipped since:** a **cross-agent leaderboard** — `compareAgents` /
+`rankReports` run the same exam across several agents (any mix of real models +
+the `oracle`/`lazy` baselines) and rank them by pass rate (`POST
+/repos/:id/certify/compare`), surfaced as a ranked board in the web Certify panel.
+Tests: [`test/certify.test.ts`](../test/certify.test.ts) (ranking + tie-breaks).
+
+**Next:** Understand/Analyze/Create rungs (not just Apply); certify a PR's agent
+before merge.

@@ -308,6 +308,24 @@ export async function certify(id: string, agent: "llm" | "oracle" | "lazy"): Pro
   );
 }
 
+export interface ComparisonReport {
+  gradable: number;
+  leaderboard: CertificationReport[];
+}
+
+export async function certifyCompare(
+  id: string,
+  agents: ("llm" | "oracle" | "lazy")[],
+): Promise<ComparisonReport> {
+  return jsonOrThrow(
+    await fetch(`${BASE}/repos/${id}/certify/compare`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ agents }),
+    }),
+  );
+}
+
 export interface ReviewItem {
   unitId: string;
   title: string;
