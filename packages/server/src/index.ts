@@ -485,10 +485,13 @@ app.post("/repos/:id/certify/compare", async (c) => {
 app.post("/repos/:id/firewall/snapshot", async (c) => {
   const repo = getRepo(c.req.param("id"));
   if (!repo) return c.json({ error: "repo not found" }, 404);
-  const { path } = (await c.req.json().catch(() => ({}))) as { path?: string };
+  const { path, entrypoint } = (await c.req.json().catch(() => ({}))) as {
+    path?: string;
+    entrypoint?: string;
+  };
   if (!path) return c.json({ error: "missing 'path'" }, 400);
   try {
-    return c.json(await snapshotForRepo(repo, path));
+    return c.json(await snapshotForRepo(repo, path, entrypoint));
   } catch (err) {
     return c.json({ error: String(err instanceof Error ? err.message : err) }, 400);
   }

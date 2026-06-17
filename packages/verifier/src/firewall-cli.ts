@@ -11,7 +11,7 @@
  * behavior changed, so it drops straight into CI / an agent loop.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, resolve } from "node:path";
+import { basename, dirname, extname, relative, resolve } from "node:path";
 import { verifierForExtension } from "./breakfix.js";
 import { type BehaviorDiff, type BehaviorSnapshot, snapshotFile, verifyAgainstSnapshot } from "./snapshot.js";
 
@@ -29,10 +29,13 @@ function callArgs(symbol: string, args: string): string {
   return `${head}(${inner})`;
 }
 
-async function doSnapshot(file: string, out?: string) {
+async function doSnapshot(file: string, out?: string, entry?: string) {
   const abs = resolve(file);
   const language = languageOf(abs);
-  const snap = await snapshotFile({ repoRoot: dirname(abs), file: basename(abs), language });
+  // The entrypoint is run with the target instrumented; it must resolve within
+  // the same dir as the file, so pass it relative to that dir.
+  const entrypoint = entry ? relative(dirname(abs), resolve(entry)) : undefined;
+  const snap = await snapshotFile({ repoRoot: dirname(abs), file: basename(abs), language, entrypoint });
   if (!snap) {
     console.error(`✗ nothing to snapshot in ${file} (no deterministic, literal-returning functions found)`);
     process.exit(2);
@@ -93,12 +96,18 @@ async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   if (cmd === "snapshot" && rest[0]) {
     const oi = rest.indexOf("-o");
-    await doSnapshot(rest[0], oi >= 0 ? rest[oi + 1] : undefined);
+    const ei = rest.indexOf("--entry");
+    await doSnapshot(rest[0], oi >= 0 ? rest[oi + 1] : undefined, ei >= 0 ? rest[ei + 1] : undefined);
   } else if (cmd === "verify" && rest[0] && rest[1]) {
     await doVerify(rest[0], rest[1]);
   } else {
     console.error(
-      "usage:\n  ma-firewall snapshot <file> [-o snapshot.json]\n  ma-firewall verify <file> <snapshot.json>",
+      "usage:\n" +
+        "  ma-firewall snapshot <file> [-o snapshot.json] [--entry example.py]\n" +
+        "  ma-firewall verify <file> <snapshot.json>\n\n" +
+        "  --entry runs a driver (example/entrypoint) with the file instrumented and pins\n" +
+        "          the real input→output it observes — covering functions whose arguments\n" +
+        "          the built-in fuzzer can't construct.",
     );
     process.exit(64);
   }

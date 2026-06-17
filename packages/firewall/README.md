@@ -68,6 +68,27 @@ false-alarms on nondeterminism (clocks, randomness, I/O) — it simply doesn't p
 what it can't pin. Functions are discovered by language-native reflection, so
 there's no parser to configure.
 
+## Complex arguments — capture real I/O with `--entry`
+
+The built-in fuzzer feeds primitives and collections, which can't construct the
+rich arguments real code often takes (a config dict, a nested order, a domain
+object) — those functions snapshot empty. Point `--entry` at a script your repo
+already ships and the firewall **instruments the file, runs the driver, and pins
+the real input→output** it observes at each function boundary:
+
+```bash
+ma-firewall snapshot src/pricing.py --entry examples/demo.py -o pricing.behavior.json
+# ✓ snapshot: 2 functions, 4 behaviors pinned → pricing.behavior.json
+#     total_price  (2)
+#     Cart.line_count  (2)
+```
+
+Captured cases are filtered exactly like fuzzed ones (deterministic,
+literal-round-tripping, stable across two runs), then `verify` works the same —
+catching a regression on the real input with the exact `(function, input)` and
+old → new. Python and JavaScript capture functions and methods; TypeScript
+captures methods.
+
 ## In CI
 
 Commit the snapshot next to the code, and fail the build if an edit changes

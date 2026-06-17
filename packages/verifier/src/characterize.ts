@@ -22,6 +22,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { SupportedLanguage } from "./breakfix.js";
+import { captureBoundaryIO, mergeCases } from "./capture.js";
 import { materializeRepo } from "./runner.js";
 
 export interface CharacterizeOptions {
@@ -32,6 +33,15 @@ export interface CharacterizeOptions {
   symbol: string;
   language: SupportedLanguage;
   timeoutMs?: number;
+  /**
+   * Optional repo-relative driver (example / entrypoint). When set, real
+   * input→output pairs observed at the target's boundary while the driver runs
+   * are merged into the synthetic battery — so functions taking complex
+   * arguments the battery can't construct become verifiable from real usage.
+   */
+  entrypoint?: string;
+  /** extra argv passed to the driver. */
+  entryArgv?: string[];
 }
 
 export interface Characterization {
@@ -325,8 +335,26 @@ export async function characterize(opts: CharacterizeOptions): Promise<Character
       emit = (cases) => nodeTest("typescript", opts.file, opts.symbol, cases);
     }
 
-    const cases = await twoRunStable(runOnce);
-    if (!cases) return null;
+    const synthetic = (await twoRunStable(runOnce)) ?? [];
+
+    // Captured-run I/O: grounded cases from the repo's own entrypoint. These can
+    // make a function verifiable even when the synthetic battery found nothing
+    // (e.g. it takes a dict / domain object the battery can't construct).
+    let captured: RawCase[] = [];
+    if (opts.entrypoint) {
+      const symbols = await captureBoundaryIO({
+        repoRoot: opts.repoRoot,
+        file: opts.file,
+        language: opts.language,
+        entrypoint: opts.entrypoint,
+        entryArgv: opts.entryArgv,
+        timeoutMs,
+      });
+      captured = symbols.find((s) => s.symbol === opts.symbol)?.cases ?? [];
+    }
+
+    const cases = mergeCases(synthetic, captured);
+    if (cases.length < 2) return null;
     return {
       testPath: placeBeside(opts.file, testFileName(opts.language, opts.symbol)),
       testContent: emit(cases),

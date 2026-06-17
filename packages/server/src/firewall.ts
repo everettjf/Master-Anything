@@ -37,10 +37,14 @@ export interface SnapshotSummary {
   symbols: { symbol: string; cases: number }[];
 }
 
-export async function snapshotForRepo(repo: RepoRecord, path: string): Promise<SnapshotSummary> {
+export async function snapshotForRepo(
+  repo: RepoRecord,
+  path: string,
+  entrypoint?: string,
+): Promise<SnapshotSummary> {
   const language = languageOf(path);
   const source = readFileSync(join(repo.root, path), "utf8");
-  const snap = await snapshotFile({ repoRoot: repo.root, file: path, language });
+  const snap = await snapshotFile({ repoRoot: repo.root, file: path, language, entrypoint });
   if (!snap || snap.symbols.length === 0) {
     throw new Error(
       "Nothing to snapshot — no deterministic, literal-returning functions found in this file.",

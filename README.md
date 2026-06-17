@@ -171,6 +171,14 @@ npx ma-firewall verify   src/utils.py utils.behavior.json
 # ✅ behavior preserved — 19/19   |   ❌ clamp(12, -1, 7)  was 7  now 8
 ```
 
+For functions whose arguments the built-in fuzzer can't construct (a config dict, a nested order, a domain
+object), add `--entry` to **capture real I/O** from a script your repo already ships — it instruments the file,
+runs the driver, and pins the actual input→output it observes:
+
+```bash
+npx ma-firewall snapshot src/pricing.py --entry examples/demo.py -o pricing.behavior.json
+```
+
 Within this repo (before publish), build the bundle and run it directly:
 
 ```bash
@@ -237,8 +245,10 @@ Markdown/HTML/PDF adapters · mixed-repo unified graph with cross-domain edges �
 auto-generated cross-linked wiki · embeddings retrieval · incremental re-enrichment · SQLite persistence ·
 Docker sandbox runner (with local fallback).
 
-**A→B→C arc — all shipped:** **A** ✅ universal verification — characterization spans Py/JS/TS (next: LLM-proposed
-inputs + captured-run I/O) · **B** ✅ graph-propagating **knowledge tracing** — beliefs propagate along prerequisite
+**A→B→C arc — all shipped:** **A** ✅ universal verification — characterization spans Py/JS/TS, now with
+**captured-run I/O** (instrument the target, run the repo's own example, pin *real* boundary I/O — so
+functions taking a dict/object the fuzzer can't build become verifiable; `--entry` on the firewall too) ·
+**B** ✅ graph-propagating **knowledge tracing** — beliefs propagate along prerequisite
 edges and drive an adaptive "Next up" recommender (`GET /repos/:id/next`) · **C** ✅ goal-anchored **Quests** — state a
 goal; the system masters *exactly* the required sub-graph and ends in a real Apply on the target as final verification.
 

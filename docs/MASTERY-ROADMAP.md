@@ -44,11 +44,27 @@ changes still differ well above tolerance. Tests:
 [`test/snapshot.test.ts`](../test/snapshot.test.ts) (firewall, Py + JS) and
 [`test/characterize.test.ts`](../test/characterize.test.ts) (approx emission).
 
+**Shipped since:** **captured-run I/O** — instead of *only* fuzzing, run the
+repo's own example/entrypoint with the target module instrumented and harvest the
+*real* arguments→return observed at each function boundary
+([`packages/verifier/src/capture.ts`](../packages/verifier/src/capture.ts)).
+Functions whose arguments the synthetic battery can't construct (a config dict, a
+nested order, a domain object) become verifiable from real usage. The captured
+pairs use the same `{ args, val }` shape, so they merge straight into the
+characterization oracle (`characterize({ …, entrypoint })`) and the Behavioral
+Firewall (`snapshotFile({ …, entrypoint })` / `ma-firewall snapshot --entry`).
+Only deterministic, literal-round-tripping pairs survive, and the driver is run
+twice and intersected — same nondeterminism filtering as the battery. Python and
+JavaScript capture functions and methods; TypeScript captures methods (ESM
+namespace exports are read-only). Tests:
+[`test/capture.test.ts`](../test/capture.test.ts) (a nested-dict function is
+`null` without a driver, verifiable with one — Py + JS).
+
 **Next in A:**
 - LLM-proposed inputs (when a model is configured) for domain-specific coverage,
   still falling back to the deterministic battery offline.
-- Captured-run characterization: trace the repo's own examples/entrypoint to
-  harvest *real* I/O at function boundaries (grounded, not just fuzzed).
+- Capture top-level TypeScript functions (a loader/transform hook, since ESM
+  namespace exports can't be reassigned in-process); async-driver capture.
 - Opt-in keeping of error-raising cases; ESM-`.js` and constructor-args support.
 
 ## B — Knowledge tracing over the graph (shipped)
@@ -146,8 +162,14 @@ nothing to install. A CI example ([`.github/workflows/firewall.yml`](../.github/
 pins behavior and fails the build on drift. (The underlying `@ma/verifier` carries
 no third-party runtime deps, so the bundle is fully inlined.)
 
-**Next:** richer/LLM-proposed inputs and captured-run I/O for deeper coverage;
-per-property invariants.
+**Shipped since:** captured-run I/O (see thrust A above) — `ma-firewall snapshot
+<file> --entry <driver>` runs an example/entrypoint with the file instrumented and
+pins the *real* input→output it observes, so functions whose arguments the fuzzer
+can't construct are guarded too. Without `--entry`, a file of complex-argument
+functions snapshots empty; with it, behavior is captured and a regression is
+caught with the exact `(function, input)` and old→new.
+
+**Next:** richer/LLM-proposed inputs for deeper coverage; per-property invariants.
 
 ## AI-certification twin (shipped)
 

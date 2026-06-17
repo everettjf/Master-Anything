@@ -21,6 +21,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { SupportedLanguage } from "./breakfix.js";
+import { captureBoundaryIO, mergeCases } from "./capture.js";
 import { materializeRepo } from "./runner.js";
 
 export interface SymbolSnapshot {
@@ -61,6 +62,15 @@ export interface SnapshotOptions {
   file: string;
   language: SupportedLanguage;
   timeoutMs?: number;
+  /**
+   * Optional repo-relative driver (example / entrypoint). When set, real
+   * input→output pairs observed while the driver runs are merged into each
+   * symbol's pinned behavior — grounding the firewall in how the code is
+   * actually used and covering functions the synthetic battery can't drive.
+   */
+  entrypoint?: string;
+  /** extra argv passed to the driver. */
+  entryArgv?: string[];
 }
 
 const SENTINEL = "__MA_FIREWALL__";
@@ -374,21 +384,50 @@ export async function snapshotFile(opts: SnapshotOptions): Promise<BehaviorSnaps
       );
     };
 
+    // The synthetic battery may find nothing (e.g. every function takes a complex
+    // argument it can't construct). With an entrypoint that's fine — captured-run
+    // I/O can carry the snapshot on its own — so don't short-circuit early.
     const first = await run();
-    if (!first?.symbols?.length) return null;
-    const second = await run();
-    if (!second?.symbols?.length) return null;
+    const second = first?.symbols?.length ? await run() : null;
 
     // Keep only cases stable across both runs (drop nondeterminism per symbol).
-    const stable = new Map<string, Map<string, string>>();
-    for (const s of second.symbols) stable.set(s.symbol, new Map(s.cases.map((c) => [c.args, c.val])));
     const symbols: SymbolSnapshot[] = [];
-    for (const s of first.symbols) {
-      const ref = stable.get(s.symbol);
-      if (!ref) continue;
-      const cases = s.cases.filter((c) => ref.get(c.args) === c.val);
-      if (cases.length) symbols.push({ symbol: s.symbol, cases });
+    if (first?.symbols?.length && second?.symbols?.length) {
+      const stable = new Map<string, Map<string, string>>();
+      for (const s of second.symbols) stable.set(s.symbol, new Map(s.cases.map((c) => [c.args, c.val])));
+      for (const s of first.symbols) {
+        const ref = stable.get(s.symbol);
+        if (!ref) continue;
+        const cases = s.cases.filter((c) => ref.get(c.args) === c.val);
+        if (cases.length) symbols.push({ symbol: s.symbol, cases });
+      }
+    } else if (!opts.entrypoint) {
+      return null;
     }
+
+    // Captured-run I/O: fold grounded cases from the repo's own entrypoint into
+    // each symbol (and add symbols the synthetic battery never reached).
+    if (opts.entrypoint) {
+      const captured = await captureBoundaryIO({
+        repoRoot: opts.repoRoot,
+        file: opts.file,
+        language: opts.language,
+        entrypoint: opts.entrypoint,
+        entryArgv: opts.entryArgv,
+        timeoutMs,
+      });
+      const bySymbol = new Map(symbols.map((s) => [s.symbol, s]));
+      for (const cap of captured) {
+        const existing = bySymbol.get(cap.symbol);
+        if (existing) existing.cases = mergeCases(existing.cases, cap.cases);
+        else {
+          const added: SymbolSnapshot = { symbol: cap.symbol, cases: cap.cases };
+          bySymbol.set(cap.symbol, added);
+          symbols.push(added);
+        }
+      }
+    }
+
     if (!symbols.length) return null;
     return { file: opts.file, language: opts.language, capturedAt: new Date().toISOString(), symbols };
   } finally {
