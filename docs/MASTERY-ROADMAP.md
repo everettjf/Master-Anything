@@ -58,7 +58,10 @@ twice and intersected — same nondeterminism filtering as the battery. Python a
 JavaScript capture functions and methods; TypeScript captures methods (ESM
 namespace exports are read-only). Tests:
 [`test/capture.test.ts`](../test/capture.test.ts) (a nested-dict function is
-`null` without a driver, verifiable with one — Py + JS).
+`null` without a driver, verifiable with one — Py + JS). A real-library case
+study on `pytoolz/toolz` ([`docs/casestudy/captured-run-toolz`](casestudy/captured-run-toolz/README.md))
+lifts the firewall from 4→6 functions (27→39 behaviors) and makes `assoc`/`merge`
+verifiable, purely from the library's own documented usage.
 
 **Next in A:**
 - LLM-proposed inputs (when a model is configured) for domain-specific coverage,
