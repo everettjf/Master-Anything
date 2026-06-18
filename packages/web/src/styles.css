@@ -954,6 +954,38 @@ code {
   gap: 8px;
   margin-bottom: 14px;
 }
+.fw-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.fw-entry label {
+  font-size: 12px;
+  color: #8b949e;
+  white-space: nowrap;
+}
+.fw-entry label em {
+  color: #6e7681;
+  font-style: normal;
+}
+.fw-entry input {
+  flex: 1;
+  min-width: 0;
+  background: #0d1117;
+  border: 1px solid #2a313c;
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: #e6edf3;
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+}
+.fw-hint {
+  color: #6e7681;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
 .fw-pick select {
   flex: 1;
   min-width: 0;

@@ -86,8 +86,9 @@ ma-firewall snapshot src/pricing.py --entry examples/demo.py -o pricing.behavior
 Captured cases are filtered exactly like fuzzed ones (deterministic,
 literal-round-tripping, stable across two runs), then `verify` works the same —
 catching a regression on the real input with the exact `(function, input)` and
-old → new. Python and JavaScript capture functions and methods; TypeScript
-captures methods.
+old → new. Arguments are recorded *before* the call, so a function that mutates
+its input still pins the correct (pre-call) value. Python, JavaScript, and
+TypeScript all capture functions and methods.
 
 ## In CI
 

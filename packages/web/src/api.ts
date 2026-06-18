@@ -258,12 +258,16 @@ export interface BehaviorDiff {
   missing: string[];
 }
 
-export async function firewallSnapshot(id: string, path: string): Promise<FirewallSnapshot> {
+export async function firewallSnapshot(
+  id: string,
+  path: string,
+  entrypoint?: string,
+): Promise<FirewallSnapshot> {
   return jsonOrThrow(
     await fetch(`${BASE}/repos/${id}/firewall/snapshot`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({ path, entrypoint: entrypoint || undefined }),
     }),
   );
 }

@@ -23,6 +23,7 @@ function call(symbol: string, args: string): string {
 export function Firewall({ repoId, files }: { repoId: string; files: string[] }) {
   const codeFiles = useMemo(() => [...new Set(files.filter((f) => CODE_EXT.test(f)))].sort(), [files]);
   const [path, setPath] = useState(codeFiles[0] ?? "");
+  const [entrypoint, setEntrypoint] = useState("");
   const [snap, setSnap] = useState<FirewallSnapshot | null>(null);
   const [candidate, setCandidate] = useState("");
   const [diff, setDiff] = useState<BehaviorDiff | null>(null);
@@ -64,7 +65,7 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
     setError(null);
     setDiff(null);
     try {
-      const s = await firewallSnapshot(repoId, path);
+      const s = await firewallSnapshot(repoId, path, entrypoint.trim());
       setSnap(s);
       setCandidate(s.source);
     } catch (e) {
@@ -109,6 +110,29 @@ export function Firewall({ repoId, files }: { repoId: string; files: string[] })
           {busy === "snap" ? "Snapshotting…" : "① Snapshot behavior"}
         </button>
       </div>
+
+      <div className="fw-entry">
+        <label htmlFor="fw-entry-input">
+          Entrypoint <em>(optional)</em>
+        </label>
+        <input
+          id="fw-entry-input"
+          list="fw-entry-options"
+          placeholder="e.g. examples/demo.py — run it to capture real I/O"
+          value={entrypoint}
+          onChange={(e) => setEntrypoint(e.target.value)}
+        />
+        <datalist id="fw-entry-options">
+          {codeFiles.map((f) => (
+            <option key={f} value={f} />
+          ))}
+        </datalist>
+      </div>
+      <p className="fw-hint">
+        Point it at a script your repo ships and the firewall runs it with the file instrumented, pinning the
+        real input→output it observes — so functions whose arguments the built-in fuzzer can't build (a dict,
+        a nested object) get guarded too.
+      </p>
 
       {error && <div className="error">{error}</div>}
 

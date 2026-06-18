@@ -53,15 +53,22 @@ nested order, a domain object) become verifiable from real usage. The captured
 pairs use the same `{ args, val }` shape, so they merge straight into the
 characterization oracle (`characterize({ …, entrypoint })`) and the Behavioral
 Firewall (`snapshotFile({ …, entrypoint })` / `ma-firewall snapshot --entry`).
-Only deterministic, literal-round-tripping pairs survive, and the driver is run
-twice and intersected — same nondeterminism filtering as the battery. Python and
-JavaScript capture functions and methods; TypeScript captures methods (ESM
-namespace exports are read-only). Tests:
-[`test/capture.test.ts`](../test/capture.test.ts) (a nested-dict function is
-`null` without a driver, verifiable with one — Py + JS). A real-library case
-study on `pytoolz/toolz` ([`docs/casestudy/captured-run-toolz`](casestudy/captured-run-toolz/README.md))
-lifts the firewall from 4→6 functions (27→39 behaviors) and makes `assoc`/`merge`
-verifiable, purely from the library's own documented usage.
+Only deterministic, literal-round-tripping pairs survive; args are snapshotted
+*before* the call (so a mutating function's recorded input is its pre-call
+state), and the driver is run twice and intersected — same nondeterminism
+filtering as the battery. **All three languages capture functions and methods**:
+Python/JS wrap the module object in-process; TypeScript's ESM exports are
+read-only, so a module loader redirects the target to a generated shim that
+re-exports each function wrapped (class prototypes are patched directly). Tests:
+[`test/capture.test.ts`](../test/capture.test.ts) (Py · JS · TS — a nested-arg
+function is `null` without a driver, verifiable with one; a read-only top-level
+TS export is captured via the loader; a mutating function's pre-call input is
+recorded correctly). Real-library case studies:
+[`pytoolz/toolz`](casestudy/captured-run-toolz/README.md) (Python — firewall
+4→6 functions, `assoc`/`merge` made verifiable) and
+[`object-path`](casestudy/captured-run-objectpath/README.md) (JS — the battery's
+coverage was 97% degenerate; captured-run pins the path-traversal behaviors that
+actually matter).
 
 **Next in A:**
 - LLM-proposed inputs (when a model is configured) for domain-specific coverage,

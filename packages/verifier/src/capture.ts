@@ -19,9 +19,11 @@
  * seen twice with different results is dropped), and the driver is run twice and
  * intersected — matching the rest of the engine's nondeterminism filtering.
  *
- * Languages: Python and JavaScript capture both functions and methods;
- * TypeScript (ESM) captures methods (its namespace exports are read-only, so
- * top-level functions can't be wrapped in-process). Pure, offline, zero-dep.
+ * Languages: Python, JavaScript, and TypeScript capture both functions and
+ * methods. Python/JS wrap the module object in-process; TS namespace exports are
+ * read-only, so a module loader redirects imports of the target to a generated
+ * shim that re-exports each function wrapped (class prototypes, being mutable,
+ * are patched directly). Pure, offline, zero-dep.
  */
 import { spawn } from "node:child_process";
 import { rm, writeFile } from "node:fs/promises";
@@ -103,8 +105,9 @@ def lit(v):
         return repr(v) if eval(repr(v)) == v else None
     except Exception:
         return None
-def record(symbol, args, val):
-    a = lit(list(args))
+def store(symbol, a, val):
+    # 'a' is the args literal captured before the call (so a mutating function's
+    # recorded input is its pre-call state); val is the return value.
     if a is None:
         return
     v = lit(val)
@@ -118,18 +121,18 @@ def record(symbol, args, val):
         slot[a] = v
 def wrap_fn(symbol, orig):
     def w(*args, **kwargs):
+        a = lit(list(args)) if not kwargs else None
         val = orig(*args, **kwargs)
-        if not kwargs:
-            try: record(symbol, args, val)
-            except Exception: pass
+        try: store(symbol, a, val)
+        except Exception: pass
         return val
     return w
 def wrap_method(symbol, orig):
     def w(self, *args, **kwargs):
+        a = lit(list(args)) if not kwargs else None
         val = orig(self, *args, **kwargs)
-        if not kwargs:
-            try: record(symbol, args, val)
-            except Exception: pass
+        try: store(symbol, a, val)
+        except Exception: pass
         return val
     return w
 try:
@@ -165,31 +168,43 @@ print(SENT + json.dumps({"symbols": symbols}))
 }
 
 // --- Node (JS/TS) harness ----------------------------------------------------
+//
+// Capture is recorded through `globalThis.__maRec`, closing over a module-local
+// `__records`. Using a global lets the TypeScript loader shim (a separate module)
+// record into the same store the harness later drains.
 
-function nodeCaptureBody(entryStmt: string, argv: string[]): string {
-  return `const SENT = ${JSON.stringify(SENTINEL)};
-process.argv = [process.argv[0], process.argv[1], ...${JSON.stringify(argv)}];
-const records = {};  // symbol -> Map(argsJson -> valJson | null)
-function lit(v) {
+const REC_LIB = `const __records = {};
+globalThis.__maLit = function (v) {
   if (v === undefined || typeof v === "function") return undefined;
   let j;
   try { j = JSON.stringify(v); } catch { return undefined; }
   if (j === undefined) return undefined;
   try { if (!isDeepStrictEqual(JSON.parse(j), v)) return undefined; } catch { return undefined; }
   return j;
-}
-function record(symbol, args, val) {
-  const a = lit(args);
+};
+// 'a' is the args literal captured before the call (so a mutating function's
+// recorded input is its pre-call state); val is the return value.
+globalThis.__maRec = function (symbol, a, val) {
   if (a === undefined) return;
-  const v = lit(val);
-  if (v === undefined) return;
-  let slot = records[symbol];
-  if (!slot) { slot = records[symbol] = new Map(); }
+  const v = globalThis.__maLit(val); if (v === undefined) return;
+  let slot = __records[symbol]; if (!slot) { slot = __records[symbol] = new Map(); }
   if (slot.has(a)) { if (slot.get(a) !== null && slot.get(a) !== v) slot.set(a, null); }
   else slot.set(a, v);
-}
+};
 const isClass = (f) => /^class[\\s{]/.test(Function.prototype.toString.call(f));
-for (const [name, obj] of Object.entries(mod)) {
+`;
+
+const EMIT = `const symbols = [];
+for (const [symbol, slot] of Object.entries(__records)) {
+  const cases = [];
+  for (const [a, v] of slot) if (v !== null) cases.push({ args: a, val: v });
+  if (cases.length) symbols.push({ symbol, cases });
+}
+console.log(SENT + JSON.stringify({ symbols }));
+`;
+
+/** In-process instrumentation: wrap module-object exports (works for CommonJS / JS). */
+const IN_PROCESS_WRAP = `for (const [name, obj] of Object.entries(mod)) {
   if (typeof obj !== "function") continue;
   if (isClass(obj)) {
     const proto = obj.prototype;
@@ -199,8 +214,9 @@ for (const [name, obj] of Object.entries(mod)) {
       if (typeof orig !== "function") continue;
       try {
         proto[m] = function (...args) {
+          const a = globalThis.__maLit(args);
           const val = orig.apply(this, args);
-          try { record(name + "." + m, args, val); } catch {}
+          try { globalThis.__maRec(name + "." + m, a, val); } catch {}
           return val;
         };
       } catch {}
@@ -209,28 +225,92 @@ for (const [name, obj] of Object.entries(mod)) {
     const orig = obj;
     try {
       mod[name] = function (...args) {
+        const a = globalThis.__maLit(args);
         const val = orig(...args);
-        try { record(name, args, val); } catch {}
+        try { globalThis.__maRec(name, a, val); } catch {}
         return val;
       };
     } catch {}
   }
 }
-${entryStmt}
-const symbols = [];
-for (const [symbol, slot] of Object.entries(records)) {
-  const cases = [];
-  for (const [a, v] of slot) if (v !== null) cases.push({ args: a, val: v });
-  if (cases.length) symbols.push({ symbol, cases });
-}
-console.log(SENT + JSON.stringify({ symbols }));
 `;
+
+/** CommonJS / JavaScript: require the module, wrap in-process, require the driver. */
+function jsCaptureSource(moduleAbs: string, entryAbs: string, argv: string[]): string {
+  return `const SENT = ${JSON.stringify(SENTINEL)};
+const { isDeepStrictEqual } = require("node:util");
+process.argv = [process.argv[0], process.argv[1], ...${JSON.stringify(argv)}];
+const mod = require(${JSON.stringify(moduleAbs)});
+${REC_LIB}${IN_PROCESS_WRAP}require(${JSON.stringify(entryAbs)});
+${EMIT}`;
 }
 
-const jsPrologue = (abs: string) =>
-  `const { isDeepStrictEqual } = require("node:util");\nconst mod = require(${JSON.stringify(abs)});\n`;
-const tsPrologue = (url: string) =>
-  `import { isDeepStrictEqual } from "node:util";\nconst mod = await import(${JSON.stringify(url)});\n`;
+/**
+ * TypeScript (ESM): a module namespace is read-only, so top-level function
+ * exports can't be reassigned in-process. Instead we register a loader that
+ * redirects imports of the target to a generated *shim* which re-exports each
+ * function wrapped to record I/O; class prototypes (mutable) are patched on the
+ * shared instance in-process. The driver imports the target as usual and
+ * transparently gets the instrumented module.
+ */
+function tsCaptureSource(targetUrl: string, entryUrl: string, argv: string[]): string {
+  return `import { register } from "node:module";
+import { isDeepStrictEqual } from "node:util";
+import { writeFileSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+
+const SENT = ${JSON.stringify(SENTINEL)};
+process.argv = [process.argv[0], process.argv[1], ...${JSON.stringify(argv)}];
+const TARGET = ${JSON.stringify(targetUrl)};
+const REAL = TARGET + "?ma_real=1";  // a distinct module instance the loader leaves untouched
+${REC_LIB}
+const o = await import(REAL);
+const here = dirname(fileURLToPath(import.meta.url));
+
+// Patch class-method prototypes on the shared instance (mutable), and build a
+// shim that wraps each top-level function export.
+let shim = "import * as o from " + JSON.stringify(REAL) + ";\\n";
+for (const [name, val] of Object.entries(o)) {
+  if (name === "default") { shim += "export default o.default;\\n"; continue; }
+  if (typeof val === "function" && !isClass(val)) {
+    shim += "export const " + name + " = (...a) => { const __a = globalThis.__maLit(a); const r = o." + name +
+      "(...a); try { globalThis.__maRec(" + JSON.stringify(name) + ", __a, r); } catch {} return r; };\\n";
+  } else {
+    shim += "export const " + name + " = o." + name + ";\\n";
+    if (typeof val === "function" && isClass(val)) {
+      const proto = val.prototype;
+      for (const m of Object.getOwnPropertyNames(proto)) {
+        if (m === "constructor" || typeof proto[m] !== "function") continue;
+        const orig = proto[m];
+        proto[m] = function (...args) {
+          const a = globalThis.__maLit(args);
+          const r = orig.apply(this, args);
+          try { globalThis.__maRec(name + "." + m, a, r); } catch {}
+          return r;
+        };
+      }
+    }
+  }
+}
+const shimPath = join(here, "_ma_shim.mjs");
+writeFileSync(shimPath, shim);
+const SHIM = pathToFileURL(shimPath).href;
+
+const loaderPath = join(here, "_ma_loader.mjs");
+writeFileSync(loaderPath,
+  "let T, S;\\n" +
+  "export function initialize(d) { T = d.target; S = d.shim; }\\n" +
+  "export async function resolve(spec, ctx, next) {\\n" +
+  "  const r = await next(spec, ctx);\\n" +
+  "  if (r.url === T) return { url: S, shortCircuit: true };\\n" +
+  "  return r;\\n" +
+  "}\\n");
+register(pathToFileURL(loaderPath).href, { data: { target: TARGET, shim: SHIM } });
+
+await import(${JSON.stringify(entryUrl)});
+${EMIT}`;
+}
 
 // --- intersection of two runs ------------------------------------------------
 
@@ -279,13 +359,12 @@ export async function captureBoundaryIO(opts: CaptureOptions): Promise<SymbolSna
         );
       } else if (opts.language === "javascript") {
         const h = join(work, "_ma_capture.cjs");
-        const body = nodeCaptureBody(`require(${JSON.stringify(entryAbs)});`, argv);
-        await writeFile(h, jsPrologue(moduleAbs) + body, "utf8");
+        await writeFile(h, jsCaptureSource(moduleAbs, entryAbs, argv), "utf8");
         parsed = await runProc("node", [h], work, timeoutMs);
       } else {
         const h = join(work, "_ma_capture.mjs");
-        const body = nodeCaptureBody(`await import(${JSON.stringify(pathToFileURL(entryAbs).href)});`, argv);
-        await writeFile(h, tsPrologue(pathToFileURL(moduleAbs).href) + body, "utf8");
+        const src = tsCaptureSource(pathToFileURL(moduleAbs).href, pathToFileURL(entryAbs).href, argv);
+        await writeFile(h, src, "utf8");
         parsed = await runProc("node", ["--experimental-strip-types", h], work, timeoutMs);
       }
       return parsed?.symbols ?? [];

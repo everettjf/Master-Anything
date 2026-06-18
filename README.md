@@ -259,8 +259,9 @@ goal; the system masters *exactly* the required sub-graph and ends in a real App
 - [Vision](./docs/VISION.md) — positioning, principles, the "Anything" roadmap
 - [Architecture](./docs/ARCHITECTURE.md) — layers, adapters, the mastery engine
 - [P0 design](./docs/P0-CODE-MVP.md) — the code-mastery MVP in detail
-- [Case study: captured-run I/O on `pytoolz/toolz`](./docs/casestudy/captured-run-toolz/README.md) — real-library
-  numbers for verifying dict/structure-shaped functions the fuzzer can't reach
+- Case studies — captured-run I/O on real libraries:
+  [`pytoolz/toolz`](./docs/casestudy/captured-run-toolz/README.md) (Python) ·
+  [`object-path`](./docs/casestudy/captured-run-objectpath/README.md) (JS — the fuzzer's coverage was 97% degenerate)
 - Blog: [Getting started](./docs/blog/getting-started-with-master-anything.md)
   ([中文](./docs/blog/getting-started-with-master-anything.zh.md)) — a usage walkthrough
 
