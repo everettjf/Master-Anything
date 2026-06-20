@@ -21,6 +21,7 @@ import {
   type LearningUnit,
   type Observation,
   OPEN_CREATE_PROMPT,
+  proposeInputs,
   type Quest,
   questProgress,
   recordAttempt,
@@ -152,11 +153,30 @@ export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit
   // synthesize a characterization test (oracle = the original implementation),
   // so the function becomes verifiable without a hand-written test.
   if (!verifiable) {
+    // When a model is configured, let it propose domain-representative inputs from
+    // the function's source — covering shapes the battery can't fuzz. They run
+    // through the oracle's own filter, so bad guesses are dropped; offline this is
+    // skipped and the battery stands alone.
+    let proposedInputs: string[] | undefined;
+    const llm = getLlm();
+    if (llm) {
+      const fnSource = source
+        .split("\n")
+        .slice(fn.provenance.startLine - 1, fn.provenance.endLine)
+        .join("\n");
+      proposedInputs = await proposeInputs({
+        provider: llm,
+        language: verifier.language,
+        symbol: fn.name,
+        source: fnSource,
+      });
+    }
     const char = await characterize({
       repoRoot: repo.root,
       file: fn.provenance.path,
       symbol: fn.name,
       language: verifier.language,
+      proposedInputs,
     });
     if (char) {
       // Confirm the synthesized test actually catches the blank (and isn't vacuous).

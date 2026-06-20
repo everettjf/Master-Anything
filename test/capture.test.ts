@@ -205,6 +205,61 @@ describe("captured-run I/O (grounded characterization)", () => {
     }
   });
 
+  it("makes a complex-argument function verifiable from proposed inputs (no driver)", async () => {
+    // What an LLM would return, formatted as native JSON arg-lists — no driver,
+    // no battery coverage; the proposed inputs alone make it characterizable.
+    const proposedInputs = [
+      JSON.stringify([{ items: [{ price: 10, qty: 2 }], discount: 0.1 }]),
+      JSON.stringify([
+        {
+          items: [
+            { price: 4, qty: 3 },
+            { price: 1, qty: 1 },
+          ],
+          discount: 0,
+        },
+      ]),
+    ];
+    const none = await characterize({
+      repoRoot: jsFixture,
+      file: "shipping.js",
+      symbol: "totalPrice",
+      language: "javascript",
+    });
+    expect(none).toBeNull();
+
+    const c = await characterize({
+      repoRoot: jsFixture,
+      file: "shipping.js",
+      symbol: "totalPrice",
+      language: "javascript",
+      proposedInputs,
+    });
+    expect(c).not.toBeNull();
+    expect(c!.cases).toBeGreaterThanOrEqual(2);
+
+    // The synthesized test passes against the oracle, and a bogus proposed input
+    // (wrong shape) was silently dropped by the round-trip filter.
+    const ok = await new LocalNodeTestRunner().run(jsFixture, {
+      edits: [{ path: c!.testPath, content: c!.testContent }],
+      targets: [c!.testPath],
+    });
+    expect(ok.passed).toBe(true);
+  });
+
+  it("drops malformed proposed inputs without failing", async () => {
+    // A mix of a valid arg-list and junk the function can't run on; only the
+    // valid one should survive (and on its own it's one case — below the ≥2 bar).
+    const c = await characterize({
+      repoRoot: jsFixture,
+      file: "shipping.js",
+      symbol: "totalPrice",
+      language: "javascript",
+      proposedInputs: [JSON.stringify([{ items: [{ price: 2, qty: 2 }], discount: 0 }]), "[42]", "garbage"],
+    });
+    expect(c).toBeNull(); // only 1 valid case captured, characterization needs ≥2
+  });
+
   it("captures a read-only top-level TS export via the loader shim", async () => {
     const symbols = await captureBoundaryIO({
       repoRoot: tsFixture,

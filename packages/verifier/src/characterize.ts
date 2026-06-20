@@ -42,6 +42,14 @@ export interface CharacterizeOptions {
   entrypoint?: string;
   /** extra argv passed to the driver. */
   entryArgv?: string[];
+  /**
+   * Extra candidate argument-lists to try, in the harness's native literal form
+   * (Python: a `repr`'d list like `"[{'a': 1}, 'x']"`; JS/TS: a JSON array like
+   * `'[{"a":1},"x"]'`). Typically LLM-proposed for domain-specific coverage; they
+   * run through the same round-trip + two-run-stable filter as the battery, so
+   * bad guesses are simply dropped. Offline, this is just empty.
+   */
+  proposedInputs?: string[];
 }
 
 export interface Characterization {
@@ -126,7 +134,7 @@ function placeBeside(file: string, name: string): string {
 
 // --- Python -----------------------------------------------------------------
 
-function pythonHarness(moduleDir: string, moduleName: string, qualname: string): string {
+function pythonHarness(moduleDir: string, moduleName: string, qualname: string, proposed: string[]): string {
   return `import sys, json, importlib, inspect
 sys.path.insert(0, ${JSON.stringify(moduleDir)})
 try:
@@ -159,8 +167,20 @@ def candidates(n):
     nums = [0, 1, 2, -3, 10]
     return [[a] * n for a in nums]
 
+PROPOSED = json.loads(${JSON.stringify(JSON.stringify(proposed))})
+def proposed_args():
+    out = []
+    for s in PROPOSED:
+        try:
+            v = eval(s)
+            if isinstance(v, list):
+                out.append(v)
+        except Exception:
+            pass
+    return out
+
 cases = []
-for args in candidates(n):
+for args in candidates(n) + proposed_args():
     try:
         val = (getattr(cls(), meth) if meth is not None else fn)(*args)
     except Exception:
@@ -208,7 +228,7 @@ ${asserts}
 // --- JavaScript / TypeScript (Node) -----------------------------------------
 
 /** Shared capture loop; `resolveTarget` is the language-specific prologue building `mod`. */
-function nodeHarnessBody(qualname: string): string {
+function nodeHarnessBody(qualname: string, proposed: string[]): string {
   return `const SENT = ${JSON.stringify(SENTINEL)};
 let n, cls, meth, fn;
 try {
@@ -241,8 +261,17 @@ function candidates(n) {
   return nums.map((a) => Array(n).fill(a));
 }
 
+const PROPOSED = ${JSON.stringify(proposed)};
+function proposedArgs() {
+  const out = [];
+  for (const s of PROPOSED) {
+    try { const a = JSON.parse(s); if (Array.isArray(a)) out.push(a); } catch {}
+  }
+  return out;
+}
+
 const cases = [];
-for (const args of candidates(n)) {
+for (const args of [...candidates(n), ...proposedArgs()]) {
   let val;
   try { val = (meth != null ? new cls()[meth](...args) : fn(...args)); } catch { continue; }
   if (val === undefined || typeof val === "function") continue;
@@ -256,16 +285,16 @@ console.log(SENT + JSON.stringify({ cases }));
 `;
 }
 
-function jsHarness(moduleAbsPath: string, qualname: string): string {
+function jsHarness(moduleAbsPath: string, qualname: string, proposed: string[]): string {
   return `const { isDeepStrictEqual } = require("node:util");
 const mod = require(${JSON.stringify(moduleAbsPath)});
-${nodeHarnessBody(qualname)}`;
+${nodeHarnessBody(qualname, proposed)}`;
 }
 
-function tsHarness(moduleUrl: string, qualname: string): string {
+function tsHarness(moduleUrl: string, qualname: string, proposed: string[]): string {
   return `import { isDeepStrictEqual } from "node:util";
 const mod = await import(${JSON.stringify(moduleUrl)});
-${nodeHarnessBody(qualname)}`;
+${nodeHarnessBody(qualname, proposed)}`;
 }
 
 function nodeTest(
@@ -319,18 +348,24 @@ export async function characterize(opts: CharacterizeOptions): Promise<Character
     let runOnce: () => Promise<OracleResult | null>;
     let emit: (cases: RawCase[]) => string;
 
+    const proposed = opts.proposedInputs ?? [];
     if (opts.language === "python") {
-      const script = pythonHarness(join(work, dirname(opts.file)), MODULE_NAME(opts.file), opts.symbol);
+      const script = pythonHarness(
+        join(work, dirname(opts.file)),
+        MODULE_NAME(opts.file),
+        opts.symbol,
+        proposed,
+      );
       runOnce = () => runProc("python3", ["-c", script], work, timeoutMs, { PYTHONDONTWRITEBYTECODE: "1" });
       emit = (cases) => pyTest(opts.symbol, MODULE_NAME(opts.file), cases);
     } else if (opts.language === "javascript") {
       const harness = join(work, "_ma_oracle.cjs");
-      await writeFile(harness, jsHarness(moduleAbs, opts.symbol), "utf8");
+      await writeFile(harness, jsHarness(moduleAbs, opts.symbol, proposed), "utf8");
       runOnce = () => runProc("node", [harness], work, timeoutMs);
       emit = (cases) => nodeTest("javascript", opts.file, opts.symbol, cases);
     } else {
       const harness = join(work, "_ma_oracle.mjs");
-      await writeFile(harness, tsHarness(pathToFileURL(moduleAbs).href, opts.symbol), "utf8");
+      await writeFile(harness, tsHarness(pathToFileURL(moduleAbs).href, opts.symbol, proposed), "utf8");
       runOnce = () => runProc("node", ["--experimental-strip-types", harness], work, timeoutMs);
       emit = (cases) => nodeTest("typescript", opts.file, opts.symbol, cases);
     }

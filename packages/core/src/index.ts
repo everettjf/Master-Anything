@@ -12,6 +12,7 @@ export * from "./layers.js";
 export * from "./mastery.js";
 export * from "./merge.js";
 export * from "./parser.js";
+export * from "./propose.js";
 export * from "./providers/factory.js";
 export * from "./providers/failover.js";
 export * from "./providers/presets.js";

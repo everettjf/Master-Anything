@@ -70,11 +70,24 @@ recorded correctly). Real-library case studies:
 coverage was 97% degenerate; captured-run pins the path-traversal behaviors that
 actually matter).
 
+**Shipped since:** **LLM-proposed inputs** — when a model is configured, it
+proposes domain-representative argument-lists from a function's source
+([`packages/core/src/propose.ts`](../packages/core/src/propose.ts)); they feed
+`characterize({ proposedInputs })` and run through the *same* round-trip +
+two-run-stable filter as the battery, so wrong guesses are dropped. So a function
+taking a shape the battery can't fuzz becomes verifiable with neither a test nor a
+driver — just the model's guesses, objectively filtered. Wired into the Apply loop
+(`createApplyAssessment` calls it whenever `getLlm()` is set); offline the battery
+stands alone. `proposeInputs` returns native-literal arg-lists (JSON for JS/TS, a
+`repr`-style literal for Python via `jsonToPyLiteral`) and never throws — bad model
+output degrades to `[]`. Tests: [`test/propose.test.ts`](../test/propose.test.ts)
+(parsing, Python-literal conversion, graceful degradation) +
+[`test/capture.test.ts`](../test/capture.test.ts) (proposed inputs alone make a
+nested-object function verifiable; malformed ones are dropped).
+
 **Next in A:**
-- LLM-proposed inputs (when a model is configured) for domain-specific coverage,
-  still falling back to the deterministic battery offline.
-- Capture top-level TypeScript functions (a loader/transform hook, since ESM
-  namespace exports can't be reassigned in-process); async-driver capture.
+- Captured-run async-driver support; richer proposed-input prompting (the function
+  signature + neighbouring types, not just its source).
 - Opt-in keeping of error-raising cases; ESM-`.js` and constructor-args support.
 
 ## B — Knowledge tracing over the graph (shipped)

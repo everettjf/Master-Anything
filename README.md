@@ -65,8 +65,10 @@ same engine.** That's why Master-Anything supports code *and* documents with one
   - **Understand** — the tutor asks a question; an LLM grades your answer **against the source**.
   - **Apply** — we blank a real function; you reimplement it; the project's **actual test suite** decides if you passed
     (Python · JavaScript · TypeScript). No test covers it? Master-Anything **synthesizes a characterization test**
-    (the original implementation is the oracle), so functions become verifiable even without a hand-written test
-    (Python · JavaScript · TypeScript).
+    (the original implementation is the oracle), so functions become verifiable even without a hand-written test.
+    Inputs come from a deterministic fuzz battery, **captured-run I/O** (real boundary I/O from the repo's own
+    example), and — when a model is configured — **LLM-proposed** domain inputs; all three are objectively filtered
+    by the oracle (Python · JavaScript · TypeScript).
   - **Analyze** — "if you change `X`, what's affected?" graded against the **call/dependency graph** (objective truth).
   - **Create** — extend the codebase with a **new capability**; verified by real tests (no regression + a new passing
     test, or a hidden LLM-generated acceptance test).
@@ -247,8 +249,10 @@ Docker sandbox runner (with local fallback).
 
 **A→B→C arc — all shipped:** **A** ✅ universal verification — characterization spans Py/JS/TS, now with
 **captured-run I/O** (instrument the target, run the repo's own example, pin *real* boundary I/O — so
-functions taking a dict/object the fuzzer can't build become verifiable; `--entry` on the firewall too) ·
-**B** ✅ graph-propagating **knowledge tracing** — beliefs propagate along prerequisite
+functions taking a dict/object the fuzzer can't build become verifiable; `--entry` on the firewall too) and
+**LLM-proposed inputs** (a configured model proposes domain-representative inputs, objectively filtered by the
+same oracle — verifiable with neither a test nor a driver) · **B** ✅ graph-propagating **knowledge tracing** —
+beliefs propagate along prerequisite
 edges and drive an adaptive "Next up" recommender (`GET /repos/:id/next`) · **C** ✅ goal-anchored **Quests** — state a
 goal; the system masters *exactly* the required sub-graph and ends in a real Apply on the target as final verification.
 
