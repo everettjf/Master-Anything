@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grounded characterization — three ways to make an untested function verifiable · Master-Anything</title>
+    <meta
+      name="description"
+      content="A Master-Anything progress note: the characterization oracle stops depending on the fuzzer. Captured-run I/O pins real boundary I/O from the repo's own example (Python · JS · TS), and a configured model can propose domain inputs — all filtered by the same oracle."
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Grounded characterization — three ways to make an untested function verifiable" />
+    <meta
+      property="og:description"
+      content="Captured-run I/O pins real boundary I/O from the repo's own example (Python · JS · TS); a configured model proposes domain inputs — all filtered by the same oracle."
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Grounded characterization — three ways to make an untested function verifiable" />
+    <meta
+      name="twitter:description"
+      content="Captured-run I/O pins real boundary I/O from the repo's own example (Python · JS · TS); a configured model proposes domain inputs — all filtered by the same oracle."
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      /* article-prose tweaks layered on top of the shared .tut container */
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.85; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.8; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.8;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      /* language toggle */
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1><span class="grad">Grounded</span> characterization —<br />three ways to make an untested function verifiable</h1>
+      <div class="lang-toggle">
+        <a class="on" href="./blog-grounded-characterization.html">EN</a><a href="./blog-grounded-characterization.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        A progress note on <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a>: an open-source tool
+        that turns any codebase (or docs, or a PDF) into a knowledge graph, then uses <b>real tests</b> and
+        <b>graph truth</b> to <b>prove</b> you've mastered it. This release is about the <i>inputs</i> — making the
+        characterization oracle work on real code, not just the functions a fuzzer happens to reach.
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        A while ago we <a href="./blog-universal-verification.html">closed the biggest hole</a> in "verifiable Apply": you
+        don't <i>need</i> a hand-written test, because an untouched function is its own oracle. Feed the original a battery
+        of inputs, record the outputs as golden values, synthesize a characterization test — blank the function and that
+        test goes red. The same machinery, pointed at AI edits, became the
+        <a href="./blog-behavioral-firewall.html">Behavioral Firewall</a>.
+      </p>
+      <p>
+        But there was an honest catch hiding <i>inside</i> that one. The battery only fuzzes <b>primitives and small
+        collections</b>: <code>0</code>, <code>2.5</code>, <code>"ab"</code>, <code>[1, 2, 3]</code>. That covers
+        arithmetic-shaped functions. It does <b>not</b> cover the function that takes a config dict, a nested order, a
+        domain object — exactly the functions that make up most real code. For those, the oracle found nothing, and
+        "verifiable" quietly fell back to "self-check."
+      </p>
+      <p>This release fixes that by giving the oracle two new ways to get inputs — and keeping the same honest filter on all of them.</p>
+
+      <h2>1. Captured-run I/O — pin the <i>real</i> inputs the code already uses</h2>
+      <p>
+        The cleanest source of realistic inputs is the repo itself. Point captured-run at a script your project already
+        ships — an example, an entrypoint — and Master-Anything <b>instruments the target module</b>, runs the script,
+        and records the real <code>(arguments → return)</code> observed at each function boundary:
+      </p>
+      <div class="code">
+        <pre><code>$ npx ma-firewall snapshot src/pricing.py --entry examples/demo.py -o pricing.behavior.json
+✓ snapshot: 2 functions, 4 behaviors pinned → pricing.behavior.json
+    total_price  (2)
+    Cart.line_count  (2)</code></pre>
+      </div>
+      <p>
+        A function taking <code>{"items": [...], "discount": 0.1}</code> — which the fuzzer will never construct —
+        becomes verifiable from how the code is <i>actually</i> called. It works for <b>Python, JavaScript, and
+        TypeScript</b>, capturing both functions and methods. (TypeScript's module exports are read-only, so we register a
+        loader that swaps in a generated shim — a top-level <code>export function</code> gets instrumented just like a
+        CommonJS export.) Arguments are snapshotted <i>before</i> the call, so even a function that mutates its input
+        records the correct pre-call value.
+      </p>
+      <p>How much does it matter on real code? We measured two well-known libraries, driven only by examples from their own docs:</p>
+      <ul>
+        <li>
+          <b><a href="https://github.com/everettjf/Master-Anything/blob/main/docs/casestudy/captured-run-toolz/README.md">pytoolz/toolz</a></b>
+          (Python) — the firewall went from 4 to 6 functions pinned (27 → 39 behaviors), and <code>assoc</code>/<code>merge</code>
+          crossed from <i>unverifiable</i> to <i>verifiable</i>.
+        </li>
+        <li>
+          <b><a href="https://github.com/everettjf/Master-Anything/blob/main/docs/casestudy/captured-run-objectpath/README.md">object-path</a></b>
+          (JS) — the sharper result. The battery pinned 47 behaviors, but <b>only 1 of them touched a real object</b>:
+          things like <code>get(0, 1, 2) -&gt; 2</code> (the path is a number, so <code>get</code> just echoes the
+          default). Those 46 degenerate cases would survive almost <i>any</i> rewrite of the real path-traversal logic —
+          false confidence. Captured-run added the 15 grounded behaviors that pin what <code>object-path</code> is
+          actually for.
+        </li>
+      </ul>
+
+      <h2>2. LLM-proposed inputs — when there's no driver, ask the model</h2>
+      <p>
+        No example to point at? If you've configured a model, it can <b>propose</b> inputs straight from the function's
+        source — a well-formed record, a couple of edge cases — returned as plain argument-lists. These don't bypass
+        anything: they run through the <i>exact same</i> round-trip + two-run-stable filter as the battery, so a wrong
+        guess simply produces no case. The model widens coverage; the oracle still decides what's real.
+      </p>
+      <p>Offline, none of this runs and the battery stands alone — the same honest degradation Master-Anything has always had.</p>
+
+      <h2>Why it's the same idea three times</h2>
+      <p>
+        The point of characterization was never the fuzzer — it was the <b>oracle</b>: the original code, deciding what's
+        true. This release just gives that oracle better questions to ask. A deterministic battery for free, real I/O when
+        the repo can drive it, model-proposed inputs when it can't — and every one of them filtered the same way, so the
+        verdict stays objective no matter where the input came from.
+      </p>
+
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Repo:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>The oracle it builds on:</b> <a href="./blog-universal-verification.html">Making "verifiable" reach any function</a></li>
+        <li><b>The firewall it powers:</b> <a href="./blog-behavioral-firewall.html">Let an AI rewrite your untested code — and prove it</a></li>
+        <li><b>Site &amp; tutorial:</b> <a href="./tutorial.html">the step-by-step tutorial</a></li>
+      </ul>
+      <p>
+        Find the most load-bearing, least-tested file in your repo. Point <code>ma-firewall</code> at one of your example
+        scripts with <code>--entry</code>. Watch it pin the behaviors that actually matter — then let an agent rewrite the
+        file and tell you, to the input, whether you can still trust it.
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

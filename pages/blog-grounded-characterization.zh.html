@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grounded characterization —— 让没测试的函数可验证的三种途径 · Master-Anything</title>
+    <meta
+      name="description"
+      content="Master-Anything 进展笔记:特征化 oracle 不再依赖 fuzzer。运行期捕获从仓库自己的示例钉住真实的边界 I/O(Python · JS · TS),配置了模型还能让它提议领域输入 —— 全都经过同一道 oracle 过滤。"
+    />
+    <meta name="theme-color" content="#0e1116" />
+    <meta name="author" content="Master-Anything contributors" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./assets/favicon.png" />
+    <link rel="canonical" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.zh.html" />
+    <link rel="alternate" hreflang="en" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.html" />
+    <link rel="alternate" hreflang="zh" href="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.zh.html" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Master-Anything" />
+    <meta property="og:title" content="Grounded characterization —— 让没测试的函数可验证的三种途径" />
+    <meta
+      property="og:description"
+      content="运行期捕获从仓库自己的示例钉住真实的边界 I/O(Python · JS · TS);配置了模型还能让它提议领域输入 —— 全都经过同一道 oracle 过滤。"
+    />
+    <meta property="og:url" content="https://everettjf.github.io/Master-Anything/blog-grounded-characterization.zh.html" />
+    <meta property="og:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Grounded characterization —— 让没测试的函数可验证的三种途径" />
+    <meta
+      name="twitter:description"
+      content="运行期捕获从仓库自己的示例钉住真实的边界 I/O(Python · JS · TS);配置了模型还能让它提议领域输入 —— 全都经过同一道 oracle 过滤。"
+    />
+    <meta name="twitter:image" content="https://everettjf.github.io/Master-Anything/assets/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .article { max-width: 760px; }
+      .article .meta { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+      .article .meta a { color: var(--accent); }
+      .article h2 { font-size: 26px; letter-spacing: -0.5px; margin: 44px 0 14px; }
+      .article h3 { font-size: 19px; margin: 30px 0 10px; }
+      .article p { color: var(--text); line-height: 1.95; margin: 14px 0; }
+      .article ul { color: var(--muted); padding-left: 22px; line-height: 1.9; }
+      .article li { margin: 10px 0; }
+      .article li b { color: var(--text); }
+      .article a { color: var(--accent); }
+      .article a:hover { text-decoration: underline; }
+      .article blockquote {
+        margin: 0 0 28px; padding: 14px 18px; color: var(--muted);
+        border-left: 3px solid var(--accent); background: var(--panel);
+        border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.9;
+      }
+      .article blockquote a { color: var(--accent); }
+      .article .code { margin: 18px 0; }
+      .article figure { margin: 26px 0; }
+      .lang-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin: 0 0 22px; }
+      .lang-toggle a { font-size: 13px; padding: 3px 12px; border-radius: 999px; color: var(--muted); }
+      .lang-toggle a.on { background: var(--panel2); color: var(--text); }
+      .lang-toggle a:hover { color: var(--text); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./index.html">
+        <span class="logo">M</span> Master<span class="dim">·Anything</span>
+      </a>
+      <nav class="links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.zh.html">Blog</a>
+        <a class="ghbtn" href="https://github.com/everettjf/Master-Anything">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="tut article">
+      <p class="eyebrow">Blog</p>
+      <h1><span class="grad">Grounded</span> characterization —<br />让没测试的函数可验证的三种途径</h1>
+      <div class="lang-toggle">
+        <a href="./blog-grounded-characterization.html">EN</a><a class="on" href="./blog-grounded-characterization.zh.html">中文</a>
+      </div>
+
+      <blockquote>
+        这是 <a href="https://github.com/everettjf/Master-Anything">Master-Anything</a> 的一篇进展笔记。这个开源工具把任意
+        代码库(或文档、PDF)变成知识图谱,再用<b>真实测试</b>和<b>图谱真值</b>来<b>证明</b>你真的掌握了它。这一版讲的是
+        <i>输入</i> —— 让特征化 oracle 在真实代码上也能用,而不只是 fuzzer 恰好能覆盖到的那些函数。
+      </blockquote>
+
+      <figure class="shot-frame">
+        <img src="./assets/og.png" width="1200" height="630" loading="lazy" alt="Master-Anything" />
+      </figure>
+
+      <p>
+        不久前我们<a href="./blog-universal-verification.zh.html">补上了「可验证 Apply」最大的窟窿</a>:你<b>不需要</b>手写
+        测试,因为一个还没被改动的函数,本身就是它自己的 oracle。给原函数喂一批输入,把输出记成 golden 值,合成一个特征化
+        测试 —— 把函数挖空,这个测试立刻变红。同一套机制对准 AI 的改动,就成了<a href="./blog-behavioral-firewall.zh.html">行为防火墙</a>。
+      </p>
+      <p>
+        但那套机制<i>内部</i>还藏着一个诚实的隐患。battery 只会 fuzz <b>基本类型和小集合</b>:<code>0</code>、
+        <code>2.5</code>、<code>"ab"</code>、<code>[1, 2, 3]</code>。这能覆盖算术形状的函数,却<b>覆盖不了</b>那些参数是
+        配置字典、嵌套订单、领域对象的函数 —— 而真实代码里恰恰大部分是这种。对它们,oracle 什么也找不到,「可验证」就悄悄
+        退化成了「自检」。
+      </p>
+      <p>这一版通过给 oracle 两条新的取输入途径来解决它 —— 并对所有途径保持同一道诚实的过滤。</p>
+
+      <h2>1. 运行期捕获 —— 钉住代码<i>真实</i>用到的输入</h2>
+      <p>
+        最干净的真实输入来源就是仓库自己。把 captured-run 指向你项目里已有的某个脚本(一个示例、一个入口),Master-Anything
+        就会<b>给目标模块插桩</b>、运行这个脚本,记录在每个函数边界上观测到的真实 <code>(参数 → 返回值)</code>:
+      </p>
+      <div class="code">
+        <pre><code>$ npx ma-firewall snapshot src/pricing.py --entry examples/demo.py -o pricing.behavior.json
+✓ snapshot: 2 functions, 4 behaviors pinned → pricing.behavior.json
+    total_price  (2)
+    Cart.line_count  (2)</code></pre>
+      </div>
+      <p>
+        一个吃 <code>{"items": [...], "discount": 0.1}</code> 的函数 —— fuzzer 永远造不出这种参数 —— 现在能从代码<i>真实的</i>
+        调用方式里变得可验证。它支持 <b>Python、JavaScript、TypeScript</b>,函数和方法都能捕获。(TypeScript 的模块导出是只读
+        的,所以我们注册了一个 loader,换入一个生成的 shim —— 顶层的 <code>export function</code> 也能像 CommonJS 导出一样
+        被插桩。)参数是在调用<i>之前</i>快照的,所以即便函数会修改入参,记录的也是正确的调用前状态。
+      </p>
+      <p>在真实代码上到底有多大用?我们在两个知名库上做了测量,driver 只用它们自己文档里的示例:</p>
+      <ul>
+        <li>
+          <b><a href="https://github.com/everettjf/Master-Anything/blob/main/docs/casestudy/captured-run-toolz/README.md">pytoolz/toolz</a></b>
+          (Python)—— 防火墙从钉住 4 个函数提升到 6 个(27 → 39 个行为),<code>assoc</code>/<code>merge</code> 从<i>不可
+          验证</i>跨进了<i>可验证</i>。
+        </li>
+        <li>
+          <b><a href="https://github.com/everettjf/Master-Anything/blob/main/docs/casestudy/captured-run-objectpath/README.md">object-path</a></b>
+          (JS)—— 结论更锋利。battery 钉住了 47 个行为,但<b>其中只有 1 个真正碰到了对象</b>:像 <code>get(0, 1, 2) -&gt; 2</code>
+          这种(路径是个数字,<code>get</code> 只是回显默认值)。这 46 个退化的 case,几乎<i>任何</i>对路径遍历逻辑的重写都骗
+          得过去 —— 纯属虚假的安全感。captured-run 补上了那 15 个真正考验 <code>object-path</code> 用途的 grounded 行为。
+        </li>
+      </ul>
+
+      <h2>2. LLM 提议输入 —— 没有 driver?那就问模型</h2>
+      <p>
+        没有现成的脚本可指?如果你配置了模型,它可以直接从函数源码里<b>提议</b>输入 —— 一个结构良好的记录、几个边界情况 ——
+        以普通的参数列表形式返回。这些并不绕过任何检查:它们会走<i>完全相同</i>的「字面量回环 + 两次运行稳定」过滤,所以猜错
+        了就只是产生不了 case。模型负责拓宽覆盖;判定什么是真实的,依然是 oracle。
+      </p>
+      <p>离线时这些都不会运行,battery 独自工作 —— 还是 Master-Anything 一贯的诚实降级。</p>
+
+      <h2>为什么这是同一个想法的三种形态</h2>
+      <p>
+        特征化的关键从来不是 fuzzer,而是那个 <b>oracle</b>:由原始代码来决定什么是真的。这一版只是给这个 oracle 更好的
+        问题去问。免费的确定性 battery、仓库能驱动时的真实 I/O、不能驱动时模型提议的输入 —— 而它们每一个都经过同一道过滤,
+        所以无论输入从哪来,判定都保持客观。
+      </p>
+
+      <h2>上手</h2>
+      <ul>
+        <li><b>仓库:</b> <a href="https://github.com/everettjf/Master-Anything">github.com/everettjf/Master-Anything</a></li>
+        <li><b>它依赖的 oracle:</b> <a href="./blog-universal-verification.zh.html">让「可验证」覆盖到任意函数</a></li>
+        <li><b>它驱动的防火墙:</b> <a href="./blog-behavioral-firewall.zh.html">让 AI 重写你没测试的代码 —— 并证明它没改变行为</a></li>
+        <li><b>站点 &amp; 教程:</b> <a href="./tutorial.html">一步步的上手教程</a></li>
+      </ul>
+      <p>
+        在你的仓库里找出那个最关键、最没测试的文件。用 <code>--entry</code> 把 <code>ma-firewall</code> 指向你的某个示例
+        脚本。看着它钉住真正重要的行为 —— 然后放 agent 去重写这个文件,它会精确到具体输入地告诉你:还能不能信。
+      </p>
+
+      <div class="tut-cta">
+        <a class="btn primary" href="./tutorial.html">Start the tutorial</a>
+        <a class="btn ghost" href="https://github.com/everettjf/Master-Anything">Star it on GitHub</a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div><span class="logo">M</span> Master·Anything — <i>Master anything, verifiably.</i></div>
+      <div class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./tutorial.html">Tutorial</a>
+        <a href="./blog-index.zh.html">Blog</a>
+        <a href="https://github.com/everettjf/Master-Anything">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
