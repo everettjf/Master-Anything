@@ -1,5 +1,9 @@
 # ma-firewall — the Behavioral Firewall
 
+[![npm](https://img.shields.io/npm/v/ma-firewall.svg)](https://www.npmjs.com/package/ma-firewall)
+[![npm downloads](https://img.shields.io/npm/dm/ma-firewall.svg)](https://www.npmjs.com/package/ma-firewall)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/everettjf/Master-Anything/blob/main/LICENSE)
+
 > **Let an AI rewrite your untested code — and prove it didn't change behavior.**
 
 A regression safety net for code that has **no tests**. `ma-firewall` discovers
@@ -105,6 +109,12 @@ behavior:
 The non-zero exit on a behavioral change fails the job. Pair it with an agent that
 rewrites legacy code and you have a guardrail that blocks behavior drift before it
 merges.
+
+## Maintainers
+
+Publishing is automated — see [`docs/RELEASING.md`](https://github.com/everettjf/Master-Anything/blob/main/docs/RELEASING.md).
+Push a `vX.Y.Z` tag matching the package version and the release workflow builds,
+self-tests, and publishes the bundle.
 
 ## License
 

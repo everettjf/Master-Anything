@@ -1,0 +1,82 @@
+name: Release ma-firewall
+
+# Publishes the standalone `ma-firewall` CLI to npm.
+#
+#   • Push a tag `vX.Y.Z` whose version matches packages/firewall/package.json
+#     → builds the zero-dep bundle, self-tests it, and `npm publish`es it.
+#   • Or run manually (workflow_dispatch); leave `dry_run` = true to rehearse the
+#     whole pipeline (build + pack + self-test) without publishing.
+#
+# Requires a repository secret `NPM_TOKEN` (an npm automation token with publish
+# rights to `ma-firewall`). Provenance is attached, so the package page links
+# back to this workflow run.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build, pack and self-test only — do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the standalone bundle
+        run: pnpm --filter ma-firewall build
+
+      - name: Tag must match packages/firewall/package.json version
+        if: github.event_name == 'push'
+        run: |
+          PKG=$(node -p "require('./packages/firewall/package.json').version")
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "package=$PKG tag=$TAG"
+          if [ "$PKG" != "$TAG" ]; then
+            echo "::error::tag v$TAG does not match package version $PKG"
+            exit 1
+          fi
+
+      - name: Self-test the bundle (snapshot catches a real behavior change)
+        run: |
+          FW=packages/firewall/dist/ma-firewall.mjs
+          node "$FW" snapshot examples/py-calc/calc.py -o /tmp/calc.behavior.json
+          node "$FW" verify examples/py-calc/calc.py /tmp/calc.behavior.json
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path("examples/py-calc/calc.py")
+          p.write_text(re.sub(r"return ", "return 1 + ", p.read_text(), count=1))
+          PY
+          if node "$FW" verify examples/py-calc/calc.py /tmp/calc.behavior.json; then
+            echo "::error::firewall failed to catch a behavior change"; exit 1
+          fi
+          git checkout -- examples/py-calc/calc.py
+
+      - name: Pack (inspect tarball contents)
+        run: npm pack --dry-run
+        working-directory: packages/firewall
+
+      - name: Publish to npm
+        if: github.event_name == 'push' || github.event.inputs.dry_run == 'false'
+        run: npm publish --access public --provenance
+        working-directory: packages/firewall
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
