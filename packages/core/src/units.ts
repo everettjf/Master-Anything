@@ -32,8 +32,30 @@ function isMethodOf(node: KnowledgeNode, className: string): boolean {
   return node.name.startsWith(`${className}.`);
 }
 
+/**
+ * Is this file a test file? Test functions stay in the graph (the Apply loop
+ * runs the project's real suite as its oracle), but they are NOT learning units:
+ * you don't "master" a codebase by reimplementing its own tests, and blanking a
+ * test is a circular grade — the test is its own oracle. Recognizes the common
+ * conventions: Python `test_*.py` / `*_test.py` / `conftest.py`, JS/TS
+ * `*.test.*` / `*.spec.*`, and `tests/` / `__tests__/` directories.
+ */
+export function isTestPath(path: string): boolean {
+  const norm = path.replace(/\\/g, "/");
+  const base = norm.slice(norm.lastIndexOf("/") + 1);
+  if (/(^|\/)(tests|__tests__)\//.test(norm)) return true;
+  if (base === "conftest.py") return true;
+  if (/^test_.*\.py$/.test(base) || /_test\.py$/.test(base)) return true;
+  if (/\.(test|spec)\.(js|jsx|ts|tsx|mjs|cjs)$/.test(base)) return true;
+  return false;
+}
+
 export function buildUnits(graph: KnowledgeGraph): LearningUnit[] {
-  const symbols = graph.nodes.filter((n) => n.kind === "function" || n.kind === "class");
+  // Test files remain in the graph (needed to run as the verification suite) but
+  // their symbols are not offered as things to learn — see isTestPath.
+  const symbols = graph.nodes.filter(
+    (n) => (n.kind === "function" || n.kind === "class") && !isTestPath(n.provenance.path),
+  );
   const classes = symbols.filter((n) => n.kind === "class");
   const classNames = new Set(classes.map((c) => c.name));
 

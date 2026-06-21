@@ -7,3 +7,5 @@ dist/
 artifacts/
 .ma-data/
 .master-anything/
+__pycache__/
+*.pyc

@@ -163,7 +163,9 @@ describe("captured-run I/O (grounded characterization)", () => {
         entrypoint: "demo.py",
       });
       expect(c).not.toBeNull();
-      expect(c!.testContent).toContain("from shipping import total_price");
+      // Loads the source file directly by path (layout-independent, bypasses package init).
+      expect(c!.testContent).toContain("spec_from_file_location");
+      expect(c!.testContent).toContain("total_price = _mod.total_price");
 
       const ok = await new LocalPytestRunner().run(pyFixture, {
         edits: [{ path: c!.testPath, content: c!.testContent }],

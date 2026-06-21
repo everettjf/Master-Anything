@@ -52,7 +52,9 @@ describe("characterization oracle (universal verification)", () => {
     });
     expect(c).not.toBeNull();
     expect(c!.cases).toBeGreaterThanOrEqual(2);
-    expect(c!.testContent).toContain("from mathx import running_sum");
+    // Loads the source file directly by path (layout-independent, bypasses package init).
+    expect(c!.testContent).toContain("spec_from_file_location");
+    expect(c!.testContent).toContain("running_sum = _mod.running_sum");
 
     // The generated test passes against the original (oracle) implementation.
     const ok = await new LocalPytestRunner().run(fixture, {

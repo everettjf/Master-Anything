@@ -58,6 +58,28 @@ export async function runnerDescribe(): Promise<string> {
   return (await getRunner("python")).describe;
 }
 
+// Whether a repo's test suite is GREEN on the unmodified source, memoized per
+// repo+language. The suite can only serve as a per-function oracle if it passes
+// to begin with: otherwise a red suite (missing test deps, collection errors,
+// flaky/env-dependent tests) makes every blanked function "fail" for reasons
+// unrelated to the blank — falsely marking functions verifiable and then failing
+// even a correct reimplementation. The repo is immutable during a run, so one
+// baseline run is reused across all of its units.
+const baselineGreen = new Map<string, Promise<boolean>>();
+async function isSuiteGreen(repoRoot: string, language: SupportedLanguage): Promise<boolean> {
+  const key = `${repoRoot}::${language}`;
+  let p = baselineGreen.get(key);
+  if (!p) {
+    p = (async () => {
+      const { runner } = await getRunner(language);
+      const baseline = await runner.run(repoRoot);
+      return baseline.passed;
+    })();
+    baselineGreen.set(key, p);
+  }
+  return p;
+}
+
 /** Read the source lines a unit's primary node points at. */
 export function unitSource(repo: RepoRecord, unit: LearningUnit): { text: string; ref: string } {
   const node = repo.graph.nodes.find((n) => n.id === unit.primary);
@@ -137,14 +159,20 @@ export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit
   const source = readFileSync(join(repo.root, fn.provenance.path), "utf8");
   const blank = verifier.blank(source, fn.provenance.startLine, fn.provenance.endLine);
 
-  // Coverage probe: blank the function and run tests. If they fail, the existing
-  // suite covers it and a fix is objectively verifiable.
+  // Coverage probe: only trust the suite as an oracle if it's GREEN on the
+  // unmodified repo AND blanking the function turns it red. The green baseline is
+  // essential — a suite that's already red (missing deps, collection errors,
+  // flaky tests) would otherwise mark every function "verifiable" and then fail a
+  // perfectly correct reimplementation. With a green baseline, a blank-induced
+  // failure means the function is genuinely covered and a correct fix restores it.
   const { runner } = await getRunner(verifier.language);
-  const probe = await runner.run(repo.root, {
-    edits: [{ path: fn.provenance.path, content: blank.fileWithBlank }],
-  });
-
-  let verifiable = !probe.passed;
+  let verifiable = false;
+  if (await isSuiteGreen(repo.root, verifier.language)) {
+    const probe = await runner.run(repo.root, {
+      edits: [{ path: fn.provenance.path, content: blank.fileWithBlank }],
+    });
+    verifiable = !probe.passed;
+  }
   let verifiedBy: ApplyAssessment["verifiedBy"] = verifiable ? "suite" : "none";
   let oracleTest: { path: string; content: string } | undefined;
   let note: string | undefined;
@@ -179,15 +207,23 @@ export async function createApplyAssessment(repo: RepoRecord, unit: LearningUnit
       proposedInputs,
     });
     if (char) {
-      // Confirm the synthesized test actually catches the blank (and isn't vacuous).
-      const broke = await runner.run(repo.root, {
+      // A valid characterization oracle must satisfy BOTH invariants: it passes on
+      // the original implementation and fails on the blank. Checking only the blank
+      // would accept a vacuous test that never passes (e.g. a wrong import that
+      // errors in both states) — marking the function verifiable yet failing even a
+      // correct reimplementation. Requiring the pass-on-original gate makes it sound.
+      const onOriginal = await runner.run(repo.root, {
+        edits: [{ path: char.testPath, content: char.testContent }],
+        targets: [char.testPath],
+      });
+      const onBlank = await runner.run(repo.root, {
         edits: [
           { path: fn.provenance.path, content: blank.fileWithBlank },
           { path: char.testPath, content: char.testContent },
         ],
         targets: [char.testPath],
       });
-      if (!broke.passed) {
+      if (onOriginal.passed && !onBlank.passed) {
         verifiable = true;
         verifiedBy = "characterization";
         oracleTest = { path: char.testPath, content: char.testContent };
