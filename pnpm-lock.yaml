@@ -27,6 +27,40 @@ importers:
         specifier: ^3.0.5
         version: 3.2.6(@types/node@22.19.19)(tsx@4.22.4)
 
+  packages/app:
+    dependencies:
+      better-sqlite3:
+        specifier: ^12.10.0
+        version: 12.10.0
+      tree-sitter:
+        specifier: ^0.22.4
+        version: 0.22.4
+      tree-sitter-javascript:
+        specifier: ^0.23.1
+        version: 0.23.1(tree-sitter@0.22.4)
+      tree-sitter-python:
+        specifier: ^0.23.6
+        version: 0.23.6(tree-sitter@0.22.4)
+      tree-sitter-typescript:
+        specifier: ^0.23.2
+        version: 0.23.2(tree-sitter@0.22.4)
+    devDependencies:
+      '@ma/core':
+        specifier: workspace:*
+        version: link:../core
+      '@ma/server':
+        specifier: workspace:*
+        version: link:../server
+      '@ma/verifier':
+        specifier: workspace:*
+        version: link:../verifier
+      '@ma/web':
+        specifier: workspace:*
+        version: link:../web
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+
   packages/core:
     dependencies:
       '@ai-sdk/anthropic':

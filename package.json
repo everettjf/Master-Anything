@@ -1,5 +1,5 @@
 {
-  "name": "master-anything",
+  "name": "@ma/monorepo",
   "version": "0.2.0",
   "private": true,
   "description": "Master anything, verifiably. From understanding to mastery.",
@@ -12,7 +12,9 @@
     "format": "biome check --write .",
     "graph": "pnpm --filter @ma/core graph",
     "server": "pnpm --filter @ma/server dev",
-    "web": "pnpm --filter @ma/web dev"
+    "web": "pnpm --filter @ma/web dev",
+    "app": "pnpm --filter master-anything build && node packages/app/dist/master-anything.mjs",
+    "app:build": "pnpm --filter master-anything build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",

@@ -121,20 +121,38 @@ The top three layers are **domain-agnostic** — adding a domain means writing o
 
 ## Quick start
 
+### Run it — one command (`npx master-anything`)
+
+No clone, no build. Boots the API **and** the web UI on a single port and opens your browser:
+
+```bash
+npx master-anything                 # then add a repo from the UI
+npx master-anything /path/to/repo   # …or pre-connect one
+```
+
+Requires **Node ≥ 20** (and `python3` only for Python Apply). Set a provider key for LLM enrichment
+(`ANTHROPIC_API_KEY=… npx master-anything`); unset is fine — it falls back to heuristics. See
+[`packages/app`](./packages/app).
+
+### Run it — from source (for development)
+
 **Prerequisites:** Node ≥ 22, [pnpm](https://pnpm.io), `git`. For Python Apply tasks: `python3` + `pytest`.
 
 ```bash
 pnpm install
 python3 -m pip install pytest        # only needed for Python Apply tasks
 
-# start the API (http://localhost:8787) and the web app (http://localhost:5173)
-pnpm --filter @ma/server dev
-pnpm --filter @ma/web dev
+# single port (built UI + API), like the published command:
+pnpm app                             # → http://localhost:8787
+
+# …or the two-process dev setup with hot reload:
+pnpm --filter @ma/server dev         # API  → http://localhost:8787
+pnpm --filter @ma/web dev            # web  → http://localhost:5173
 ```
 
-Open **http://localhost:5173** and enter an **absolute repo path**. To see the full loop immediately, use a bundled
-example, e.g. `…/Master-Anything/examples/py-calc` (verifiable Apply) or `…/examples/mixed-app` (code + docs with
-cross-domain edges).
+Open the printed URL and enter an **absolute repo path** (the dev web app is at **http://localhost:5173**). To see
+the full loop immediately, use a bundled example, e.g. `…/Master-Anything/examples/py-calc` (verifiable Apply) or
+`…/examples/mixed-app` (code + docs with cross-domain edges).
 
 ### The mastery loop
 

@@ -1,0 +1,78 @@
+name: Release master-anything
+
+# Publishes the one-command app (`npx master-anything`) to npm.
+#
+#   • Push a tag `app-vX.Y.Z` whose version matches packages/app/package.json
+#     → builds the bundle + web UI, smoke-tests it, and `npm publish`es it.
+#   • Or run manually (workflow_dispatch); leave `dry_run` = true to rehearse the
+#     whole pipeline (build + pack + smoke-test) without publishing.
+#
+# Requires a repository secret `NPM_TOKEN` (an npm automation token with publish
+# rights to `master-anything`). Provenance is attached.
+
+on:
+  push:
+    tags: ["app-v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build, pack and smoke-test only — do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the app bundle (server + web)
+        run: pnpm --filter master-anything build
+
+      - name: Tag must match packages/app/package.json version
+        if: github.event_name == 'push'
+        run: |
+          PKG=$(node -p "require('./packages/app/package.json').version")
+          TAG="${GITHUB_REF_NAME#app-v}"
+          echo "package=$PKG tag=$TAG"
+          if [ "$PKG" != "$TAG" ]; then
+            echo "::error::tag app-v$TAG does not match package version $PKG"
+            exit 1
+          fi
+
+      - name: Smoke-test the bundle (API + SPA on one port)
+        run: |
+          APP=packages/app/dist/master-anything.mjs
+          MA_DATA_DIR=$(mktemp -d) node "$APP" --port 8799 --no-open &
+          PID=$!
+          for i in $(seq 1 20); do
+            curl -fsS http://localhost:8799/api/health && break || sleep 0.5
+          done
+          curl -fsS http://localhost:8799/api/health | grep -q '"ok":true'
+          curl -fsS http://localhost:8799/ | grep -qi '<div id="root">'
+          kill $PID
+
+      - name: Pack (inspect tarball contents)
+        run: npm pack --dry-run
+        working-directory: packages/app
+
+      - name: Publish to npm
+        if: github.event_name == 'push' || github.event.inputs.dry_run == 'false'
+        run: npm publish --access public --provenance
+        working-directory: packages/app
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
